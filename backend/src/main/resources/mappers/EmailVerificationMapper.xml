@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.farmday.verification.mapper.EmailVerificationMapper">
+
+    <!-- 시퀀스에서 PK 채번 -->
+    <select id="getNextId" resultType="long">
+        SELECT EMAIL_VERIFICATION_SEQ.NEXTVAL
+        FROM DUAL
+    </select>
+
+    <!-- 이메일 인증 레코드 저장 -->
+    <insert id="insert" parameterType="com.farmday.verification.domain.EmailVerification">
+        INSERT INTO EMAIL_VERIFICATION (
+            email_id,
+            email,
+            token,
+            status,
+            purpose,
+            requested_at,
+            verified_at,
+            expired_at,
+            created_date,
+            updated_date
+        ) VALUES (
+            #{emailId},
+            #{email},
+            #{token},
+            #{status},
+            #{purpose},
+            #{requestedAt},
+            #{verifiedAt},
+            #{expiredAt},
+            #{createdDate},
+            #{updatedDate}
+        )
+    </insert>
+
+    <!-- 토큰으로 조회 -->
+    <select id="findByToken"
+            parameterType="string"
+            resultType="com.farmday.verification.domain.EmailVerification">
+        SELECT
+            email_id      AS emailId,
+            email,
+            token,
+            status,
+            purpose,
+            requested_at  AS requestedAt,
+            verified_at   AS verifiedAt,
+            expired_at    AS expiredAt,
+            created_date  AS createdDate,
+            updated_date  AS updatedDate
+        FROM EMAIL_VERIFICATION
+        WHERE token = #{token}
+    </select>
+
+    <!-- VERIFIED 처리 -->
+    <update id="markVerified" parameterType="long">
+        UPDATE EMAIL_VERIFICATION
+        SET status      = 'VERIFIED',
+            verified_at = SYSDATE,
+            updated_date = SYSDATE
+        WHERE email_id = #{emailId}
+    </update>
+
+    <!-- USED 처리 (회원가입에 사용 완료된 토큰) -->
+    <update id="markUsed" parameterType="long">
+        UPDATE EMAIL_VERIFICATION
+        SET status       = 'USED',
+            updated_date = SYSDATE
+        WHERE email_id = #{emailId}
+    </update>
+
+</mapper>

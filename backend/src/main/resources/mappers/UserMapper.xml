@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.farmday.user.mapper.UserMapper">
+
+    <!-- 시퀀스 -->
+    <select id="getNextUserNo" resultType="long">
+        SELECT USERS_SEQ.NEXTVAL FROM DUAL
+    </select>
+
+    <!-- userId로 유저 조회 -->
+    <select id="findByUserId"
+            parameterType="string"
+            resultType="com.farmday.user.domain.User">
+        SELECT
+            user_no,
+            role,
+            userId,
+            userPwd,
+            addr,
+            name,
+            phone,
+            phone_verified,
+            email,
+            email_verified,
+            email_verify_token,
+            email_verify_expired_at,
+            birth,
+            gender,
+            photo,
+            last_login_at,
+            created_date,
+            updated_date,
+            is_blocked,
+            block_reason,
+            blocked_at
+        FROM USERS
+        WHERE userId = #{userId}
+    </select>
+
+    <!-- 회원 INSERT -->
+    <insert id="insertUser" parameterType="com.farmday.user.domain.User">
+        INSERT INTO USERS (
+            user_no,
+            role,
+            userId,
+            userPwd,
+            addr,
+            name,
+            phone,
+            phone_verified,
+            email,
+            email_verified,
+            email_verify_token,
+            email_verify_expired_at,
+            birth,
+            gender,
+            photo,
+            last_login_at,
+            created_date,
+            updated_date,
+            is_blocked,
+            block_reason,
+            blocked_at
+        ) VALUES (
+            #{userNo},
+            #{role},
+            #{userId},
+            #{userPwd},
+            #{addr},
+            #{name},
+            #{phone},
+            #{phoneVerified},
+            #{email},
+            #{emailVerified},
+            #{emailVerifyToken},
+            #{emailVerifyExpiredAt},
+            #{birth},
+            #{gender},
+            #{photo},
+            #{lastLoginAt},
+            SYSDATE,
+            SYSDATE,
+            #{isBlocked},
+            #{blockReason},
+            #{blockedAt}
+        )
+    </insert>
+
+    <!-- 이메일 인증 토큰 저장 (선택사항) -->
+    <update id="updateEmailToken">
+        UPDATE USERS
+        SET email_verify_token     = #{token},
+            email_verify_expired_at = #{expiredAt}
+        WHERE user_no = #{userNo}
+    </update>
+
+    <!-- 토큰으로 유저 조회 -->
+    <select id="findByEmailVerifyToken"
+            parameterType="string"
+            resultType="com.farmday.user.domain.User">
+        SELECT
+            user_no,
+            role,
+            userId,
+            userPwd,
+            addr,
+            name,
+            phone,
+            phone_verified,
+            email,
+            email_verified,
+            email_verify_token,
+            email_verify_expired_at,
+            birth,
+            gender,
+            photo,
+            last_login_at,
+            created_date,
+            updated_date,
+            is_blocked,
+            block_reason,
+            blocked_at
+        FROM USERS
+        WHERE email_verify_token = #{token}
+    </select>
+
+    <!-- 이메일 인증 완료 처리 -->
+    <update id="verifyEmail">
+        UPDATE USERS
+        SET email_verified = 'Y',
+            email_verify_token = NULL,
+            email_verify_expired_at = NULL
+        WHERE user_no = #{userNo}
+    </update>
+
+    <!-- 유저 역할 변경 -->
+    <update id="updateUserRole">
+        UPDATE USERS
+        SET role = #{role}
+        WHERE user_no = #{userNo}
+    </update>
+
+</mapper>

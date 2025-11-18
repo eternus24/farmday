@@ -1,0 +1,85 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '2.7.7'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.farmday'
+version = '0.0.1-SNAPSHOT'
+description = 'Demo project for Spring Boot'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(8)
+	}
+}
+
+
+configurations {
+    developmentOnly
+    runtimeClasspath {
+        extendsFrom developmentOnly
+    }
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	 // ===== Spring 기본 =====
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    // ===== MyBatis (Boot 2.7.x + Java 8 호환 버전) =====
+    implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:2.3.1'
+
+    // ===== DB Driver (Oracle) =====
+    runtimeOnly 'com.oracle.database.jdbc:ojdbc8:19.11.0.0'
+
+    // ===== Lombok =====
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    // ===== DevTools (개발용) =====
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+    // ===== OpenAPI / Swagger =====
+    implementation 'org.springdoc:springdoc-openapi-ui:1.7.0'
+
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+    // ===== OAuth2 (소셜 로그인 등) =====
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+    // 필요하면 리소스 서버도:
+    // implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
+
+    // ===== JWT (토큰 발급/검증) =====
+    implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
+
+    // ===== Test =====
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter-test:2.3.1'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+springBoot {
+    mainClass = 'com.farmday.FarmdayApplication'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
+
+// ✅ 리소스도 실시간 감지(templates/mappers 등 변경 시 재시작/리로드)
+tasks.named('bootRun') {
+  sourceResources sourceSets.main
+  jvmArgs += "-Dspring.devtools.restart.enabled=true"
+}

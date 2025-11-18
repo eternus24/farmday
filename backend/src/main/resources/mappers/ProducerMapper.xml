@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.farmday.producer.mapper.ProducerMapper">
+
+    <!-- 시퀀스에서 다음 producer_id -->
+    <select id="getNextProducerId" resultType="long">
+        SELECT PRODUCER_SEQ.NEXTVAL FROM DUAL
+    </select>
+
+    <!-- INSERT -->
+    <insert id="insertProducer" parameterType="com.farmday.producer.domain.Producer">
+        INSERT INTO PRODUCER (
+            producer_id,
+            user_no,
+            biz_no,
+            biz_name,
+            biz_addr,
+            biz_phone,
+            bank_name,
+            bank_account_no,
+            account_holder,
+            is_verified,
+            verified_at,
+            reject_reason,
+            created_date,
+            updated_date
+        ) VALUES (
+            #{producerId},
+            #{userNo},
+            #{bizNo},
+            #{bizName},
+            #{bizAddr},
+            #{bizPhone},
+            #{bankName},
+            #{bankAccountNo},
+            #{accountHolder},
+            #{isVerified},
+            #{verifiedAt},
+            #{rejectReason},
+            SYSDATE,
+            SYSDATE
+        )
+    </insert>
+
+    <!-- user_no로 조회 -->
+    <select id="findByUserNo"
+            parameterType="long"
+            resultType="com.farmday.producer.domain.Producer">
+        SELECT
+            producer_id,
+            user_no,
+            biz_no,
+            biz_name,
+            biz_addr,
+            biz_phone,
+            bank_name,
+            bank_account_no,
+            account_holder,
+            is_verified,
+            verified_at,
+            reject_reason,
+            created_date,
+            updated_date
+        FROM PRODUCER
+        WHERE user_no = #{userNo}
+    </select>
+
+    <!-- id로 조회 -->
+    <select id="findById"
+            parameterType="long"
+            resultType="com.farmday.producer.domain.Producer">
+        SELECT
+            producer_id,
+            user_no,
+            biz_no,
+            biz_name,
+            biz_addr,
+            biz_phone,
+            bank_name,
+            bank_account_no,
+            account_holder,
+            is_verified,
+            verified_at,
+            reject_reason,
+            created_date,
+            updated_date
+        FROM PRODUCER
+        WHERE producer_id = #{producerId}
+    </select>
+
+    <!-- 승인 대기 목록 -->
+    <select id="findPendingProducers"
+            resultType="com.farmday.producer.domain.Producer">
+        SELECT
+            producer_id,
+            user_no,
+            biz_no,
+            biz_name,
+            biz_addr,
+            biz_phone,
+            bank_name,
+            bank_account_no,
+            account_holder,
+            is_verified,
+            verified_at,
+            reject_reason,
+            created_date,
+            updated_date
+        FROM PRODUCER
+        WHERE is_verified = 'N'
+        ORDER BY created_date DESC
+    </select>
+
+    <!-- 승인 -->
+    <update id="approveProducer">
+        UPDATE PRODUCER
+        SET is_verified = 'Y',
+            verified_at = SYSDATE,
+            reject_reason = NULL,
+            updated_date = SYSDATE
+        WHERE producer_id = #{producerId}
+    </update>
+
+    <!-- 반려 -->
+    <update id="rejectProducer">
+        UPDATE PRODUCER
+        SET is_verified = 'N',
+            reject_reason = #{rejectReason},
+            updated_date = SYSDATE
+        WHERE producer_id = #{producerId}
+    </update>
+
+</mapper>

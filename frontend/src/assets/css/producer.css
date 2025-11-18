@@ -1,0 +1,484 @@
+/* ============================= */
+/*  공통 레이아웃 + 배경        */
+/* ============================= */
+
+/* 상단 헤더 아래 + 하단 푸터와 간격 */
+.producer-page-root {
+  margin-top: 80px;
+  padding: 0 40px 80px;
+  background-color: #f6f8fa;
+  min-height: calc(100vh - 160px);
+}
+
+/* 좌우 레이아웃 (사이드바 + 콘텐츠) */
+.producer-layout {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  gap: 24px;
+  align-items: stretch; /* 좌/우 컬럼 높이 동일하게 */
+  min-height: 60vh;
+}
+
+/* ============================= */
+/*  왼쪽 사이드바                */
+/* ============================= */
+
+.producer-sidebar {
+  width: 240px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+  padding: 20px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* 프로필 카드 */
+.producer-profile-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+/* 프로필 사진 영역 */
+.producer-profile-card .profile-photo-wrap {
+  position: relative;
+  width: 90px;
+  height: 90px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #e5e7eb;
+  margin: 0 auto 22px auto;
+}
+
+.producer-profile-card .profile-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 사진 변경 버튼: 사진 아래 중앙 */
+.producer-profile-card .photo-edit-btn {
+  position: absolute;
+  left: 50%;
+  bottom: -18px;
+  transform: translateX(-50%);
+  padding: 5px 12px;
+  font-size: 11px;
+  border-radius: 999px;
+  background: #10b981;
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+}
+
+/* 프로필 텍스트 */
+.producer-profile-card .profile-info h2 {
+  font-size: 16px;
+  margin: 0 0 2px;
+}
+
+.producer-profile-card .profile-info p {
+  font-size: 13px;
+  margin: 0;
+  color: #6b7280;
+}
+
+.producer-profile-card .profile-edit-btn {
+  margin-top: 10px;
+  padding: 6px 10px;
+  font-size: 12px;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  cursor: pointer;
+}
+
+/* 사이드 메뉴 */
+.producer-nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.producer-nav a {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 15px;
+  color: #4b5563;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.producer-nav a:hover {
+  background-color: #e0f9ec;
+  color: #059669;
+}
+
+.producer-nav a.active {
+  background-color: #10b981;
+  color: #ffffff;
+}
+
+/* ============================= */
+/*  오른쪽 콘텐츠 영역           */
+/* ============================= */
+
+.producer-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 상단 제목 + 스토어 버튼 */
+.producer-header {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.04);
+}
+
+.producer-header h1 {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0;
+  color: #111827;
+}
+
+.producer-store-btn {
+  padding: 8px 14px;
+  background-color: #22c55e;
+  border: none;
+  border-radius: 999px;
+  color: #0b1120;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.5);
+}
+
+.producer-store-btn:hover {
+  background-color: #16a34a;
+}
+
+/* 메인 카드 (대시보드/판매관리/상품관리/프로필 공통) */
+.producer-main {
+  flex: 1; /* 왼쪽 카드 높이에 맞추기 위해 남은 공간 채움 */
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 20px 22px;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+}
+
+.producer-main h2 {
+  font-size: 18px;
+  margin: 0 0 16px;
+  color: #111827;
+}
+
+/* 섹션 카드 (판매관리/상품관리/프로필 내부) */
+.producer-main section {
+  margin-top: 8px;
+  margin-bottom: 16px;
+}
+
+.producer-main section > h3 {
+  font-size: 16px;
+  margin: 0 0 10px;
+  color: #111827;
+}
+
+/* 판매 관리 내부 카드 (신규 주문 리스트 등) */
+.producer-orders-page section {
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+}
+
+/* ============================= */
+/*  대시보드                     */
+/* ============================= */
+
+.producer-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* 상단 KPI 카드 */
+.producer-dashboard .dashboard-kpi {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.producer-dashboard .kpi-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 10px 12px;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.06);
+}
+
+.producer-dashboard .kpi-card h3 {
+  font-size: 13px;
+  margin: 0 0 4px;
+  color: #6b7280;
+}
+
+.producer-dashboard .kpi-card p {
+  font-size: 18px;
+  margin: 0;
+  font-weight: 700;
+  color: #111827;
+}
+
+/* 하단 차트 자리 */
+.producer-dashboard .dashboard-charts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.producer-dashboard .chart-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+}
+
+.producer-dashboard .chart-card h3 {
+  font-size: 14px;
+  margin: 0 0 6px;
+  color: #111827;
+}
+
+.producer-dashboard .chart-placeholder {
+  height: 140px;
+  border-radius: 10px;
+  border: 1px dashed #d1d5db;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: #9ca3af;
+  background: #f9fafb;
+}
+
+/* ============================= */
+/*  판매 관리 탭 / 테이블        */
+/* ============================= */
+
+.orders-tabs {
+  display: inline-flex;
+  border-radius: 999px;
+  background-color: #f3f4f6;
+  padding: 4px;
+  margin-bottom: 16px;
+}
+
+.orders-tabs button {
+  border: none;
+  background: transparent;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  cursor: pointer;
+  color: #6b7280;
+}
+
+.orders-tabs button.active {
+  background-color: #10b981;
+  color: #ffffff;
+}
+
+/* 공통 테이블 스타일 */
+.orders-table,
+.sales-table,
+.order-items-table,
+.products-table,
+.cert-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+.orders-table th,
+.sales-table th,
+.order-items-table th,
+.products-table th,
+.cert-table th {
+  text-align: left;
+  padding: 10px 8px;
+  border-bottom: 1px solid #e5e7eb;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.orders-table td,
+.sales-table td,
+.order-items-table td,
+.products-table td,
+.cert-table td {
+  padding: 10px 8px;
+  border-bottom: 1px solid #f3f4f6;
+  color: #111827;
+}
+
+/* 행 hover */
+.orders-table tbody tr:hover,
+.products-table tbody tr:hover,
+.order-items-table tbody tr:hover {
+  background-color: #f9fafb;
+}
+
+/* 테이블 안 버튼 */
+.orders-table button,
+.products-table button,
+.cert-table button {
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid #10b981;
+  background-color: #ecfdf5;
+  color: #047857;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.orders-table button:hover,
+.products-table button:hover,
+.cert-table button:hover {
+  background-color: #d1fae5;
+}
+
+/* ============================= */
+/*  상품 관리                     */
+/* ============================= */
+
+.producer-products-page {
+  min-height: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 테이블 안 인풋 */
+.products-table input[type="number"],
+.products-table input[type="text"] {
+  width: 100%;
+  height: 32px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background-color: #f9fafb;
+  font-size: 13px;
+  box-sizing: border-box;
+}
+
+.products-table input[type="number"] {
+  text-align: right;
+}
+
+/* 재고 요약 리스트 */
+.producer-products-page ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  font-size: 14px;
+}
+
+/* ============================= */
+/*  주문 처리 페이지             */
+/* ============================= */
+
+.producer-order-detail-page {
+  min-height: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 상단 주문 상세/상태 레이아웃 */
+.producer-order-detail-page .order-layout {
+  display: grid;
+  grid-template-columns: 1.1fr 1.2fr 0.9fr;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.order-status-panel {
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.04);
+}
+
+.order-status-panel h3 {
+  font-size: 14px;
+  margin: 0 0 8px;
+}
+
+.order-status-panel .status-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.order-status-panel button {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: none;
+  background-color: #10b981;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ============================= */
+/*  프로필 관리                   */
+/* ============================= */
+
+.profile-form > div {
+  margin-bottom: 12px;
+}
+
+.profile-form label {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 4px;
+  color: #6b7280;
+}
+
+.profile-form input,
+.profile-form textarea {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  padding: 7px 9px;
+  font-size: 13px;
+}
+
+.profile-form button[type='submit'] {
+  margin-top: 8px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  background-color: #10b981;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
