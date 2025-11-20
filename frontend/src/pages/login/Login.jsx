@@ -1,7 +1,24 @@
 // src/pages/login/Login.jsx
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";   // ✅ 추가
+import { useState, useContext } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import styled from "styled-components";
+import { AuthContext } from "../../contexts/AuthContext";
+
+// 🔹 야채 프사 4개 import (경로 주의: pages/login 기준으로 ../..)
+import defaultAvatar from "../../assets/img/user-default1.png";
+import veggie1 from "../../assets/img/user-default2.png";
+import veggie2 from "../../assets/img/user-default3.png";
+import veggie3 from "../../assets/img/user-default4.png";
+import veggie4 from "../../assets/img/user-default5.png";
+
+// 배열로 묶어두기
+const VEGGIE_AVATARS = [
+  defaultAvatar,   // 🥇 디폴트도 랜덤 후보로 포함
+  veggie1,
+  veggie2,
+  veggie3,
+  veggie4,
+];
 
 const initialForm = {
   userId: "",
@@ -13,6 +30,7 @@ export default function Login() {
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();                // ✅ 추가
+  const { setAuth } = useContext(AuthContext); // ✅ 추가
 
   const openEmailVerifyPopup = () => {
     window.open(
@@ -62,6 +80,25 @@ export default function Login() {
 
       // ✅ 유저 정보는 따로 저장 (원하면)
       localStorage.setItem("loginUser", JSON.stringify(data.user));
+
+      // 🔹 실제 프로필 사진이 있으면 그거 우선
+      let finalPhoto = data.user?.photo || null;
+
+      // 🔹 없으면 야채 캐릭터 중 랜덤 선택
+      if (!finalPhoto) {
+        const idx = Math.floor(Math.random() * VEGGIE_AVATARS.length);
+        finalPhoto = VEGGIE_AVATARS[idx];
+      }
+
+      // 새로고침 후에도 유지하려고 localStorage에 같이 저장
+      localStorage.setItem("loginAvatar", finalPhoto);
+
+      // ⭐ 전역 로그인 상태 업데이트
+      setAuth({
+        loggedIn: true,
+        name: data.user?.name || data.user?.userId || "회원",
+        photo: finalPhoto,   // 🔹 추가
+      });
 
       // ✅ 메인 페이지로 이동
       navigate("/");
