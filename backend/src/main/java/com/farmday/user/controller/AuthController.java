@@ -4,7 +4,10 @@ import com.farmday.producer.domain.Producer;
 import com.farmday.producer.service.ProducerService;
 import com.farmday.security.jwt.JwtTokenProvider;
 import com.farmday.user.domain.User;
+import com.farmday.user.domain.UserToken;
 import com.farmday.user.service.UserService;
+import com.farmday.user.service.UserTokenService;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -15,10 +18,8 @@ import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
-import java.sql.Date;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,6 +33,7 @@ public class AuthController {
     private final UserService userService;
     private final JwtTokenProvider jwtTokenProvider;
     private final ProducerService producerService;
+    private final UserTokenService userTokenService;
 
     @Value("${app.frontend-url}")
     private String frontendUrl;
@@ -55,7 +57,7 @@ public class AuthController {
 
         String redirectUrl = frontendUrl
                 + "/signup?email=" + URLEncoder.encode(ev.getEmail(), StandardCharsets.UTF_8.name())
-                + "&emailToken=" + URLEncoder.encode(ev.getToken(), StandardCharsets.UTF_8.name());
+                + "&token=" + URLEncoder.encode(ev.getToken(), StandardCharsets.UTF_8.name());
 
         return ResponseEntity
                 .status(HttpStatus.FOUND)   // 302 리다이렉트
@@ -163,17 +165,22 @@ public class AuthController {
             String accessToken = jwtTokenProvider.generateAccessToken(user);
             String refreshToken = jwtTokenProvider.generateRefreshToken(user);
 
-            // 3) 성공 응답
+            // ✅ 리프레시 토큰 저장 부분은 예외 따로 감싸기
+            try {
+                userTokenService.saveRefreshToken(user.getUserNo(), refreshToken);
+            } catch (Exception ex) {
+                ex.printStackTrace();   // 콘솔에 원인 찍어보기 (log.error 있으면 그걸로)
+            }
+
+            // 3) 응답
             LoginResponse response = new LoginResponse(accessToken, refreshToken, user);
             return ResponseEntity.ok(response);
 
         } catch (IllegalArgumentException e) {
-            // ❗ 아이디/비밀번호 틀렸을 때 → 401 + 깔끔한 메시지 한 줄만
             return ResponseEntity
                     .status(HttpStatus.UNAUTHORIZED)
                     .body("아이디 또는 비밀번호가 올바르지 않습니다.");
         } catch (IllegalStateException e) {
-            // 차단 계정 같은 경우 → 403
             return ResponseEntity
                     .status(HttpStatus.FORBIDDEN)
                     .body(e.getMessage());
@@ -187,11 +194,13 @@ public class AuthController {
     public ResponseEntity<?> refresh(@RequestBody TokenRefreshRequest request) {
         String refreshToken = request.getRefreshToken();
 
+        // 1) 형식/서명 검증 (JWT)
         if (refreshToken == null || !jwtTokenProvider.validateToken(refreshToken)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body("유효하지 않은 리프레시 토큰입니다.");
         }
 
+        // 2) 토큰에서 userId 추출
         String userId = jwtTokenProvider.getUserId(refreshToken);
         User user = userService.findByUserId(userId);
         if (user == null) {
@@ -199,12 +208,54 @@ public class AuthController {
                     .body("사용자를 찾을 수 없습니다.");
         }
 
+        // 3) DB에 이 리프레시 토큰이 활성 상태인지 확인
+        UserToken storedToken = userTokenService.getActiveToken(refreshToken);
+        if (storedToken == null || !"Y".equalsIgnoreCase(storedToken.getIsActive())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("이미 로그아웃되었거나 유효하지 않은 리프레시 토큰입니다.");
+        }
+
+        // 4) 새 토큰 발급
         String newAccessToken = jwtTokenProvider.generateAccessToken(user);
         String newRefreshToken = jwtTokenProvider.generateRefreshToken(user);
+
+        // 5) 기존 토큰 비활성화 + 새 토큰 저장 (로테이션)
+        userTokenService.revokeToken(refreshToken);
+        userTokenService.saveRefreshToken(user.getUserNo(), newRefreshToken);
 
         TokenRefreshResponse response =
                 new TokenRefreshResponse(newAccessToken, newRefreshToken);
         return ResponseEntity.ok(response);
+    }
+
+    // ==========================
+    // 6) 로그아웃 (Refresh Token 무효화)
+    // ==========================
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(@RequestBody TokenRefreshRequest request) {
+        String refreshToken = request.getRefreshToken();
+
+        // 1) 형식/서명 검증
+        if (refreshToken == null || !jwtTokenProvider.validateToken(refreshToken)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("유효하지 않은 리프레시 토큰입니다.");
+        }
+
+        // 2) 토큰에서 userId 추출
+        String userId = jwtTokenProvider.getUserId(refreshToken);
+        User user = userService.findByUserId(userId);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("사용자를 찾을 수 없습니다.");
+        }
+
+        // 3) DB에서 해당 리프레시 토큰 비활성화
+        userTokenService.revokeToken(refreshToken);
+
+        // (옵션) 전체 기기 로그아웃 하고 싶으면:
+        // userTokenService.revokeAllTokensForUser(user.getUserNo());
+
+        return ResponseEntity.ok("로그아웃 완료");
     }
 
     // ==========================
@@ -283,6 +334,19 @@ public class AuthController {
         private String bankName;
         private String bankAccountNo;
         private String accountHolder;
+    }
+
+    @GetMapping("/check-userid")
+    public ResponseEntity<String> checkUserId(@RequestParam String userId) {
+        boolean exists = userService.existsByUserId(userId);
+        if (exists) {
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body("이미 사용 중인 아이디입니다.");
+        } else {
+            return ResponseEntity
+                    .ok("사용 가능한 아이디입니다.");
+        }
     }
 
 }

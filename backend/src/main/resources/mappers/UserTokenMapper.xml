@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.farmday.user.mapper.UserTokenMapper">
+
+    <resultMap id="UserTokenMap" type="com.farmday.user.domain.UserToken">
+        <id     property="tokenId"     column="token_id"/>
+        <result property="userNo"      column="user_no"/>
+        <result property="tokenValue"  column="token_value"/>
+        <result property="tokenType"   column="token_type"/>
+        <result property="isActive"    column="is_active"/>
+        <result property="createdDate" column="created_date"/>
+        <result property="expiredDate" column="expired_date"/>
+        <result property="revokedDate" column="revoked_date"/>
+        <result property="userAgent"   column="user_agent"/>
+        <result property="ipAddress"   column="ip_address"/>
+    </resultMap>
+
+    <!-- 시퀀스에서 PK 발급 -->
+    <select id="getNextTokenId" resultType="long">
+        SELECT USER_TOKEN_SEQ.NEXTVAL
+        FROM dual
+    </select>
+
+    <!-- 토큰 INSERT -->
+    <insert id="insertToken" parameterType="com.farmday.user.domain.UserToken">
+        INSERT INTO USER_TOKEN (
+            token_id, user_no, token_value, token_type,
+            is_active, created_date, expired_date,
+            revoked_date, user_agent, ip_address
+        ) VALUES (
+            #{tokenId},
+            #{userNo},
+            #{tokenValue},
+            #{tokenType},
+            #{isActive},
+            NVL(#{createdDate}, SYSDATE),
+            #{expiredDate},
+            #{revokedDate},
+            #{userAgent},
+            #{ipAddress}
+        )
+    </insert>
+
+    <!-- 활성 토큰 조회 -->
+    <select id="findActiveByTokenValue"
+            parameterType="string"
+            resultMap="UserTokenMap">
+        SELECT *
+        FROM USER_TOKEN
+        WHERE token_value = #{tokenValue}
+          AND is_active = 'Y'
+    </select>
+
+    <!-- 토큰 비활성화 (로그아웃/로테이션) -->
+    <update id="deactivateByTokenValue">
+        UPDATE USER_TOKEN
+        SET is_active = 'N',
+            revoked_date = #{revokedDate}
+        WHERE token_value = #{tokenValue}
+          AND is_active = 'Y'
+    </update>
+
+    <!-- 유저 전체 로그아웃 (옵션) -->
+    <update id="deactivateAllByUser">
+        UPDATE USER_TOKEN
+        SET is_active = 'N',
+            revoked_date = #{revokedDate}
+        WHERE user_no = #{userNo}
+          AND is_active = 'Y'
+    </update>
+
+</mapper>

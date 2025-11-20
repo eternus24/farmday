@@ -21,6 +21,8 @@ public interface UserService {
     // userId로 유저 조회 (토큰 재발급 등에 사용)
     User findByUserId(String userId);
 
+    boolean existsByUserId(String userId);
+
         // ✅ (추가) 이메일 인증: 1) 메일 발송
     void requestEmailVerificationForSignup(String email);
 

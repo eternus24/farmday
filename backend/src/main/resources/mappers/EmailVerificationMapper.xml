@@ -30,11 +30,11 @@
             #{token},
             #{status},
             #{purpose},
-            #{requestedAt},
-            #{verifiedAt},
-            #{expiredAt},
-            #{createdDate},
-            #{updatedDate}
+            #{requestedAt, jdbcType=TIMESTAMP},
+            #{verifiedAt, jdbcType=TIMESTAMP},
+            #{expiredAt, jdbcType=TIMESTAMP},
+            #{createdDate, jdbcType=TIMESTAMP},
+            #{updatedDate, jdbcType=TIMESTAMP}
         )
     </insert>
 

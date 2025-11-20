@@ -29,6 +29,8 @@ public interface UserMapper {
     
     User findByEmail(@Param("email") String email);
 
+    int countByUserId(String userId);
+
     void updateUserRole(@Param("userNo") Long userNo,
                     @Param("role") String role);
 

@@ -15,7 +15,7 @@
             parameterType="string"
             resultType="com.farmday.user.domain.User">
         SELECT
-            user_no,
+            user_no AS userNo,
             role,
             userId,
             userPwd,
@@ -75,8 +75,8 @@
             #{phoneVerified},
             #{email},
             #{emailVerified},
-            #{emailVerifyToken},
-            #{emailVerifyExpiredAt},
+            #{emailVerifyToken, jdbcType=VARCHAR},
+            #{emailVerifyExpiredAt, jdbcType=TIMESTAMP},
             #{birth},
             #{gender},
             #{photo},
@@ -102,7 +102,7 @@
             parameterType="string"
             resultType="com.farmday.user.domain.User">
         SELECT
-            user_no,
+            user_no AS userNo,
             role,
             userId,
             userPwd,
@@ -142,5 +142,41 @@
         SET role = #{role}
         WHERE user_no = #{userNo}
     </update>
+
+    <!-- email로 유저 조회 -->
+    <select id="findByEmail"
+            parameterType="string"
+            resultType="com.farmday.user.domain.User">
+        SELECT
+            user_no AS userNo,
+            role,
+            userId,
+            userPwd,
+            addr,
+            name,
+            phone,
+            phone_verified,
+            email,
+            email_verified,
+            email_verify_token,
+            email_verify_expired_at,
+            birth,
+            gender,
+            photo,
+            last_login_at,
+            created_date,
+            updated_date,
+            is_blocked,
+            block_reason,
+            blocked_at
+        FROM USERS
+        WHERE email = #{email}
+    </select>
+
+    <select id="countByUserId" parameterType="string" resultType="int">
+        SELECT COUNT(*)
+        FROM USERS
+        WHERE userId = #{userId}
+    </select>
 
 </mapper>

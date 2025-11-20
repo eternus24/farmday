@@ -31,6 +31,9 @@ public class UserServiceImpl implements UserService {
     @Value("${app.frontend-url}")
     private String frontendUrl;
 
+    @Value("${app.backend-url}")
+    private String backendUrl;
+
     // 관리자 가입용 인증 코드 (application.yml 등에 설정)
     @Value("${admin.signup.code}")
     private String adminSignupCode;
@@ -63,6 +66,11 @@ public class UserServiceImpl implements UserService {
 
         // 5) INSERT
         userMapper.insertUser(user);
+    }
+
+    @Override
+    public boolean existsByUserId(String userId) {
+        return userMapper.countByUserId(userId) > 0;
     }
 
     @Override
@@ -154,7 +162,7 @@ public class UserServiceImpl implements UserService {
         emailVerificationMapper.insert(ev);
 
         // 5) 인증 링크 생성
-        String link = frontendUrl + "/signup/email-verify?token=" + token;
+        String link = backendUrl + "/api/auth/pre-signup/verify-email?token=" + token;
 
         // 6) 메일 발송
         SimpleMailMessage message = new SimpleMailMessage();

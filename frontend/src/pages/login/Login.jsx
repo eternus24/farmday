@@ -40,7 +40,7 @@ export default function Login() {
 
     setSubmitting(true);
     try {
-      const res = await fetch("http://localhost:8080/api/auth/login", {
+      const res = await fetch("http://192.168.0.20:8080/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -50,21 +50,32 @@ export default function Login() {
       });
 
       if (res.ok) {
-        // ✅ 백엔드가 보내주는 User JSON 받기
-        const user = await res.json();
-        console.log("로그인 성공 user:", user);
+      // ✅ 전체 응답(JSON) 받기
+      const data = await res.json();
+      console.log("로그인 성공 data:", data);
 
-        // ✅ 브라우저에 로그인 정보 저장 (간단 버전)
-        localStorage.setItem("loginUser", JSON.stringify(user));
+      // data 구조: { accessToken, refreshToken, user }
 
-        // ✅ 메인 페이지로 이동
-        navigate("/");
+      // ✅ 토큰 저장
+      localStorage.setItem("accessToken", data.accessToken);
+      localStorage.setItem("refreshToken", data.refreshToken);
 
-        // 원하면 상태값/메시지도 정리
-        setMessage("로그인 성공!");
+      // ✅ 유저 정보는 따로 저장 (원하면)
+      localStorage.setItem("loginUser", JSON.stringify(data.user));
+
+      // ✅ 메인 페이지로 이동
+      navigate("/");
+
+      setMessage("로그인 성공!");
+    } else {
+      if (res.status === 401) {
+        setMessage("아이디 또는 비밀번호가 올바르지 않습니다.");
+      } else if (res.status === 403) {
+        setMessage("접근이 차단된 계정입니다.");
       } else {
-        setMessage("로그인에 실패했습니다. 아이디/비밀번호를 확인해 주세요.");
+        setMessage("로그인에 실패했습니다. 다시 시도해 주세요.");
       }
+    } 
     } catch (err) {
       console.error(err);
       setMessage("서버와의 통신 중 오류가 발생했습니다.");
@@ -116,7 +127,9 @@ export default function Login() {
 
           <SubLinkArea>
             아직 회원이 아니신가요?{" "}
-            <button onClick={openEmailVerifyPopup}>회원가입</button>
+            <button type="button" onClick={openEmailVerifyPopup}>
+              회원가입
+            </button>
           </SubLinkArea>
         </form>
       </Card>
@@ -128,11 +141,12 @@ export default function Login() {
 
 const PageWrapper = styled.div`
   width: 100%;
-  min-height: 60vh;
+  min-height: 85vh;
   display: flex;
   justify-content: center;
   padding: 120px 16px 20px;
   background-color: #fff;
+  align-items: flex-start;
 `;
 
 const Card = styled.div`
@@ -235,6 +249,22 @@ const SubLinkArea = styled.div`
   }
 
   a:hover {
+    text-decoration: underline;
+  }
+
+  /* ✅ 회원가입 버튼을 링크처럼 보이게 */
+  button {
+    border: none;
+    background: none;
+    padding: 0;
+    margin-left: 4px;
+    color: #198754;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.85rem;
+  }
+
+  button:hover {
     text-decoration: underline;
   }
 `;

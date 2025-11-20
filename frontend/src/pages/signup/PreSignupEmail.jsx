@@ -8,7 +8,7 @@ const initialState = {
 
 export default function PreSignupEmail() {
   const [form, setForm] = useState(initialState);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState({ text: "", error: false });
   const [submitting, setSubmitting] = useState(false);
 
   const onChange = (e) => {
@@ -29,21 +29,23 @@ export default function PreSignupEmail() {
 
     setSubmitting(true);
     try {
-      const res = await fetch("http://localhost:8080/api/auth/pre-signup/email", {
+      const res = await fetch("http://192.168.0.20:8080/api/auth/pre-signup/email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: form.email }),
       });
 
       if (res.ok) {
-        const text = await res.text();
-        setMessage(
-          text ||
-            "입력하신 이메일로 인증 링크를 보냈습니다. 메일함에서 인증 링크를 클릭하면 회원가입 화면으로 이동합니다."
-        );
+        setMessage({
+            text: "입력하신 이메일로 인증 링크를 보냈습니다. 메일함에서 인증 링크를 클릭하면 회원가입 화면으로 이동합니다.",
+            error: false
+        });
       } else {
-        const text = await res.text();
-        setMessage(text || "이메일 인증 메일 발송 중 오류가 발생했습니다.");
+        if (res.status === 409) {
+          setMessage({ text: "이미 사용중인 이메일입니다.", error: true });
+        } else {
+          setMessage({ text: "이메일 인증 메일 발송 중 오류가 발생했습니다.", error: true });
+        }
       }
     } catch (err) {
       console.error(err);
@@ -77,7 +79,9 @@ export default function PreSignupEmail() {
             />
           </FormGroup>
 
-          {message && <MessageText>{message}</MessageText>}
+          {message.text && (
+            <MessageText error={message.error}>{message.text}</MessageText>
+          )}
 
           <SubmitButton type="submit" disabled={!canSubmit || submitting}>
             {submitting ? "발송 중..." : "인증 메일 보내기"}
@@ -182,5 +186,6 @@ const MessageText = styled.div`
   margin-bottom: 12px;
   font-size: 0.8rem;
   text-align: center;
-  color: #6c757d;
+  color: ${(props) => (props.error ? "#dc3545" : "#198754")}; 
+  /* 빨강: 오류 / 초록: 성공 */
 `;
