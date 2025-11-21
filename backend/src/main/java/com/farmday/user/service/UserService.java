@@ -23,6 +23,12 @@ public interface UserService {
 
     boolean existsByUserId(String userId);
 
+    // ✅ (추가) 이메일로 유저 조회 - 소셜 로그인용
+    User findByEmail(String email);
+
+    // ✅ (추가) 소셜 로그인용 자동 회원가입
+    User signupSocialUser(String provider, String providerUserId, String email, String name, String photoUrl);
+
         // ✅ (추가) 이메일 인증: 1) 메일 발송
     void requestEmailVerificationForSignup(String email);
 

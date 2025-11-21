@@ -7,23 +7,25 @@ import com.farmday.user.domain.User;
 import com.farmday.user.domain.UserToken;
 import com.farmday.user.service.UserService;
 import com.farmday.user.service.UserTokenService;
+import com.farmday.verification.domain.EmailVerification;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
-
-import com.farmday.verification.domain.EmailVerification;
 import org.springframework.beans.factory.annotation.Value;
+
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @RestController
 @RequiredArgsConstructor
@@ -34,6 +36,9 @@ public class AuthController {
     private final JwtTokenProvider jwtTokenProvider;
     private final ProducerService producerService;
     private final UserTokenService userTokenService;
+
+    @Value("${admin.signup.code}")
+    private String adminSignupCode;   // ✅ 관리자 회원가입 코드
 
     @Value("${app.frontend-url}")
     private String frontendUrl;
@@ -63,7 +68,6 @@ public class AuthController {
                 .status(HttpStatus.FOUND)   // 302 리다이렉트
                 .location(URI.create(redirectUrl))
                 .build();
-                 
     }
 
     // ==========================
@@ -128,9 +132,7 @@ public class AuthController {
         producer.setBankAccountNo(request.getBankAccountNo());
         producer.setAccountHolder(request.getAccountHolder());
 
-        // 엔티티에 status 필드는 없고, isVerified만 있으니까 이렇게 두는 게 자연스러워
         producer.setIsVerified("N");   // 아직 미인증
-        // verifiedAt / rejectReason / createdDate / updatedDate 는 DB에서 채우도록 둬도 됨
 
         // 4) 등록 (유저번호 연결)
         producerService.createProducerForSignup(user.getUserNo(), producer);
@@ -141,38 +143,75 @@ public class AuthController {
     // ==========================
     // 3) 관리자 회원가입 (인증코드 필요)
     // ==========================
-    @PostMapping("/signup/admin")
-    public ResponseEntity<?> signupAdmin(@RequestBody AdminSignupRequest request) {
+    @PostMapping("/admin/signup")
+    public ResponseEntity<?> adminSignup(@RequestBody AdminSignupRequest request) {
+
+        if (!adminSignupCode.equals(request.getAdminCode())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("관리자 회원가입 코드가 올바르지 않습니다.");
+        }
+
         User user = new User();
         user.setUserId(request.getUserId());
         user.setUserPwd(request.getPassword());
         user.setName(request.getName());
         user.setEmail(request.getEmail());
-        userService.signupAdmin(user, request.getAdminCode());
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body("관리자 회원가입이 완료되었습니다.");
+        user.setRole("ADMIN");
+
+        userService.signupUser(user);
+
+        return ResponseEntity.ok("관리자 회원가입이 완료되었습니다.");
     }
 
-    // ==========================
-    // 4) 로그인 (토큰 발급)
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+    @PostMapping("/admin/login")
+    public ResponseEntity<?> adminLogin(@RequestBody LoginRequest request) {
         try {
-            // 1) 아이디/비밀번호 검증
             User user = userService.login(request.getUserId(), request.getPassword());
 
-            // 2) 토큰 발급
+            if (!"ADMIN".equalsIgnoreCase(user.getRole())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("관리자만 로그인 가능합니다.");
+            }
+
             String accessToken = jwtTokenProvider.generateAccessToken(user);
             String refreshToken = jwtTokenProvider.generateRefreshToken(user);
 
-            // ✅ 리프레시 토큰 저장 부분은 예외 따로 감싸기
             try {
                 userTokenService.saveRefreshToken(user.getUserNo(), refreshToken);
             } catch (Exception ex) {
-                ex.printStackTrace();   // 콘솔에 원인 찍어보기 (log.error 있으면 그걸로)
+                ex.printStackTrace();
             }
 
-            // 3) 응답
+            return ResponseEntity.ok(new LoginResponse(accessToken, refreshToken, user));
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body("아이디 또는 비밀번호가 올바르지 않습니다.");
+        } catch (IllegalStateException e) {
+            return ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .body(e.getMessage());
+        }
+    }
+
+    // ==========================
+    // 4) 일반 로그인 (토큰 발급)
+    // ==========================
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+        try {
+            User user = userService.login(request.getUserId(), request.getPassword());
+
+            String accessToken = jwtTokenProvider.generateAccessToken(user);
+            String refreshToken = jwtTokenProvider.generateRefreshToken(user);
+
+            try {
+                userTokenService.saveRefreshToken(user.getUserNo(), refreshToken);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+
             LoginResponse response = new LoginResponse(accessToken, refreshToken, user);
             return ResponseEntity.ok(response);
 
@@ -188,19 +227,51 @@ public class AuthController {
     }
 
     // ==========================
+    // 4-1) 구글 소셜 로그인 (accessToken만 받음)
+    // ==========================
+    @PostMapping("/social/google")
+    public ResponseEntity<?> googleSocialLogin(@RequestBody AccessTokenRequest request) {
+
+        try {
+            SocialLoginRequest socialReq = fetchGoogleUserInfo(request.getAccessToken());
+            socialReq.setProvider("GOOGLE");
+            return handleSocialLogin("GOOGLE", socialReq);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("구글 소셜 로그인 처리 중 오류가 발생했습니다.");
+        }
+    }
+
+    // ==========================
+    // 4-2) 카카오 소셜 로그인 (accessToken만 받음)
+    // ==========================
+    @PostMapping("/social/kakao")
+    public ResponseEntity<?> kakaoSocialLogin(@RequestBody AccessTokenRequest request) {
+
+        try {
+            SocialLoginRequest socialReq = fetchKakaoUserInfo(request.getAccessToken());
+            socialReq.setProvider("KAKAO");
+            return handleSocialLogin("KAKAO", socialReq);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("카카오 소셜 로그인 처리 중 오류가 발생했습니다.");
+        }
+    }
+
+    // ==========================
     // 5) 토큰 재발급 (Refresh Token)
     // ==========================
     @PostMapping("/refresh")
     public ResponseEntity<?> refresh(@RequestBody TokenRefreshRequest request) {
         String refreshToken = request.getRefreshToken();
 
-        // 1) 형식/서명 검증 (JWT)
         if (refreshToken == null || !jwtTokenProvider.validateToken(refreshToken)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body("유효하지 않은 리프레시 토큰입니다.");
         }
 
-        // 2) 토큰에서 userId 추출
         String userId = jwtTokenProvider.getUserId(refreshToken);
         User user = userService.findByUserId(userId);
         if (user == null) {
@@ -208,18 +279,15 @@ public class AuthController {
                     .body("사용자를 찾을 수 없습니다.");
         }
 
-        // 3) DB에 이 리프레시 토큰이 활성 상태인지 확인
         UserToken storedToken = userTokenService.getActiveToken(refreshToken);
         if (storedToken == null || !"Y".equalsIgnoreCase(storedToken.getIsActive())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body("이미 로그아웃되었거나 유효하지 않은 리프레시 토큰입니다.");
         }
 
-        // 4) 새 토큰 발급
         String newAccessToken = jwtTokenProvider.generateAccessToken(user);
         String newRefreshToken = jwtTokenProvider.generateRefreshToken(user);
 
-        // 5) 기존 토큰 비활성화 + 새 토큰 저장 (로테이션)
         userTokenService.revokeToken(refreshToken);
         userTokenService.saveRefreshToken(user.getUserNo(), newRefreshToken);
 
@@ -235,13 +303,11 @@ public class AuthController {
     public ResponseEntity<?> logout(@RequestBody TokenRefreshRequest request) {
         String refreshToken = request.getRefreshToken();
 
-        // 1) 형식/서명 검증
         if (refreshToken == null || !jwtTokenProvider.validateToken(refreshToken)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body("유효하지 않은 리프레시 토큰입니다.");
         }
 
-        // 2) 토큰에서 userId 추출
         String userId = jwtTokenProvider.getUserId(refreshToken);
         User user = userService.findByUserId(userId);
         if (user == null) {
@@ -249,13 +315,131 @@ public class AuthController {
                     .body("사용자를 찾을 수 없습니다.");
         }
 
-        // 3) DB에서 해당 리프레시 토큰 비활성화
         userTokenService.revokeToken(refreshToken);
 
-        // (옵션) 전체 기기 로그아웃 하고 싶으면:
-        // userTokenService.revokeAllTokensForUser(user.getUserNo());
-
         return ResponseEntity.ok("로그아웃 완료");
+    }
+
+    /**
+     * 소셜 로그인 공통 처리:
+     * - email 로 기존 유저 찾기
+     * - 없으면 자동 회원가입
+     * - 액세스/리프레시 토큰 발급 + 저장
+     */
+    private ResponseEntity<?> handleSocialLogin(String provider, SocialLoginRequest request) {
+        if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("이메일 정보가 없습니다.");
+        }
+        if (request.getProviderUserId() == null || request.getProviderUserId().trim().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("소셜 사용자 ID가 없습니다.");
+        }
+
+        User user = userService.findByEmail(request.getEmail());
+
+        if (user == null) {
+            // ⭐ USERS 테이블 기반 소셜 회원가입
+            user = userService.signupSocialUser(
+                    provider,
+                    request.getProviderUserId(),
+                    request.getEmail(),
+                    request.getName(),
+                    request.getPhotoUrl()
+            );
+        }
+
+        String accessToken = jwtTokenProvider.generateAccessToken(user);
+        String refreshToken = jwtTokenProvider.generateRefreshToken(user);
+
+        try {
+            userTokenService.saveRefreshToken(user.getUserNo(), refreshToken);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+        LoginResponse response = new LoginResponse(accessToken, refreshToken, user);
+        return ResponseEntity.ok(response);
+    }
+
+    // ==========================
+    // 7) 구글 유저 정보 조회 (accessToken → email, name, picture)
+    // ==========================
+    private SocialLoginRequest fetchGoogleUserInfo(String accessToken) throws Exception {
+        String url = "https://www.googleapis.com/oauth2/v3/userinfo";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessToken);
+
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity<String> resp = restTemplate.exchange(
+                url, HttpMethod.GET, new HttpEntity<>(headers), String.class);
+
+        if (!resp.getStatusCode().is2xxSuccessful()) {
+            throw new IllegalStateException("구글 사용자 정보 조회 실패: " + resp.getStatusCode());
+        }
+
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode root = mapper.readTree(resp.getBody());
+
+        String sub = root.path("sub").asText();           // 구글 고유 ID
+        String email = root.path("email").asText(null);
+        String name = root.path("name").asText(null);
+        String picture = root.path("picture").asText(null);
+
+        SocialLoginRequest req = new SocialLoginRequest();
+        req.setProviderUserId(sub);
+        req.setEmail(email);
+        req.setName(name != null ? name : email);
+        req.setPhotoUrl(picture);
+
+        return req;
+    }
+
+    // ==========================
+    // 8) 카카오 유저 정보 조회 (accessToken → email, nickname, profile_image)
+    //   주소/연령대는 제외
+    // ==========================
+    private SocialLoginRequest fetchKakaoUserInfo(String accessToken) throws Exception {
+        String url = "https://kapi.kakao.com/v2/user/me";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessToken);
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity<String> resp = restTemplate.exchange(
+                url, HttpMethod.GET, new HttpEntity<>(headers), String.class);
+
+        if (!resp.getStatusCode().is2xxSuccessful()) {
+            throw new IllegalStateException("카카오 사용자 정보 조회 실패: " + resp.getStatusCode());
+        }
+
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode root = mapper.readTree(resp.getBody());
+
+        Long kakaoId = root.path("id").asLong();
+        JsonNode account = root.path("kakao_account");
+        JsonNode profile = account.path("profile");
+
+        String email = account.path("email").asText(null);
+        String name = account.path("name").asText(null);
+        String nickname = profile.path("nickname").asText(null);
+        String profileImage = profile.path("profile_image_url").asText(null);
+
+        SocialLoginRequest req = new SocialLoginRequest();
+        req.setProviderUserId(String.valueOf(kakaoId));
+        req.setEmail(email);
+        req.setName(
+                name != null && !name.isEmpty()
+                        ? name
+                        : (nickname != null ? nickname : "카카오사용자")
+        );
+        req.setPhotoUrl(profileImage);
+
+        // 연령대/주소 제외, 필요하면 gender/phone/birth 등도 여기서 추출 가능
+
+        return req;
     }
 
     // ==========================
@@ -347,6 +531,22 @@ public class AuthController {
             return ResponseEntity
                     .ok("사용 가능한 아이디입니다.");
         }
+    }
+
+    // 프론트에서 보내는 바디: { "accessToken": "..." }
+    @Data
+    static class AccessTokenRequest {
+        private String accessToken;
+    }
+
+    // 내부 공통 DTO (클라에서 이걸 직접 보내지 않음)
+    @Data
+    static class SocialLoginRequest {
+        private String provider;        // GOOGLE / KAKAO
+        private String providerUserId;  // 소셜 고유 ID
+        private String email;           // account_email
+        private String name;            // name or nickname
+        private String photoUrl;        // 프로필 이미지 URL
     }
 
 }

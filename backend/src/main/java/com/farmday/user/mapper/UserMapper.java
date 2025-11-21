@@ -31,6 +31,8 @@ public interface UserMapper {
 
     int countByUserId(String userId);
 
+    User findByProviderUserId(String providerUserId);
+
     void updateUserRole(@Param("userNo") Long userNo,
                     @Param("role") String role);
 

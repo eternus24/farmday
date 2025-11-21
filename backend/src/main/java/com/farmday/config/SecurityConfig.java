@@ -47,7 +47,8 @@ public class SecurityConfig {
                         "/assets/**",
                         "/css/**",
                         "/js/**",
-                        "/images/**"
+                        "/images/**",
+                        "/groupdeal/**"
                 ).permitAll()
                 // 인증/회원가입 API
                 .antMatchers("/api/auth/**").permitAll()

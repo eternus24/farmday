@@ -74,6 +74,41 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public User findByEmail(String email) {
+        return userMapper.findByEmail(email);
+    }
+
+    @Override
+    public User signupSocialUser(String provider, String providerUserId, String email, String name, String photoUrl) {
+
+        Long userNo = userMapper.getNextUserNo();
+        User user = new User();
+        user.setUserNo(userNo);
+
+        // userId는 "google_xxx", "kakao_xxx" 이런 식으로 생성
+        String prefix = provider == null ? "SOCIAL" : provider.toUpperCase();
+        user.setUserId(prefix.toLowerCase() + "_" + providerUserId);
+
+        user.setRole("USER");   // 소셜도 기본 USER
+        user.setName(name);
+        user.setEmail(email);
+        user.setPhoto(photoUrl);   // User 도메인에 photo 있음 
+
+        // 소셜 로그인은 별도 비밀번호 없이 랜덤값으로 설정
+        String randomPassword = UUID.randomUUID().toString();
+        user.setUserPwd(passwordEncoder.encode(randomPassword));
+
+        // 기본 상태값
+        user.setPhoneVerified("N");
+        user.setEmailVerified("Y");     // 소셜에서 이메일 인증된 걸 신뢰한다면 Y 로
+        user.setIsBlocked("N");
+
+        userMapper.insertUser(user);
+
+        return user;
+    }
+
+    @Override
     public void signupProducer(User user, Producer producer) {
         Long userNo = userMapper.getNextUserNo();
         user.setUserNo(userNo);

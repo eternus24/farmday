@@ -1,24 +1,17 @@
 // src/pages/login/Login.jsx
 import { useState, useContext } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { AuthContext } from "../../contexts/AuthContext";
 
-// 🔹 야채 프사 4개 import (경로 주의: pages/login 기준으로 ../..)
+// 야채 프사 5개
 import defaultAvatar from "../../assets/img/user-default1.png";
 import veggie1 from "../../assets/img/user-default2.png";
 import veggie2 from "../../assets/img/user-default3.png";
 import veggie3 from "../../assets/img/user-default4.png";
 import veggie4 from "../../assets/img/user-default5.png";
 
-// 배열로 묶어두기
-const VEGGIE_AVATARS = [
-  defaultAvatar,   // 🥇 디폴트도 랜덤 후보로 포함
-  veggie1,
-  veggie2,
-  veggie3,
-  veggie4,
-];
+const VEGGIE_AVATARS = [defaultAvatar, veggie1, veggie2, veggie3, veggie4];
 
 const initialForm = {
   userId: "",
@@ -29,8 +22,45 @@ export default function Login() {
   const [form, setForm] = useState(initialForm);
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const navigate = useNavigate();                // ✅ 추가
-  const { setAuth } = useContext(AuthContext); // ✅ 추가
+  const navigate = useNavigate();
+  const { setAuth } = useContext(AuthContext);
+
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  const KAKAO_JS_KEY = import.meta.env.VITE_KAKAO_JS_KEY;
+
+  // 🔹 로그인 성공 시 공통 처리
+  const handleLoginSuccess = (data) => {
+    if (!data || !data.accessToken || !data.refreshToken || !data.user) {
+      setMessage("로그인 응답 형식이 올바르지 않습니다.");
+      return;
+    }
+
+    // 토큰 저장
+    localStorage.setItem("accessToken", data.accessToken);
+    localStorage.setItem("refreshToken", data.refreshToken);
+
+    // 유저 정보 저장
+    localStorage.setItem("loginUser", JSON.stringify(data.user));
+
+    // 프로필 사진 결정
+    let finalPhoto = data.user?.photo || null;
+    if (!finalPhoto) {
+      const idx = Math.floor(Math.random() * VEGGIE_AVATARS.length);
+      finalPhoto = VEGGIE_AVATARS[idx];
+    }
+    localStorage.setItem("loginAvatar", finalPhoto);
+
+    // 전역 AuthContext 업데이트
+    setAuth({
+      loggedIn: true,
+      name: data.user?.name || data.user?.userId || "회원",
+      photo: finalPhoto,
+    });
+
+    setMessage("로그인 성공!");
+    navigate("/");
+  };
 
   const openEmailVerifyPopup = () => {
     window.open(
@@ -47,6 +77,7 @@ export default function Login() {
 
   const canSubmit = form.userId && form.userPwd;
 
+  // 🔹 일반 로그인
   const onSubmit = async (e) => {
     e.preventDefault();
     setMessage("");
@@ -58,7 +89,7 @@ export default function Login() {
 
     setSubmitting(true);
     try {
-      const res = await fetch("http://192.168.0.20:8080/api/auth/login", {
+      const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -68,57 +99,140 @@ export default function Login() {
       });
 
       if (res.ok) {
-      // ✅ 전체 응답(JSON) 받기
-      const data = await res.json();
-      console.log("로그인 성공 data:", data);
-
-      // data 구조: { accessToken, refreshToken, user }
-
-      // ✅ 토큰 저장
-      localStorage.setItem("accessToken", data.accessToken);
-      localStorage.setItem("refreshToken", data.refreshToken);
-
-      // ✅ 유저 정보는 따로 저장 (원하면)
-      localStorage.setItem("loginUser", JSON.stringify(data.user));
-
-      // 🔹 실제 프로필 사진이 있으면 그거 우선
-      let finalPhoto = data.user?.photo || null;
-
-      // 🔹 없으면 야채 캐릭터 중 랜덤 선택
-      if (!finalPhoto) {
-        const idx = Math.floor(Math.random() * VEGGIE_AVATARS.length);
-        finalPhoto = VEGGIE_AVATARS[idx];
-      }
-
-      // 새로고침 후에도 유지하려고 localStorage에 같이 저장
-      localStorage.setItem("loginAvatar", finalPhoto);
-
-      // ⭐ 전역 로그인 상태 업데이트
-      setAuth({
-        loggedIn: true,
-        name: data.user?.name || data.user?.userId || "회원",
-        photo: finalPhoto,   // 🔹 추가
-      });
-
-      // ✅ 메인 페이지로 이동
-      navigate("/");
-
-      setMessage("로그인 성공!");
-    } else {
-      if (res.status === 401) {
-        setMessage("아이디 또는 비밀번호가 올바르지 않습니다.");
-      } else if (res.status === 403) {
-        setMessage("접근이 차단된 계정입니다.");
+        const data = await res.json();
+        console.log("일반 로그인 성공:", data);
+        handleLoginSuccess(data);
       } else {
-        setMessage("로그인에 실패했습니다. 다시 시도해 주세요.");
+        if (res.status === 401) {
+          setMessage("아이디 또는 비밀번호가 올바르지 않습니다.");
+        } else if (res.status === 403) {
+          setMessage("접근이 차단된 계정입니다.");
+        } else {
+          setMessage("로그인에 실패했습니다. 다시 시도해 주세요.");
+        }
       }
-    } 
     } catch (err) {
       console.error(err);
       setMessage("서버와의 통신 중 오류가 발생했습니다.");
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const GoogleIcon = () => (
+    <svg width="18" height="18" viewBox="0 0 48 48">
+      <path fill="#EA4335" d="M24 9.5c3.9 0 7.1 1.6 9.3 3.8l6.9-6.9C35.9 2.9 30.2 0 24 0 14.6 0 6.6 5.4 2.6 13.3l8.1 6.3C12.6 14 17.9 9.5 24 9.5z"/>
+      <path fill="#FBBC05" d="M46.5 24c0-1.5-.1-2.5-.4-3.7H24v7.5h12.8c-.5 3-2.1 5.6-4.6 7.4l7.1 5.6C43.5 37.3 46.5 31.2 46.5 24z"/>
+      <path fill="#34A853" d="M10.7 28.9c-.5-1.5-.8-3.1-.8-4.9s.3-3.4.8-4.9l-8.1-6.3C1.3 16.4 0 20 0 24s1.3 7.6 3.3 11.1l7.4-6.2z"/>
+      <path fill="#4285F4" d="M24 48c6.2 0 11.9-2.1 16.1-5.7l-7.1-5.6c-2 1.3-4.7 2.2-9 2.2-6.1 0-11.4-4.4-13.3-10.4l-7.4 6.2C6.6 42.6 14.6 48 24 48z"/>
+    </svg>
+  );
+
+  const KakaoIcon = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24">
+      <path
+        fill="#3C1E1E"
+        d="M12 2C6.48 2 2 5.66 2 10.2c0 2.87 1.98 5.38 5 6.8-.2.7-.7 2.4-.8 2.8-.1.3 0 .3.2.2.3-.1 2.5-1.6 3.5-2.3.7.1 1.4.1 2.1.1 5.52 0 10-3.66 10-8.2S17.52 2 12 2z"
+      />
+    </svg>
+  );
+
+  // 🔹 구글 소셜 로그인
+  const handleGoogleLogin = () => {
+    if (
+      !window.google ||
+      !window.google.accounts ||
+      !window.google.accounts.oauth2
+    ) {
+      console.error("Google OAuth2 client not loaded.");
+      setMessage("구글 로그인 기능을 사용할 수 없습니다. 관리자에게 문의해 주세요.");
+      return;
+    }
+
+    const google = window.google.accounts.oauth2.initTokenClient({
+      client_id: GOOGLE_CLIENT_ID,
+      scope: "profile email",
+      callback: async (response) => {
+        try {
+          const res = await fetch(
+            "http://localhost:8080/api/auth/social/google", // 구글은 로컬에서만 테스트라면 localhost
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                accessToken: response.access_token,
+              }),
+            }
+          );
+
+          if (res.ok) {
+            const data = await res.json();
+            console.log("구글 소셜 로그인 성공:", data);
+            handleLoginSuccess(data);
+          } else {
+            setMessage("구글 소셜 로그인에 실패했습니다.");
+          }
+        } catch (err) {
+          console.error(err);
+          setMessage("구글 소셜 로그인 중 오류가 발생했습니다.");
+        }
+      },
+    });
+
+    google.requestAccessToken();
+  };
+
+  // 🔹 카카오 소셜 로그인
+  const handleKakaoLogin = () => {
+    if (!window.Kakao) {
+      console.error("Kakao SDK not loaded.");
+      setMessage("카카오 로그인 기능을 사용할 수 없습니다. 관리자에게 문의해 주세요.");
+      return;
+    }
+
+    // SDK 로드됐는데 init 안 되어 있으면 여기서 초기화
+    if (!window.Kakao.isInitialized()) {
+      window.Kakao.init(KAKAO_JS_KEY);
+    }
+
+    if (!window.Kakao.Auth) {
+      console.error("Kakao Auth not available.");
+      setMessage("카카오 로그인 기능을 사용할 수 없습니다. 관리자에게 문의해 주세요.");
+      return;
+    }
+
+    window.Kakao.Auth.login({
+      scope: "profile_nickname profile_image account_email", // 필요한 동의항목
+      success: async function (authObj) {
+        try {
+          const res = await fetch(
+            `${API_BASE_URL}/api/auth/social/kakao`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                accessToken: authObj.access_token,
+              }),
+            }
+          );
+
+          if (res.ok) {
+            const data = await res.json();
+            console.log("카카오 소셜 로그인 성공:", data);
+            handleLoginSuccess(data);
+          } else {
+            setMessage("카카오 소셜 로그인에 실패했습니다.");
+          }
+        } catch (err) {
+          console.error(err);
+          setMessage("카카오 소셜 로그인 중 오류가 발생했습니다.");
+        }
+      },
+      fail: function (err) {
+        console.error(err);
+        setMessage("카카오 소셜 로그인에 실패했습니다.");
+      },
+    });
   };
 
   return (
@@ -168,13 +282,25 @@ export default function Login() {
               회원가입
             </button>
           </SubLinkArea>
+
+          <SocialLoginArea>
+            <SocialButton type="button" onClick={handleGoogleLogin}>
+              <GoogleIcon />
+              구글 로그인
+            </SocialButton>
+
+            <SocialButton type="button" onClick={handleKakaoLogin}>
+              <KakaoIcon />
+              카카오 로그인
+            </SocialButton>
+          </SocialLoginArea>
         </form>
       </Card>
     </PageWrapper>
   );
 }
 
-/* =============== styled-components (Signup이랑 톤 맞춤) =============== */
+/* =============== styled-components =============== */
 
 const PageWrapper = styled.div`
   width: 100%;
@@ -279,17 +405,6 @@ const SubLinkArea = styled.div`
   text-align: center;
   color: #6c757d;
 
-  a {
-    color: #198754;
-    font-weight: 600;
-    text-decoration: none;
-  }
-
-  a:hover {
-    text-decoration: underline;
-  }
-
-  /* ✅ 회원가입 버튼을 링크처럼 보이게 */
   button {
     border: none;
     background: none;
@@ -304,4 +419,29 @@ const SubLinkArea = styled.div`
   button:hover {
     text-decoration: underline;
   }
+`;
+
+const SocialLoginArea = styled.div`
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+`;
+
+const SocialButton = styled.button`
+  flex: 1;
+  border-radius: 999px;
+  padding: 9px 0;
+  border: 1px solid #ced4da;
+  background-color: #ffffff;
+  font-size: 0.9rem;
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  &:hover { background-color: #f8f9fa; }
+  &:active { transform: scale(0.98); }
 `;

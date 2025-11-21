@@ -40,6 +40,36 @@
         WHERE userId = #{userId}
     </select>
 
+    <!-- 소셜 프로바이더 기반 userId 로 유저 조회 -->
+    <select id="findByProviderUserId"
+            parameterType="string"
+            resultType="com.farmday.user.domain.User">
+        SELECT
+            user_no AS userNo,
+            role,
+            userId,
+            userPwd,
+            addr,
+            name,
+            phone,
+            phone_verified,
+            email,
+            email_verified,
+            email_verify_token,
+            email_verify_expired_at,
+            birth,
+            gender,
+            photo,
+            last_login_at,
+            created_date,
+            updated_date,
+            is_blocked,
+            block_reason,
+            blocked_at
+        FROM USERS
+        WHERE userId = #{providerUserId}
+    </select>
+
     <!-- 회원 INSERT -->
     <insert id="insertUser" parameterType="com.farmday.user.domain.User">
         INSERT INTO USERS (
