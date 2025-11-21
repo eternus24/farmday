@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import com.farmday.producer.domain.Producer;
@@ -237,6 +238,12 @@ public class UserServiceImpl implements UserService {
         ev.setVerifiedAt(now);
 
         return ev;
+    }
+
+    @Override
+    @Transactional
+    public void updateLastLogin(Long userNo) {
+        userMapper.updateLastLogin(userNo);
     }
 
 }

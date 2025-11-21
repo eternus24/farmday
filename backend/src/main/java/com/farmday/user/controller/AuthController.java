@@ -173,6 +173,8 @@ public class AuthController {
                         .body("관리자만 로그인 가능합니다.");
             }
 
+            userService.updateLastLogin(user.getUserNo());
+
             String accessToken = jwtTokenProvider.generateAccessToken(user);
             String refreshToken = jwtTokenProvider.generateRefreshToken(user);
 
@@ -202,6 +204,8 @@ public class AuthController {
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         try {
             User user = userService.login(request.getUserId(), request.getPassword());
+
+            userService.updateLastLogin(user.getUserNo());
 
             String accessToken = jwtTokenProvider.generateAccessToken(user);
             String refreshToken = jwtTokenProvider.generateRefreshToken(user);
@@ -348,6 +352,8 @@ public class AuthController {
                     request.getPhotoUrl()
             );
         }
+
+        userService.updateLastLogin(user.getUserNo());
 
         String accessToken = jwtTokenProvider.generateAccessToken(user);
         String refreshToken = jwtTokenProvider.generateRefreshToken(user);

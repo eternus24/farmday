@@ -22,8 +22,14 @@ import ProducerProfilePage from "./pages/producer/ProducerProfilePage";
 import Login from "./pages/login/Login";
 import Signup from "./pages/signup/Signup";
 import PreSignupEmail from "./pages/signup/PreSignupEmail";
+import AdminLogin from "./pages/admin/AdminLogin";
+import AdminSignup from "./pages/admin/AdminSignup";
+import AdminLayout from "./layouts/AdminLayout";
+import RequireAdmin from "./routes/RequireAdmin";
 
 import { AuthContext } from "./contexts/AuthContext";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminUserList from "./pages/admin/AdminUserList";
 
 // JWT 파싱 헬퍼
 function parseJwt(token) {
@@ -123,6 +129,28 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/test" element={<Test />} />
             <Route path="*" element={<NotFound404 />} />
+          </Route>
+
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route path="login" element={<AdminLogin />} />
+            <Route path="signup" element={<AdminSignup />} />
+
+            <Route
+              index
+              element={
+                <RequireAdmin>
+                  <AdminDashboard />
+                </RequireAdmin>
+              }
+            />
+            <Route
+              path="users"
+              element={
+                <RequireAdmin>
+                  <AdminUserList />
+                </RequireAdmin>
+              }
+            />
           </Route>
         </Routes>
       </BrowserRouter>

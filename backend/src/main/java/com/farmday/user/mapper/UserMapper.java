@@ -1,6 +1,10 @@
 package com.farmday.user.mapper;
 
 import com.farmday.user.domain.User;
+
+import java.util.List;
+import java.util.Map;
+
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -33,7 +37,16 @@ public interface UserMapper {
 
     User findByProviderUserId(String providerUserId);
 
-    void updateUserRole(@Param("userNo") Long userNo,
-                    @Param("role") String role);
+    void updateUserRole(@Param("userNo") Long userNo, @Param("role") String role);
+        
+    List<User> findUsersForAdmin(Map<String, Object> params);
+
+    long countUsersForAdmin(Map<String, Object> params);
+
+    User findByUserNoForAdmin(@Param("userNo") Long userNo);
+
+    int updateBlockStatus(@Param("userNo") Long userNo, @Param("blocked") String blocked, @Param("blockReason") String blockReason);
+
+    void updateLastLogin(@Param("userNo") Long userNo);
 
 }

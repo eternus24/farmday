@@ -209,4 +209,137 @@
         WHERE userId = #{userId}
     </select>
 
+    <!-- 유저 목록 (관리자용, Oracle 11g 호환 페이징) -->
+    <select id="findUsersForAdmin"
+            parameterType="map"
+            resultType="com.farmday.user.domain.User">
+        SELECT
+            *
+        FROM (
+            SELECT
+                u.user_no      AS userNo,
+                u.role,
+                u.userId,
+                u.userPwd,
+                u.addr,
+                u.name,
+                u.phone,
+                u.phone_verified AS phoneVerified,
+                u.email,
+                u.email_verified AS emailVerified,
+                u.email_verify_token AS emailVerifyToken,
+                u.email_verify_expired_at AS emailVerifyExpiredAt,
+                u.birth,
+                u.gender,
+                u.photo,
+                u.last_login_at AS lastLoginAt,
+                u.created_date AS createdDate,
+                u.updated_date AS updatedDate,
+                u.is_blocked AS isBlocked,
+                u.block_reason AS blockReason,
+                u.blocked_at AS blockedAt,
+                ROW_NUMBER() OVER (ORDER BY u.created_date DESC) AS rn
+            FROM USERS u
+            <where>
+                <!-- 키워드 검색: 아이디 / 이름 / 이메일 -->
+                <if test="keyword != null and keyword != ''">
+                    (
+                        u.userId LIKE '%' || #{keyword} || '%'
+                        OR u.name LIKE '%' || #{keyword} || '%'
+                        OR u.email LIKE '%' || #{keyword} || '%'
+                    )
+                </if>
+
+                <!-- 역할 필터 -->
+                <if test="role != null and role != ''">
+                    AND u.role = #{role}
+                </if>
+
+                <!-- 차단 여부 필터 ('Y' / 'N') -->
+                <if test="blocked != null and blocked != ''">
+                    AND u.is_blocked = #{blocked}
+                </if>
+            </where>
+        )
+        WHERE rn BETWEEN #{offset} + 1 AND #{offset} + #{size}
+    </select>
+
+    <!-- 유저 목록 총 카운트 (페이징용) -->
+    <select id="countUsersForAdmin"
+            parameterType="map"
+            resultType="long">
+        SELECT COUNT(*)
+        FROM USERS
+        <where>
+            <if test="keyword != null and keyword != ''">
+                (
+                    userId LIKE '%' || #{keyword} || '%'
+                    OR name LIKE '%' || #{keyword} || '%'
+                    OR email LIKE '%' || #{keyword} || '%'
+                )
+            </if>
+
+            <if test="role != null and role != ''">
+                AND role = #{role}
+            </if>
+
+            <if test="blocked != null and blocked != ''">
+                AND is_blocked = #{blocked}
+            </if>
+        </where>
+    </select>
+
+    <!-- 유저 단건 조회 (user_no 기준, 관리자용 상세) -->
+    <select id="findByUserNoForAdmin"
+        parameterType="long"
+        resultType="com.farmday.user.domain.User">
+        SELECT
+            user_no          AS userNo,
+            role,
+            userId,
+            userPwd,
+            addr,
+            name,
+            phone,
+            phone_verified       AS phoneVerified,
+            email,
+            email_verified       AS emailVerified,
+            email_verify_token   AS emailVerifyToken,
+            email_verify_expired_at AS emailVerifyExpiredAt,
+            birth,
+            gender,
+            photo,
+            last_login_at    AS lastLoginAt,
+            created_date     AS createdDate,
+            updated_date     AS updatedDate,
+            is_blocked       AS isBlocked,
+            block_reason     AS blockReason,
+            blocked_at       AS blockedAt
+        FROM USERS
+        WHERE user_no = #{userNo}
+    </select>
+
+    <!-- 유저 차단 / 차단 해제 -->
+    <update id="updateBlockStatus">
+        UPDATE USERS
+        SET
+            is_blocked = #{blocked},
+            block_reason = #{blockReason},
+            blocked_at =
+            CASE
+                WHEN #{blocked} = 'Y' THEN SYSDATE
+                ELSE NULL
+            END
+        WHERE user_no = #{userNo}
+    </update>
+
+    <!-- 마지막 로그인 시간 업데이트 -->
+    <update id="updateLastLogin">
+        UPDATE USERS
+        SET
+            last_login_at = SYSDATE,
+            updated_date  = SYSDATE
+        WHERE user_no = #{userNo}
+    </update>
+
 </mapper>

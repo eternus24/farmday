@@ -34,5 +34,7 @@ public interface UserService {
 
     // ✅ (추가) 이메일 인증: 2) 토큰 검증 + VERIFIED 처리 후, 인증 정보 반환
     EmailVerification completePreSignupEmailVerification(String token);
+
+    void updateLastLogin(Long userNo);
     
 }
