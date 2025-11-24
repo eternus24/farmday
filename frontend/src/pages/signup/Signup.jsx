@@ -30,6 +30,8 @@ const initialForm = {
   accountHolder: "",
 };
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
 export default function Signup() {
   const [form, setForm] = useState(initialForm);
   const [message, setMessage] = useState("");
@@ -202,7 +204,7 @@ export default function Signup() {
 
     try {
       const res = await fetch(
-        `http://192.168.0.20:8080/api/auth/check-userid?userId=${encodeURIComponent(
+        `${API_BASE}/api/auth/check-userid?userId=${encodeURIComponent(
           form.userId
         )}`
       );
@@ -291,7 +293,7 @@ export default function Signup() {
           ? `${form.addr} ${form.addrDetail}`
           : form.addr;
 
-        url = "http://192.168.0.20:8080/api/auth/signup/user";
+        url = `${API_BASE}/api/auth/signup/user`;
         body = {
           userId: form.userId,
           password: form.userPwd,
@@ -311,7 +313,7 @@ export default function Signup() {
           ? `${form.bizAddr} ${form.bizAddrDetail}`
           : form.bizAddr;
 
-        url = "http://192.168.0.20:8080/api/auth/signup/producer";
+        url = `${API_BASE}/api/auth/signup/producer`;
         body = {
           userId: form.userId,
           password: form.userPwd,

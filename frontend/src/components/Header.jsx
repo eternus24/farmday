@@ -9,6 +9,7 @@ export default function Header() {
   const { auth, setAuth } = useContext(AuthContext);
   const defaultAvatar = defaultAvatarImg; // 프로젝트 맞게 수정
   const profileSrc = auth.photo || defaultAvatar;
+  const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
   // ✅ 로그아웃 처리
   const handleLogout = async () => {
@@ -16,7 +17,7 @@ export default function Header() {
     
     try {
       if (refreshToken) {
-        await fetch('http://192.168.0.20:8080/api/auth/logout', {
+        await fetch(API_BASE, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ refreshToken }),

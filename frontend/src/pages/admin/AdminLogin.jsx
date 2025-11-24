@@ -10,6 +10,8 @@ const initialForm = {
   password: "",
 };
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
 export default function AdminLogin() {
   const [form, setForm] = useState(initialForm);
   const [message, setMessage] = useState("");
@@ -41,7 +43,7 @@ export default function AdminLogin() {
         password: form.password, // ✅ 백엔드 DTO와 동일
       };
 
-      const res = await fetch("http://192.168.0.20:8080/api/auth/admin/login", {
+      const res = await fetch(`${API_BASE}/api/auth/admin/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

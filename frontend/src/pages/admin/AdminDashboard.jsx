@@ -32,6 +32,7 @@ export default function AdminDashboard() {
   const [data, setData] = useState(null);
   const [rankingMode, setRankingMode] = useState("DAILY"); // DAILY | MONTHLY
   const [orderMode, setOrderMode] = useState("DAILY"); // DAILY | MONTHLY
+  const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -40,7 +41,7 @@ export default function AdminDashboard() {
 
       try {
         const token = localStorage.getItem("accessToken");
-        const res = await fetch("http://192.168.0.20:8080/api/admin/dashboard", {
+        const res = await fetch(`${API_BASE}/api/admin/dashboard`, {
           headers: {
             "Content-Type": "application/json",
             ...(token ? { Authorization: token.startsWith("Bearer ") ? token : `Bearer ${token}` } : {}),

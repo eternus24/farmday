@@ -1,7 +1,9 @@
 import axios from "axios";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const api = axios.create({
-  baseURL: "http://192.168.0.20:8080", // 또는 네 스프링 서버 IP
+  baseURL: API_BASE_URL, // 또는 네 스프링 서버 IP
   //각자 서버에 맞춰 설정!
 });
 

@@ -41,6 +41,7 @@ import CheckoutPage from './pages/orders/Checkout'
 import { SuccessPage } from './pages/orders/Success'
 import { FailPage } from './pages/orders/Fail'
 import MyPage from './pages/mypage/mypage'
+import ScrollToTop from "./components/common/ScrollToTop";
 
 // JWT 파싱 헬퍼
 function parseJwt(token) {
@@ -116,6 +117,7 @@ function App() {
   return (
     <AuthContext.Provider value={{ auth, setAuth }}>
       <BrowserRouter>
+      <ScrollToTop/>
         <Routes>
           <Route path="/pre-signup" element={<PreSignupEmail />} />
           <Route element={<Layout />}>

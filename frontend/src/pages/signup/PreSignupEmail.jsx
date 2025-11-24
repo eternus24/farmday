@@ -6,6 +6,8 @@ const initialState = {
   email: "",
 };
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
 export default function PreSignupEmail() {
   const [form, setForm] = useState(initialState);
   const [message, setMessage] = useState({ text: "", error: false });
@@ -29,7 +31,7 @@ export default function PreSignupEmail() {
 
     setSubmitting(true);
     try {
-      const res = await fetch("http://192.168.0.20:8080/api/auth/pre-signup/email", {
+      const res = await fetch(`${API_BASE}/api/auth/pre-signup/email`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: form.email }),

@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import styled from "styled-components";
 
-const API_BASE = "http://192.168.0.20:8080";
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 export default function AdminUserList() {
   const [users, setUsers] = useState([]);
