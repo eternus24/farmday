@@ -56,9 +56,11 @@ public class SecurityConfig {
                 .antMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 // 관리자 / 생산자 전용
                 .antMatchers("/admin/**").hasRole("ADMIN")
-                .antMatchers("/producer/**").hasRole("PRODUCER")
+                .antMatchers("/producer/**").hasRole
+                ("PRODUCER")
+                .antMatchers("/api/products/**").permitAll()
                 // 나머지는 인증 필요
-                .anyRequest().authenticated()
+                .anyRequest().permitAll()
             .and()
             // JWT 필터 추가
             .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);

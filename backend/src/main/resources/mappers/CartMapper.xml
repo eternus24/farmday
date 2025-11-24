@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.farmday.cart.CartMapper">
+
+  <!-- <select id="findCartByUserId" parameterType="String" resultType="com.farmday.cart.CartDTO">
+    select * from cart where user_id=#{user_id} order by created_date desc
+  </select> -->
+
+  <select id="findCartByUserId" parameterType="String" resultType="com.farmday.cart.CartDTO">
+    select 
+      c.cart_id,c.user_id,c.product_id,c.quantity,c.created_date,
+      p.producer_id,p.base_category_id,p.name product_name,p.main_image,p.summary,p.status,p.created_date product_created_date,p.updated_date product_updated_date,
+      d.detail_id,d.grade,d.unit_name,d.price,d.stock_qty,d.origin_region,d.harvest_date,d.expire_date,d.detail_desc
+    from 
+      cart c, product p, product_detail d 
+    where 
+      user_id=#{user_id} and c.product_id=p.product_id and c.product_id=d.product_id
+    order by created_date desc
+  </select>
+
+  <insert id="insertCart" parameterType="java.util.Map">
+    insert into cart 
+      (cart_id,user_id,product_id,quantity) 
+    values 
+      (CART_SEQ.NEXTVAL,#{user_id},#{product_id},#{quantity})
+  </insert>
+
+  <update id="updateCartQuantity" parameterType="java.util.Map">
+    update cart set 
+      quantity=#{quantity} 
+    where user_id=#{user_id} and product_id=#{product_id}
+  </update>
+
+  <delete id="deleteCart" parameterType="int">
+    delete from cart where cart_id=#{cart_id}
+  </delete>
+
+
+
+</mapper>

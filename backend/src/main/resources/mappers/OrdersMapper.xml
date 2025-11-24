@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.farmday.orders.OrdersMapper">
+
+  <select id="findUserInfoForOrder" parameterType="String" resultType="com.farmday.orders.UsersDTO">
+    select * from users where userid=#{user_id}
+  </select>
+
+  <select id="findOrdersByTossOrderId" parameterType="String" resultType="com.farmday.orders.OrdersDTO">
+    select * from orders where toss_orderid=#{toss_orderid}
+  </select>
+
+
+  <insert id="insertOrders" parameterType="com.farmday.orders.OrdersDTO">
+    insert into orders
+      (order_id,user_id,order_status,product_total_amount,shipping_fee,discount_amount,order_total_amount,receiver_name,receiver_phone,receiver_addr,delivery_message,order_type,group_deal_id,toss_orderid,toss_paymentkey)
+    values
+      (ORDERS_SEQ.NEXTVAL,#{user_id},#{order_status},#{product_total_amount},#{shipping_fee},#{discount_amount},#{order_total_amount},#{receiver_name},#{receiver_phone},#{receiver_addr},#{delivery_message},#{order_type},null,#{toss_orderid},#{toss_paymentkey})
+  </insert>
+
+  <insert id="insertOrdersItem" parameterType="com.farmday.orders.OrdersItemDTO">
+    insert into orders_Item
+      (order_item_id,order_id,product_id,product_name,discount_amount,price_at_order,quantity,line_total_amount)
+    values
+      (ORDERS_ITEM_SEQ.NEXTVAL,#{order_id},#{product_id},#{product_name},#{discount_amount},#{price_at_order},#{quantity},#{line_total_amount})
+  </insert>
+
+
+
+  <select id="findAllOrdersByUserId" parameterType="String" resultType="com.farmday.orders.OrdersDTO">
+    select * from orders where user_id=#{user_id} order by order_id desc
+  </select>
+
+  <select id="findOrdersItemByOrderId" parameterType="int" resultType="com.farmday.orders.OrdersItemDTO">
+    select * from orders_item where order_id=#{order_id} order by order_id desc
+  </select>
+
+
+
+</mapper>

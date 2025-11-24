@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.farmday.product.mapper.ProductMapper">
+
+<!-- 조건 기반 리스트 조회 -->
+<select id="getProductList" resultType="com.farmday.product.dto.ProductDTO">
+        SELECT
+            p.product_id        AS productId,
+            p.producer_id       AS producerId,
+            p.base_category_id  AS baseCategoryId,
+            p.name              AS name,
+            p.summary           AS summary,
+            p.main_image        AS mainImage,
+            p.status            AS status,
+            p.created_date      AS createdDate,
+
+            d.detail_id         AS detailId,
+            d.unit_name         AS unitName,
+            d.price             AS price,
+            d.grade             AS grade
+
+        FROM product p
+        LEFT JOIN product_detail d
+            ON p.product_id = d.product_id
+
+        <where>
+            <!-- 키워드 검색 -->
+            <if test="keyword != null and keyword != ''">
+                AND p.name LIKE '%' || #{keyword} || '%'
+            </if>
+
+            <!-- 카테고리 배열 검색 -->
+            <if test="categories != null and categories.size() > 0">
+                AND p.base_category_id IN
+                <foreach item="c" collection="categories" open="(" separator="," close=")">
+                    #{c}
+                </foreach>
+            </if>
+
+            <!-- 가격 필터 -->
+            <if test="price != null">
+                AND d.price <![CDATA[ >= ]]> #{price}
+            </if>
+        </where>
+
+        <!-- 정렬 -->
+        <choose>
+            <when test="sort == 'lowPrice'"> ORDER BY d.price ASC </when>
+            <when test="sort == 'highPrice'"> ORDER BY d.price DESC </when>
+            <when test="sort == 'new'"> ORDER BY p.created_date DESC </when>
+            <otherwise> ORDER BY p.product_id DESC </otherwise>
+        </choose>
+    </select>
+
+<!-- 1. 상품 상세 조회 -->
+<select id="getProductDetail" parameterType="long"
+            resultType="com.farmday.product.dto.ProductDTO">
+
+        SELECT
+            p.product_id            AS productId,
+            p.producer_id           AS producerId,
+            p.base_category_id      AS baseCategoryId,
+            p.name                  AS name,
+            p.summary               AS summary,
+            p.main_image            AS mainImage,
+            p.status                AS status,
+            p.created_date          AS createdDate,
+            p.updated_date          AS updatedDate,
+
+            d.detail_id             AS detailId,
+            d.grade                 AS grade,
+            d.unit_name             AS unitName,
+            d.price                 AS price,
+            d.stock_qty             AS stockQty,
+            d.origin_region         AS originRegion,
+            d.harvest_date          AS harvestDate,
+            d.expire_date           AS expireDate,
+            d.detail_desc           AS detailDesc,
+            d.created_date          AS detailCreatedDate,
+            d.updated_date          AS detailUpdatedDate
+
+        FROM product p
+        LEFT JOIN product_detail d
+            ON p.product_id = d.product_id
+        WHERE p.product_id = #{value}
+    </select>
+
+<!-- 2. 상품 상세 조회 -->
+<select id="getProductImages" parameterType="long" resultType="com.farmday.product.dto.ProductImageDTO">
+        SELECT
+            image_id AS imageId,
+            product_id AS productId,
+            image_url AS imageUrl,
+            is_main AS isMain,
+            sort_order AS sortOrder,
+            created_date AS createdDate
+
+        FROM product_image
+        WHERE product_id = #{value}
+        ORDER BY sort_order ASC
+    </select>
+    
+<!-- 상점 찾기 -->
+    <select id="getStoreByProducer" parameterType="long"
+        resultType="com.farmday.product.dto.StoreDTO">
+    SELECT
+        store_id AS storeId,
+        producer_id AS producerId,
+        owner_user_id AS ownerUserId,
+        store_name AS storeName,
+        phone,
+        addr,
+        addr_detail AS addrDetail,
+        region_si,
+        region_gun AS regionGun,
+        description,
+        thumbnail_url AS thumbnailUrl,
+        status,
+        is_active AS isActive,
+        created_date AS createdDate,
+        updated_date AS updatedDate
+    FROM store
+    WHERE producer_id = #{producerId}
+</select>
+
+
+<!-- 상품 등록 -->
+<insert id="insertData" parameterType="com.farmday.product.dto.ProductDTO">
+        INSERT INTO product (
+            producer_id,
+            base_category_id,
+            name,
+            summary,
+            main_image,
+            status,
+            created_date,
+            updated_date
+        )
+        VALUES (
+            #{producerId},
+            #{baseCategoryId},
+            #{name},
+            #{summary},
+            #{mainImage},
+            #{status},
+            SYSDATE,
+            SYSDATE
+        )
+    </insert>
+
+<!-- 상품 수정 -->
+<update id="updateProduct" parameterType="com.farmday.product.dto.ProductDTO">
+        UPDATE product
+        SET
+            name = #{name},
+            summary = #{summary},
+            main_image = #{mainImage},
+            base_category_id = #{baseCategoryId},
+            status = #{status},
+            updated_date = SYSDATE
+        WHERE product_id = #{productId}
+</update>
+
+<!-- 상품 삭제 -->
+<delete id="deleteProduct" parameterType="long">
+    DELETE FROM product WHERE product_id = #{value}
+</delete>
+
+
+</mapper>

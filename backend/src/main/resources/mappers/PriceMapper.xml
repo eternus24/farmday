@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 네임스페이스는 인터페이스 풀네임과 맞춰야 함 -->
+<mapper namespace="com.farmday.price.mapper.PriceMapper">
+
+    <!-- 품목 ID 기준 최신 시세 조회 -->
+    <select id="selectPriceByItemId" resultType="com.farmday.price.domain.PriceMarket">
+        SELECT
+            ID          AS id,
+            ITEM_ID     AS itemId,
+            MARKET_NAME AS marketName,
+            BASE_DATE   AS baseDate,
+            PRICE       AS price
+        FROM PRICE_MARKET
+        WHERE ITEM_ID = #{itemId}
+        ORDER BY BASE_DATE DESC
+        FETCH FIRST 1 ROW ONLY
+        <!-- 또는 LIMIT 1 (DB에 맞게 수정) -->
+    </select>
+
+    <!-- 품목 + 날짜 기준 시세 조회 -->
+    <select id="selectPriceByItemAndDate" resultType="com.farmday.price.domain.PriceDaily">
+        SELECT
+            ID          AS id,
+            ITEM_ID     AS itemId,
+            MARKET_NAME AS marketName,
+            BASE_DATE   AS baseDate,
+            PRICE       AS price
+        FROM PRICE_DAILY
+        WHERE ITEM_ID = #{itemId}
+          AND BASE_DATE = #{baseDate}
+    </select>
+
+    <!-- 등급별 최신 시세 조회 (필요 시 구현) -->
+    <select id="selectLatestPricesByGrade" resultType="com.farmday.price.domain.PriceMarket">
+        <!-- TODO: 실제 등급 컬럼(GRADE 등)에 맞춰 구현 -->
+        SELECT
+            ID          AS id,
+            ITEM_ID     AS itemId,
+            MARKET_NAME AS marketName,
+            BASE_DATE   AS baseDate,
+            PRICE       AS price
+        FROM PRICE_MARKET
+        WHERE ITEM_ID = #{itemId}
+        ORDER BY BASE_DATE DESC
+    </select>
+
+    <!-- 시장별 시세 저장 -->
+    <insert id="insertPriceMarket">
+        INSERT INTO PRICE_MARKET (
+            ITEM_ID,
+            MARKET_NAME,
+            BASE_DATE,
+            PRICE
+        ) VALUES (
+            #{itemId},
+            #{marketName},
+            #{baseDate},
+            #{price}
+        )
+    </insert>
+
+    <!-- 일별 시세 저장 -->
+    <insert id="insertPriceDaily">
+        INSERT INTO PRICE_DAILY (
+            ITEM_ID,
+            MARKET_NAME,
+            BASE_DATE,
+            PRICE
+        ) VALUES (
+            #{itemId},
+            #{marketName},
+            #{baseDate},
+            #{price}
+        )
+    </insert>
+
+    <!-- 수집 로그 저장 -->
+    <insert id="insertPriceFetchLog">
+        INSERT INTO PRICE_FETCH_LOG (
+            FETCHED_AT,
+            FETCHED_COUNT,
+            STATUS,
+            ERROR_MESSAGE
+        ) VALUES (
+            #{fetchedAt},
+            #{fetchedCount},
+            #{status},
+            #{errorMessage}
+        )
+    </insert>
+
+</mapper>

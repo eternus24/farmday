@@ -5,14 +5,9 @@ import { useState } from "react";
 
 import Index from "./pages/index";
 import NotFound404 from "./pages/404/404";
-import Shop from "./pages/shop/shop";
 import Cart from "./pages/cart/cart";
-import Checkout from "./pages/checkout/checkout";
 import Contact from "./pages/contact/contact";
-import ShopDetail from "./pages/shop-detail/shop-detail";
-import Testimonial from "./pages/testimonial/testimonial";
 import Layout from "./layouts/Layout";
-import Test from "./pages/test/test";
 import ProducerLayout from "./pages/producer/ProducerLayout";
 import ProducerDashboard from "./pages/producer/ProducerDashboard";
 import ProducerOrdersPage from "./pages/producer/ProducerOrdersPage";
@@ -26,10 +21,26 @@ import AdminLogin from "./pages/admin/AdminLogin";
 import AdminSignup from "./pages/admin/AdminSignup";
 import AdminLayout from "./layouts/AdminLayout";
 import RequireAdmin from "./routes/RequireAdmin";
-
+import GroupDealListPage from "./pages/groupdeal/GroupDealListPage";
+import GroupDealDetailPage from "./pages/groupdeal/GroupDealDetailPage";
 import { AuthContext } from "./contexts/AuthContext";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUserList from "./pages/admin/AdminUserList";
+
+// 사용자 SHOP 관련
+import ShopMain from './pages/shop/ShopMain';
+import ShopQA from './pages/shop/ShopQA';
+import ShopDetail from "./pages/shop/ShopDetail";
+
+//생산자 페이지
+import StoreMyPage from './pages/mystore/StoreMyPage';
+
+import Tables from './pages/tables/tables'
+import Orders from './pages/orders/orders'
+import CheckoutPage from './pages/orders/Checkout'
+import { SuccessPage } from './pages/orders/Success'
+import { FailPage } from './pages/orders/Fail'
+import MyPage from './pages/mypage/mypage'
 
 // JWT 파싱 헬퍼
 function parseJwt(token) {
@@ -109,12 +120,27 @@ function App() {
           <Route path="/pre-signup" element={<PreSignupEmail />} />
           <Route element={<Layout />}>
             <Route path="/" element={<Index />} />
-            <Route path="/shop" element={<Shop />} />
             <Route path="/cart" element={<Cart />} />
-            <Route path="/checkout" element={<Checkout />} />
             <Route path="/contact" element={<Contact />} />
-            <Route path="/shop-detail" element={<ShopDetail />} />
-            <Route path="/testimonial" element={<Testimonial />} />
+
+            <Route path="/orders" element={<Orders />} />
+            <Route path="/orders/success" element={<SuccessPage/>} />
+            <Route path="/orders/fail" element={<FailPage/>} />
+
+            <Route path="/mypage" element={<MyPage/>} />
+
+            {/*  사용자 SHOP */}
+            <Route path="/shop" element={<ShopMain />} />
+            <Route path="/shop/qa" element={<ShopQA />} />
+
+            <Route path="/shop/detail/:id" element={<ShopDetail />} />
+
+            {/* 생산자 페이지 */}
+            <Route path='store/:prodcuerId' element={<StoreMyPage/>}/>
+
+            {/* ⭐ 공동구매 페이지 추가 */}
+            <Route path="/groupdeal" element={<GroupDealListPage />} />
+            <Route path="/groupdeal/:id" element={<GroupDealDetailPage />} />
 
             {/* 생산자 마이페이지 */}
             <Route path="/producer" element={<ProducerLayout />}>
@@ -127,9 +153,11 @@ function App() {
 
             <Route path="/signup" element={<Signup />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/test" element={<Test />} />
             <Route path="*" element={<NotFound404 />} />
           </Route>
+
+          <Route path="/tables" element={<Tables />} />
+          <Route path="/checkout" element={<CheckoutPage/>} />
 
           <Route path="/admin" element={<AdminLayout />}>
             <Route path="login" element={<AdminLogin />} />
