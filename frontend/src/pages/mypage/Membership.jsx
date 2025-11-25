@@ -101,7 +101,7 @@ export default function Membership() {
 
   const percent = (() => {
     const year = status.yearSpentAmount || 0;
-    const need = status.nextNeedAmount || 0;
+    const need = status.nextGradeNeedAmount || 0;
     const total = year + need;
     if (total === 0) return 0;
     return Math.round((year / total) * 100);
@@ -133,7 +133,7 @@ export default function Membership() {
         </ProgressBar>
 
         <RemainText>
-          다음 등급까지 <b>{Number(status.nextNeedAmount || 0).toLocaleString()}원</b> 더
+          다음 등급까지 <b>{Number(status.nextGradeNeedAmount || 0).toLocaleString()}원</b> 더
           필요해요!
         </RemainText>
       </ProgressCard>

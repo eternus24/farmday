@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.farmday.delivery.mapper.DeliveryMapper">
+
+    <!-- 공통 resultMap -->
+    <resultMap id="deliveryResultMap" type="com.farmday.delivery.domain.Delivery">
+        <id     property="deliveryId"          column="delivery_id"/>
+        <result property="orderId"             column="order_id"/>
+        <result property="carrierName"         column="carrier_name"/>
+        <result property="trackingNumber"      column="tracking_number"/>
+        <result property="deliveryStatus"      column="delivery_status"/>
+        <result property="shippedAt"           column="shipped_at"/>
+        <result property="deliveredAt"         column="delivered_at"/>
+        <result property="expectedDeliveryAt"  column="expected_delivery_at"/>
+        <result property="createdDate"         column="created_date"/>
+        <result property="updatedDate"         column="updated_date"/>
+    </resultMap>
+
+    <!-- 주문 기준 조회 -->
+    <select id="findByOrderId" parameterType="long" resultMap="deliveryResultMap">
+        SELECT
+            delivery_id,
+            order_id,
+            carrier_name,
+            tracking_number,
+            delivery_status,
+            shipped_at,
+            delivered_at,
+            expected_delivery_at,
+            created_date,
+            updated_date
+        FROM DELIVERY
+        WHERE order_id = #{orderId}
+    </select>
+
+    <!-- 신규 등록 -->
+    <insert id="insertDelivery" parameterType="com.farmday.delivery.domain.Delivery">
+        INSERT INTO DELIVERY (
+            delivery_id,
+            order_id,
+            carrier_name,
+            tracking_number,
+            delivery_status,
+            shipped_at,
+            delivered_at,
+            expected_delivery_at,
+            created_date,
+            updated_date
+        ) VALUES (
+            /* delivery_id는 트리거에서 자동 세팅 → NULL 넣어도 됨 */
+            #{deliveryId},
+            #{orderId},
+            #{carrierName},
+            #{trackingNumber},
+            #{deliveryStatus},
+            #{shippedAt},
+            #{deliveredAt},
+            #{expectedDeliveryAt},
+            SYSDATE,
+            SYSDATE
+        )
+    </insert>
+
+    <!-- 수정 -->
+    <update id="updateDelivery" parameterType="com.farmday.delivery.domain.Delivery">
+        UPDATE DELIVERY
+        SET
+            carrier_name         = #{carrierName},
+            tracking_number      = #{trackingNumber},
+            delivery_status      = #{deliveryStatus},
+            shipped_at           = #{shippedAt},
+            delivered_at         = #{deliveredAt},
+            expected_delivery_at = #{expectedDeliveryAt},
+            updated_date         = SYSDATE
+        WHERE order_id = #{orderId}
+        <!-- 또는 delivery_id 기준으로 할 거면 WHERE delivery_id = #{deliveryId} -->
+    </update>
+
+</mapper>

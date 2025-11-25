@@ -8,7 +8,7 @@ export default function Layout() {
     <>
       <Header />
       {/* 헤더 높이만큼 여백 (프로젝트 스타일에 맞춰 조절) */}
-      <main style={{ paddingTop: 120 }}>
+      <main style={{ paddingTop: 100 }}>
         <Outlet />
       </main>
       <Footer />

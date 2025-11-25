@@ -43,6 +43,7 @@ import { FailPage } from './pages/orders/Fail'
 import MyPage from './pages/mypage/mypage'
 import ScrollToTop from "./components/common/ScrollToTop";
 import Membership from "./pages/mypage/Membership";
+import OrderDelivery from "./pages/mypage/OrderDelivery";
 
 // JWT 파싱 헬퍼
 function parseJwt(token) {
@@ -135,6 +136,7 @@ function App() {
 
             <Route path="/mypage" element={<MyPage/>}/>
             <Route path="/mypage/membership" element={<Membership/>} />
+            <Route path="/mypage/orders/${order.orderId}/delivery" element={<OrderDelivery/>} />
 
             {/*  사용자 SHOP */}
             <Route path="/shop" element={<ShopMain />} />

@@ -50,20 +50,20 @@
             parameterType="long"
             resultType="com.farmday.producer.domain.Producer">
         SELECT
-            producer_id,
-            user_no,
-            biz_no,
-            biz_name,
-            biz_addr,
-            biz_phone,
-            bank_name,
-            bank_account_no,
-            account_holder,
-            is_verified,
-            verified_at,
-            reject_reason,
-            created_date,
-            updated_date
+            producer_id       AS producerId,
+            user_no           AS userNo,
+            biz_no            AS bizNo,
+            biz_name          AS bizName,
+            biz_addr          AS bizAddr,
+            biz_phone         AS bizPhone,
+            bank_name         AS bankName,
+            bank_account_no   AS bankAccountNo,
+            account_holder    AS accountHolder,
+            is_verified       AS isVerified,
+            verified_at       AS verifiedAt,
+            reject_reason     AS rejectReason,
+            created_date      AS createdDate,
+            updated_date      AS updatedDate
         FROM PRODUCER
         WHERE user_no = #{userNo}
     </select>

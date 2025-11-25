@@ -245,7 +245,7 @@
 /* ✅ (추가) 레이아웃에서 상단 패딩으로 보정하므로, 섹션 자체의 마진 보정은 0 */
 .hero-header,
 .page-header {
-  margin-top: 32px !important;
+  margin-top: 0px !important;
 }
 
 

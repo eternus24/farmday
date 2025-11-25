@@ -12,42 +12,42 @@
     <!-- ============================= -->
    <select id="selectActiveGroupDeals"
         resultType="com.farmday.groupdeal.domain.GroupDealCardDto">
-    SELECT
-        gd.group_deal_id      AS groupDealId,
-        NULL                  AS productId,      -- GROUP_DEAL 테이블에는 product_id 없음
+        SELECT
+            gd.group_deal_id      AS groupDealId,
+            NULL                  AS productId,      -- GROUP_DEAL 테이블에는 product_id 없음
 
-        -- 카드에서 보여줄 이름을 공동구매 제목으로 사용
-        gd.title              AS productName,    -- 예: "제주 감귤 5kg 공동구매"
-        NULL                  AS region,         -- 산지 정보는 현재 매핑 테이블 없으므로 null
-        NULL                  AS mainTag,        -- 태그 컬럼 없음 → null
+            -- 카드에서 보여줄 이름을 공동구매 제목으로 사용
+            gd.title              AS productName,    -- 예: "제주 감귤 5kg 공동구매"
+            NULL                  AS region,         -- 산지 정보는 현재 매핑 테이블 없으므로 null
+            NULL                  AS mainTag,        -- 태그 컬럼 없음 → null
 
-        -- 이미지도 아직 상품 테이블과 연동 안 하므로 null
-        NULL                  AS imageUrl,
+            -- 이미지도 아직 상품 테이블과 연동 안 하므로 null
+            NULL                  AS imageUrl,
 
-        -- 가격 정보 (GROUP_DEAL 기준)
-        gd.origin_price       AS originPrice,
-        gd.deal_price         AS dealPrice,
-        gd.discount_rate      AS discountRate,
+            -- 가격 정보 (GROUP_DEAL 기준)
+            gd.origin_price       AS originPrice,
+            gd.deal_price         AS dealPrice,
+            gd.discount_rate      AS discountRate,
 
-        -- 현재 참여 인원: 팀들의 current_member_cnt 합계
-        (
-            SELECT NVL(SUM(t.current_member_cnt), 0)
-            FROM GROUP_DEAL_TEAM t
-            WHERE t.group_deal_id = gd.group_deal_id
-              AND t.status IN ('WAITING', 'FULL', 'SUCCESS')
-        )                     AS currentMemberCount,
+            -- 현재 참여 인원: 팀들의 current_member_cnt 합계
+            (
+                SELECT NVL(SUM(t.current_member_cnt), 0)
+                FROM GROUP_DEAL_TEAM t
+                WHERE t.group_deal_id = gd.group_deal_id
+                AND t.status IN ('WAITING', 'FULL', 'SUCCESS')
+            )                     AS currentMemberCount,
 
-        gd.min_member_count   AS minMemberCount,
-        gd.end_at             AS endAt,
+            gd.min_member_count   AS minMemberCount,
+            gd.end_at             AS endAt,
 
-        -- 평점/리뷰수: 아직 PRODUCT 연동 안 했으므로 0으로 고정
-        0                     AS rating,
-        0                     AS reviewCount
-    FROM GROUP_DEAL gd
-    WHERE gd.status    = 'OPEN'
-      AND gd.is_active = 'Y'
-    ORDER BY gd.end_at ASC
-</select>
+            -- 평점/리뷰수: 아직 PRODUCT 연동 안 했으므로 0으로 고정
+            0                     AS rating,
+            0                     AS reviewCount
+        FROM GROUP_DEAL gd
+        WHERE gd.status    = 'OPEN'
+        AND gd.is_active = 'Y'
+        ORDER BY gd.end_at ASC
+    </select>
 
     <!-- ============================= -->
     <!-- 공동구매 상세 조회 -->
@@ -55,59 +55,58 @@
     <select id="selectGroupDealDetail"
         parameterType="long"
         resultType="com.farmday.groupdeal.domain.GroupDealDetailDto">
-    SELECT
-        gd.group_deal_id      AS groupDealId,
-        NULL                  AS productId,        -- GROUP_DEAL에는 product_id 없음
-        NULL                  AS detailId,         -- detailId도 테이블에 없음
+        SELECT
+            gd.group_deal_id      AS groupDealId,
+            NULL                  AS productId,        -- GROUP_DEAL에는 product_id 없음
+            NULL                  AS detailId,         -- detailId도 테이블에 없음
 
-        -- 상세 화면에서 보여줄 이름/설명: GROUP_DEAL 컬럼 사용
-        gd.title              AS productName,      -- 카드/상세에서 공통으로 사용할 이름
-        gd.group_deal_detail  AS groupDealDetail,  -- 상세 설명 (있는 경우)
+            -- 상세 화면에서 보여줄 이름/설명: GROUP_DEAL 컬럼 사용
+            gd.title              AS productName,      -- 카드/상세에서 공통으로 사용할 이름
+            gd.group_deal_detail  AS groupDealDetail,  -- 상세 설명 (있는 경우)
 
-        -- 가격 정보
-        gd.origin_price       AS originPrice,
-        gd.deal_price         AS dealPrice,
-        gd.discount_rate      AS discountRate,
+            -- 가격 정보
+            gd.origin_price       AS originPrice,
+            gd.deal_price         AS dealPrice,
+            gd.discount_rate      AS discountRate,
 
-        gd.min_member_count   AS minMemberCount,
-        gd.max_member_count   AS maxMemberCount,
-        gd.per_user_limit_qty AS perUserLimitQty,
+            gd.min_member_count   AS minMemberCount,
+            gd.max_member_count   AS maxMemberCount,
+            gd.per_user_limit_qty AS perUserLimitQty,
 
-        gd.start_at           AS startAt,
-        gd.end_at             AS endAt,
+            gd.start_at           AS startAt,
+            gd.end_at             AS endAt,
 
-        -- 현재 참여 인원: 팀들의 current_member_cnt 합계
-        (
-            SELECT NVL(SUM(t.current_member_cnt), 0)
-            FROM GROUP_DEAL_TEAM t
-            WHERE t.group_deal_id = gd.group_deal_id
-              AND t.status IN ('WAITING', 'FULL', 'SUCCESS')
-        )                     AS currentMemberCount,
+            -- 현재 참여 인원: 팀들의 current_member_cnt 합계
+            (
+                SELECT NVL(SUM(t.current_member_cnt), 0)
+                FROM GROUP_DEAL_TEAM t
+                WHERE t.group_deal_id = gd.group_deal_id
+                AND t.status IN ('WAITING', 'FULL', 'SUCCESS')
+            )                     AS currentMemberCount,
 
-        -- 판매 수량: 참여 멤버 수 기준 (PENDING_PAYMENT, PAID)
-        (
-            SELECT NVL(COUNT(*), 0)
-            FROM GROUP_DEAL_MEMBER gm
-                JOIN GROUP_DEAL_TEAM t
-                    ON gm.team_id = t.team_id
-            WHERE t.group_deal_id = gd.group_deal_id
-              AND gm.status IN ('PENDING_PAYMENT', 'PAID')
-        )                     AS soldCount,
+            -- 판매 수량: 참여 멤버 수 기준 (PENDING_PAYMENT, PAID)
+            (
+                SELECT NVL(COUNT(*), 0)
+                FROM GROUP_DEAL_MEMBER gm
+                    JOIN GROUP_DEAL_TEAM t
+                        ON gm.team_id = t.team_id
+                WHERE t.group_deal_id = gd.group_deal_id
+                AND gm.status IN ('PENDING_PAYMENT', 'PAID')
+            )                     AS soldCount,
 
-        -- 평점/리뷰수: 상품 테이블과 아직 안 묶였으므로 0으로 고정
-        0                     AS rating,
-        0                     AS reviewCount,
+            -- 평점/리뷰수: 상품 테이블과 아직 안 묶였으므로 0으로 고정
+            0                     AS rating,
+            0                     AS reviewCount,
 
-        -- 배송 정보/판매자 이름: 현재 PRODUCT/PRODUCER와 연동 안 했으므로 null
-        NULL                  AS deliveryText,
-        NULL                  AS sellerName,
+            -- 배송 정보/판매자 이름: 현재 PRODUCT/PRODUCER와 연동 안 했으므로 null
+            NULL                  AS deliveryText,
+            NULL                  AS sellerName,
 
-        -- 상품 코드: group_deal_id를 문자열로 사용
-        TO_CHAR(gd.group_deal_id) AS productCode
-    FROM GROUP_DEAL gd
-    WHERE gd.group_deal_id = #{groupDealId}
-</select>
-
+            -- 상품 코드: group_deal_id를 문자열로 사용
+            TO_CHAR(gd.group_deal_id) AS productCode
+        FROM GROUP_DEAL gd
+        WHERE gd.group_deal_id = #{groupDealId}
+    </select>
 
     <!-- ============================= -->
     <!-- 단일 Deal 엔티티 조회 -->
@@ -147,141 +146,6 @@
         WHERE group_deal_id = #{groupDealId}
     </update>
 
-    <!-- ============================= -->
-    <!-- 팀 목록 조회 (상세 페이지 오른쪽 팀 리스트) -->
-    <!-- ============================= -->
-    <select id="selectTeamsByDealId"
-            parameterType="long"
-            resultType="com.farmday.groupdeal.domain.GroupDealTeamDto">
-        SELECT
-            t.team_id            AS teamId,
-            -- 이름 마스킹: 예) "홍길동" -> "홍*동"
-            (SUBSTR(u.name, 1, 1) || '*' || SUBSTR(u.name, 2)) AS leaderMaskedName,
-            t.current_member_cnt AS currentMemberCnt,
-            t.target_member_cnt  AS targetMemberCnt,
-            t.opened_at          AS openedAt
-        FROM GROUP_DEAL_TEAM t
-            JOIN USERS u
-                ON t.leader_user_id = u.userId
-        WHERE t.group_deal_id = #{groupDealId}
-          AND t.status IN ('WAITING', 'FULL')
-        ORDER BY t.opened_at DESC
-    </select>
-
-    <!-- ============================= -->
-    <!-- 팀 생성 -->
-    <!-- ============================= -->
-    <insert id="insertTeam"
-            parameterType="com.farmday.groupdeal.domain.GroupDealTeam">
-
-        <!-- 1) 먼저 시퀀스 NEXTVAL을 teamId 필드에 넣고 -->
-        <selectKey keyProperty="teamId"
-                resultType="long"
-                order="BEFORE">
-            SELECT GROUP_DEAL_TEAM_SEQ.NEXTVAL
-            FROM DUAL
-        </selectKey>
-
-        <!-- 2) 그 값을 이용해서 INSERT -->
-        INSERT INTO GROUP_DEAL_TEAM (
-            team_id,
-            group_deal_id,
-            leader_user_id,
-            target_member_cnt,
-            current_member_cnt,
-            status,
-            opened_at,
-            created_date,
-            updated_date
-        ) VALUES (
-            #{teamId},
-            #{groupDealId},
-            #{leaderUserId},
-            #{targetMemberCnt},
-            #{currentMemberCnt},
-            #{status},
-            #{openedAt},
-            SYSDATE,
-            SYSDATE
-        )
-    </insert>
-
-    <!-- 단일 팀 조회 -->
-    <select id="selectTeamById"
-            parameterType="long"
-            resultType="com.farmday.groupdeal.domain.GroupDealTeam">
-        SELECT
-            team_id              AS teamId,
-            group_deal_id        AS groupDealId,
-            leader_user_id       AS leaderUserId,
-            target_member_cnt    AS targetMemberCnt,
-            current_member_cnt   AS currentMemberCnt,
-            status,
-            opened_at            AS openedAt,
-            closed_at            AS ClosedAt,
-            created_date         AS createdDate,
-            updated_date         AS updatedDate
-        FROM GROUP_DEAL_TEAM
-        WHERE team_id = #{teamId}
-    </select>
-
-    <!-- 팀 인원수/상태 업데이트 -->
-    <update id="updateTeamMemberCount">
-        UPDATE GROUP_DEAL_TEAM
-        SET current_member_cnt = #{currentMemberCnt},
-            status             = #{status},
-            updated_date       = SYSDATE
-        WHERE team_id = #{teamId}
-    </update>
-
-    <!-- ============================= -->
-    <!-- 팀 참여자(멤버) 추가 -->
-    <!-- ============================= -->
-    <!-- 멤버 추가: 시퀀스 + selectKey 사용 -->
-    <insert id="insertMember"
-            parameterType="com.farmday.groupdeal.domain.GroupDealMember">
-
-        <selectKey keyProperty="memberId"
-                resultType="long"
-                order="BEFORE">
-            SELECT GROUP_DEAL_MEMBER_SEQ.NEXTVAL
-            FROM DUAL
-        </selectKey>
-
-        INSERT INTO GROUP_DEAL_MEMBER (
-            member_id,
-            team_id,
-            user_id,
-            status,
-            joined_at
-        ) VALUES (
-            #{memberId},
-            #{teamId},
-            #{userId},
-            #{status},
-            SYSDATE
-        )
-    </insert>
-
-    <!-- 팀별 참여자 수 (결제/결제대기 기준) -->
-    <select id="countMembersByTeamId"
-            parameterType="long"
-            resultType="int">
-        SELECT COUNT(*)
-        FROM GROUP_DEAL_MEMBER
-        WHERE team_id = #{teamId}
-          AND status IN ('PENDING_PAYMENT', 'PAID')
-    </select>
-
-    <!-- 특정 유저가 해당 팀에 이미 참여했는지 여부 -->
-    <select id="countMembersByTeamIdAndUserId"
-            resultType="int">
-        SELECT COUNT(*)
-        FROM GROUP_DEAL_MEMBER
-        WHERE team_id = #{teamId}
-          AND user_id = #{userId}
-          AND status IN ('PENDING_PAYMENT', 'PAID')
-    </select>
 
     <!-- ============================= -->
     <!-- 공동구매 이미지 목록 조회 -->
@@ -302,69 +166,5 @@
         WHERE group_deal_id = #{groupDealId}
         ORDER BY sort_order ASC, image_id ASC
     </select>
-
-    <!-- ============================= -->
-    <!-- 팀 상태/마감일(닫힘) 업데이트 -->
-    <!-- ============================= -->
-    <update id="updateTeamStatusAndClosedAt"
-            parameterType="com.farmday.groupdeal.domain.GroupDealTeam">
-        UPDATE GROUP_DEAL_TEAM
-        SET status    = #{status},
-            closed_at = SYSDATE,
-            updated_date = SYSDATE
-        WHERE team_id = #{teamId}
-    </update>
-
-    <!-- ============================= -->
-    <!-- 팀별 멤버 목록 조회 -->
-    <!-- ============================= -->
-    <select id="selectMembersByTeamId"
-            parameterType="long"
-            resultType="com.farmday.groupdeal.domain.GroupDealMember">
-        SELECT
-            member_id          AS memberId,
-            team_id            AS teamId,
-            user_id            AS userId,
-            order_id           AS orderId,
-            order_item_id      AS orderItemId,
-            status,
-            result_notified_at AS resultNotifiedAt,
-            joined_at          AS joinedAt
-        FROM GROUP_DEAL_MEMBER
-        WHERE team_id = #{teamId}
-        ORDER BY joined_at ASC, member_id ASC
-    </select>
-
-    <!-- ============================= -->
-    <!-- 결제 완료 시 주문 정보 매핑 -->
-    <!-- ============================= -->
-    <update id="updateMemberPaymentInfo"
-            parameterType="com.farmday.groupdeal.domain.GroupDealMember">
-        UPDATE GROUP_DEAL_MEMBER
-        SET order_id      = #{orderId},
-            order_item_id = #{orderItemId},
-            status        = #{status}
-        WHERE member_id = #{memberId}
-    </update>
-
-    <!-- ============================= -->
-    <!-- 멤버 상태만 변경 (취소/환불 등) -->
-    <!-- ============================= -->
-    <update id="updateMemberStatus"
-            parameterType="com.farmday.groupdeal.domain.GroupDealMember">
-        UPDATE GROUP_DEAL_MEMBER
-        SET status = #{status}
-        WHERE member_id = #{memberId}
-    </update>
-
-    <!-- ============================= -->
-    <!-- 결과 알림 발송 시각 업데이트 -->
-    <!-- ============================= -->
-    <update id="updateMemberResultNotifiedAt"
-            parameterType="long">
-        UPDATE GROUP_DEAL_MEMBER
-        SET result_notified_at = SYSDATE
-        WHERE member_id = #{memberId}
-    </update>
 
 </mapper>

@@ -57,4 +57,10 @@ public class ProducerServiceImpl implements ProducerService {
         // role 은 당분간 PRODUCER_PENDING 그대로 두거나, 필요하면 USER로 되돌릴 수도 있음
         // 여기선 그대로 두는 걸로.
     }
+
+    @Override
+    public Producer findByUserNo(Long userNo) {
+        return producerMapper.findByUserNo(userNo);
+    }
+    
 }

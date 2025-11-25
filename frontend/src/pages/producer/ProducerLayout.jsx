@@ -1,26 +1,67 @@
 // src/pages/producer/ProducerLayout.jsx
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useContext } from 'react'
 import '../../assets/css/producer.css'
 import ProducerProfileCard from '../../components/producer/ProducerProfileCard.jsx'
-// ⭐ 새 CSS 파일(또는 App.css)에 넣을 거라면 여기서 import 해도 됨
-// import '../../styles/producer.css'
+import axios from 'axios'
+import { AuthContext } from '../../contexts/AuthContext'
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL
 
 export default function ProducerLayout() {
   const navigate = useNavigate()
+  const { auth } = useContext(AuthContext)
+
   const [producer, setProducer] = useState(null)
   const [storeExists, setStoreExists] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   useEffect(() => {
-    setProducer({
-      name: '홍길동',
-      farmName: '길동 농원',
-      email: 'test@test.com',
-      phone: '010-0000-0000',
-      photoUrl: '',
-    })
-    setStoreExists(false)
-  }, [])
+    const token =
+      auth?.accessToken ||
+      auth?.token ||
+      localStorage.getItem('accessToken')
+
+    if (!token) {
+      setError('로그인이 필요합니다.')
+      setLoading(false)
+      return
+    }
+
+    const fetchProducer = async () => {
+      try {
+        setLoading(true)
+        setError('')
+
+        const res = await axios.get(`${API_BASE}/api/producer/me`, {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: token.startsWith('Bearer ')
+              ? token
+              : `Bearer ${token}`,
+          },
+        })
+
+        const data = res.data
+        setProducer({
+          name: data.name,
+          farmName: data.farmName,
+          email: data.email,
+          phone: data.phone,
+          photoUrl: data.photoUrl || '',
+        })
+        setStoreExists(!!data.hasStore)
+      } catch (err) {
+        console.error('생산자 정보 조회 에러:', err)
+        setError('생산자 정보를 불러오는 중 오류가 발생했습니다.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchProducer()
+  }, [auth])
 
   const handleStoreButtonClick = () => {
     if (!storeExists) {
@@ -30,7 +71,9 @@ export default function ProducerLayout() {
     }
   }
 
-  if (!producer) return <div>로딩중...</div>
+  if (loading) return <div>생산자 정보를 불러오는 중입니다...</div>
+  if (error) return <div>{error}</div>
+  if (!producer) return <div>생산자 정보가 없습니다.</div>
 
   return (
     <div className="producer-page-root">
@@ -73,7 +116,7 @@ export default function ProducerLayout() {
           </header>
 
           <section className="producer-main">
-            <Outlet />
+            <Outlet context={{ producer, storeExists }} />
           </section>
         </main>
       </div>

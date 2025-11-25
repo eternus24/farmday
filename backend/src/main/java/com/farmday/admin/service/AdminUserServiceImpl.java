@@ -2,7 +2,6 @@ package com.farmday.admin.service;
 
 import com.farmday.admin.dto.AdminUserDetailDto;
 import com.farmday.admin.dto.AdminUserListResponse;
-import com.farmday.admin.service.AdminUserService;
 import com.farmday.user.domain.User;
 import com.farmday.user.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;

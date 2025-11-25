@@ -1,48 +1,73 @@
 // src/pages/producer/ProducerOrdersPage.jsx
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useContext } from 'react'
 import { useNavigate } from 'react-router-dom'
+import axios from 'axios'
+import { AuthContext } from '../../contexts/AuthContext'
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL
 
 export default function ProducerOrdersPage() {
   const navigate = useNavigate()
+  const { auth } = useContext(AuthContext)
+
   const [tab, setTab] = useState('NEW') // 'NEW' | 'COMPLETED' | 'SALES'
   const [newOrders, setNewOrders] = useState([])
   const [completedOrders, setCompletedOrders] = useState([])
   const [monthlySales, setMonthlySales] = useState([])
 
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
   useEffect(() => {
-    // TODO: API 연동
-    setNewOrders([
-      {
-        id: 1,
-        orderNo: '202511170001',
-        orderDate: '2025-11-17',
-        buyerName: '김철수',
-        firstProductName: '사과 5kg',
-        itemCount: 2,
-        totalAmount: 35000,
-        status: 'READY',
-      },
-    ])
+    const token =
+      auth?.accessToken ||
+      auth?.token ||
+      localStorage.getItem('accessToken')
 
-    setCompletedOrders([
-      {
-        id: 2,
-        orderNo: '202511160001',
-        orderDate: '2025-11-16',
-        buyerName: '이영희',
-        firstProductName: '배 3kg',
-        itemCount: 1,
-        totalAmount: 25000,
-        status: 'DELIVERED',
-      },
-    ])
+    if (!token) {
+      setError('로그인이 필요합니다.')
+      setLoading(false)
+      return
+    }
 
-    setMonthlySales([
-      { month: '2025-09', amount: 1200000 },
-      { month: '2025-10', amount: 2300000 },
-      { month: '2025-11', amount: 1750000 },
-    ])
-  }, [])
+    const commonHeaders = {
+      'Content-Type': 'application/json',
+      Authorization: token.startsWith('Bearer ') ? token : `Bearer ${token}`,
+    }
+
+    const fetchAll = async () => {
+      try {
+        setLoading(true)
+        setError('')
+
+        // 신규 주문
+        const [newRes, completedRes, salesRes] = await Promise.all([
+          axios.get(`${API_BASE}/api/producer/orders`, {
+            headers: commonHeaders,
+            params: { status: 'NEW' },
+          }),
+          axios.get(`${API_BASE}/api/producer/orders`, {
+            headers: commonHeaders,
+            params: { status: 'COMPLETED' },
+          }),
+          axios.get(`${API_BASE}/api/producer/sales/monthly`, {
+            headers: commonHeaders,
+          }),
+        ])
+
+        setNewOrders(newRes.data || [])
+        setCompletedOrders(completedRes.data || [])
+        setMonthlySales(salesRes.data || [])
+      } catch (err) {
+        console.error('생산자 주문/매출 조회 에러:', err)
+        setError('주문/매출 정보를 불러오는 중 오류가 발생했습니다.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchAll()
+  }, [auth])
 
   const handleGoDetail = (orderId) => {
     navigate(`/producer/orders/${orderId}`)
@@ -73,21 +98,24 @@ export default function ProducerOrdersPage() {
         </button>
       </div>
 
-      {tab === 'NEW' && (
+      {loading && <p>데이터를 불러오는 중입니다...</p>}
+      {!loading && error && <p>{error}</p>}
+
+      {!loading && !error && tab === 'NEW' && (
         <section>
           <h3>신규 주문 리스트</h3>
           <OrderTable orders={newOrders} onClickDetail={handleGoDetail} />
         </section>
       )}
 
-      {tab === 'COMPLETED' && (
+      {!loading && !error && tab === 'COMPLETED' && (
         <section>
           <h3>완료된 판매 내역</h3>
           <OrderTable orders={completedOrders} onClickDetail={handleGoDetail} />
         </section>
       )}
 
-      {tab === 'SALES' && (
+      {!loading && !error && tab === 'SALES' && (
         <section>
           <h3>월별 매출 현황</h3>
           <MonthlySalesTable monthlySales={monthlySales} />
@@ -115,7 +143,7 @@ function OrderTable({ orders, onClickDetail }) {
       </thead>
       <tbody>
         {orders.map((o) => (
-          <tr key={o.id}>
+          <tr key={o.orderId}>
             <td>{o.orderDate}</td>
             <td>{o.orderNo}</td>
             <td>{o.buyerName}</td>
@@ -126,7 +154,7 @@ function OrderTable({ orders, onClickDetail }) {
             <td>{o.totalAmount.toLocaleString()}원</td>
             <td>{o.status}</td>
             <td>
-              <button onClick={() => onClickDetail(o.id)}>주문 처리</button>
+              <button onClick={() => onClickDetail(o.orderId)}>주문 처리</button>
             </td>
           </tr>
         ))}

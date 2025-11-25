@@ -6,7 +6,6 @@ import com.farmday.security.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -55,8 +54,8 @@ public class SecurityConfig {
                 // Swagger (있으면)
                 .antMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 // 관리자 / 생산자 전용
-                .antMatchers("/admin/**").hasRole("ADMIN")
-                .antMatchers("/producer/**").hasRole
+                .antMatchers("/api/admin/**").hasRole("ADMIN")
+                .antMatchers("/api/producer/**").hasRole
                 ("PRODUCER")
                 .antMatchers("/api/products/**").permitAll()
                 // 나머지는 인증 필요

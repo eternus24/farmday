@@ -1,58 +1,101 @@
 // src/pages/producer/ProducerOrderDetailPage.jsx
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useContext } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import OrderStatusPanel from '../../components/producer/OrderStatusPanel.jsx'
+import axios from 'axios'
+import { AuthContext } from '../../contexts/AuthContext'
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL
 
 export default function ProducerOrderDetailPage() {
   const { orderId } = useParams()
   const navigate = useNavigate()
+  const { auth } = useContext(AuthContext)
+
   const [order, setOrder] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   useEffect(() => {
-    // TODO: /api/producer/orders/:orderId 로 상세 조회
-    // 더미 데이터
-    setOrder({
-      id: orderId,
-      orderNo: '202511170001',
-      orderDate: '2025-11-17',
-      status: 'READY',
-      buyerName: '김철수',
-      buyerPhone: '010-1111-2222',
-      address: '서울시 어딘가 123',
-      totalAmount: 35000,
-      deliveryFee: 3000,
-      items: [
-        {
-          id: 1,
-          name: '사과 5kg',
-          option: '특등급',
-          qty: 1,
-          price: 25000,
-        },
-        {
-          id: 2,
-          name: '배 3kg',
-          option: '상등급',
-          qty: 1,
-          price: 10000,
-        },
-      ],
-    })
-  }, [orderId])
+    const token =
+      auth?.accessToken ||
+      auth?.token ||
+      localStorage.getItem('accessToken')
+
+    if (!token) {
+      setError('로그인이 필요합니다.')
+      setLoading(false)
+      return
+    }
+
+    const fetchOrder = async () => {
+      try {
+        setLoading(true)
+        setError('')
+
+        const res = await axios.get(
+          `${API_BASE}/api/producer/orders/${orderId}`,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: token.startsWith('Bearer ')
+                ? token
+                : `Bearer ${token}`,
+            },
+          },
+        )
+
+        setOrder(res.data)
+      } catch (err) {
+        console.error('생산자 주문 상세 조회 에러:', err)
+        setError('주문 정보를 불러오는 중 오류가 발생했습니다.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (orderId) {
+      fetchOrder()
+    }
+  }, [orderId, auth])
 
   const handleChangeStatus = async (nextStatus) => {
-    // TODO: PATCH /api/producer/orders/:orderId/status
-    // { status: nextStatus }
-    // 성공 후 상태 업데이트
-    setOrder((prev) => ({
-      ...prev,
-      status: nextStatus,
-    }))
+    if (!order) return
+
+    const token =
+      auth?.accessToken ||
+      auth?.token ||
+      localStorage.getItem('accessToken')
+
+    try {
+      await axios.patch(
+        `${API_BASE}/api/producer/orders/${orderId}/status`,
+        { status: nextStatus },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: token.startsWith('Bearer ')
+              ? token
+              : `Bearer ${token}`,
+          },
+        },
+      )
+
+      setOrder((prev) => ({
+        ...prev,
+        status: nextStatus,
+      }))
+    } catch (err) {
+      console.error('주문 상태 변경 에러:', err)
+      alert('주문 상태 변경 중 오류가 발생했습니다.')
+    }
   }
 
-  if (!order) return <div>로딩중...</div>
+  if (loading) return <div>주문 정보를 불러오는 중입니다...</div>
+  if (error) return <div>{error}</div>
+  if (!order) return <div>주문 정보가 없습니다.</div>
 
-  const itemsTotal = order.items.reduce(
+  const itemsTotal = order.items?.reduce(
     (sum, item) => sum + item.price * item.qty,
     0,
   )
@@ -80,7 +123,7 @@ export default function ProducerOrderDetailPage() {
           <p>{order.address}</p>
 
           <h3>결제 정보</h3>
-          <p>상품 합계: {itemsTotal.toLocaleString()}원</p>
+          <p>상품 합계: {itemsTotal?.toLocaleString()}원</p>
           <p>배송비: {order.deliveryFee.toLocaleString()}원</p>
           <p>
             총 결제 금액:{' '}
@@ -102,8 +145,8 @@ export default function ProducerOrderDetailPage() {
               </tr>
             </thead>
             <tbody>
-              {order.items.map((item) => (
-                <tr key={item.id}>
+              {order.items?.map((item) => (
+                <tr key={item.orderItemId}>
                   <td>{item.name}</td>
                   <td>{item.option}</td>
                   <td>{item.qty}</td>

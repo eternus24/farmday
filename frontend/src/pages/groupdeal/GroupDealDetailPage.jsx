@@ -3,12 +3,8 @@ import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import GroupDealTimer from "../../components/groupdeal/GroupDealTimer";
 import GroupDealDetailTabs from "../../layouts/GroupDealDetailTabs";
-import GroupDealTeamList from "../../components/groupdeal/GroupDealTeamList";
 import {
   getGroupDealDetail,
-  getGroupDealTeams,
-  createTeam,
-  joinTeam,
 } from "../../api/groupDealApi";
 
 const PRIMARY_DEEP_GREEN = "#166534";
@@ -19,11 +15,9 @@ function GroupDealDetailPage() {
   const navigate = useNavigate();
 
   const [deal, setDeal] = useState(null);
-  const [teams, setTeams] = useState([]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [joining, setJoining] = useState(false);
 
   const priceSectionRef = useRef(null);
   const [showStickyBar, setShowStickyBar] = useState(false);
@@ -31,12 +25,10 @@ function GroupDealDetailPage() {
   const [isLiked, setIsLiked] = useState(false);
   const [isImageHover, setIsImageHover] = useState(false);
 
-  const [hasParticipated, setHasParticipated] = useState(false);
-
   // DTO -> 화면용 데이터로 변환
   function mapDetailDtoToView(detail) {
     if (!detail) return null;
-
+    
     const originPrice =
       detail.originPrice != null ? Number(detail.originPrice) : 0;
     const dealPrice = detail.dealPrice != null ? Number(detail.dealPrice) : 0;
@@ -80,14 +72,12 @@ function GroupDealDetailPage() {
       setLoading(true);
       setError(null);
       try {
-        const [detailRes, teamsRes] = await Promise.all([
+        const [detailRes] = await Promise.all([
           getGroupDealDetail(id),
-          getGroupDealTeams(id),
         ]);
 
         const mapped = mapDetailDtoToView(detailRes);
         setDeal(mapped);
-        setTeams(teamsRes || []);
       } catch (e) {
         console.error(e);
         setError(e.message || "공동구매 정보를 불러오는 중 오류가 발생했습니다.");
@@ -115,80 +105,6 @@ function GroupDealDetailPage() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // 함께 구매(새 팀 생성) - 1회 제한
-  const handleCreateTeam = async () => {
-    if (!deal) return;
-
-    // 이미 이 공동구매에 참여(생성/참여)한 경우 막기
-    if (hasParticipated) {
-      alert("이미 이 공동구매에 참여하셨습니다. 한 번만 참여할 수 있습니다.");
-      return;
-    }
-
-    try {
-      setJoining(true);
-      const result = await createTeam(deal.groupDealId, { quantity: 1 });
-
-      alert(
-        (result && result.message
-          ? result.message
-          : "새 팀이 생성되었습니다.") +
-          (result && result.teamId ? `\nteamId: ${result.teamId}` : "")
-      );
-
-      // ✅ 성공적으로 팀을 만들었으니, 이제 이 페이지에서는 다시 참여 불가
-      setHasParticipated(true);
-
-      const latestTeams = await getGroupDealTeams(deal.groupDealId);
-      setTeams(latestTeams || []);
-    } catch (e) {
-      console.error(e);
-      alert(
-        e?.response?.data?.message ||
-          `팀 생성 실패: ${e.message || "알 수 없는 오류"}`
-      );
-    } finally {
-      setJoining(false);
-    }
-  };
-
-  // 기존 팀 참여 - 1회 제한
-  const handleJoinTeam = async (team) => {
-    if (!deal) return;
-    if (!team || !team.teamId) return;
-
-    // 이미 이 공동구매에 참여(생성/참여)한 경우 막기
-    if (hasParticipated) {
-      alert("이미 이 공동구매에 참여하셨습니다. 한 번만 참여할 수 있습니다.");
-      return;
-    }
-
-    try {
-      setJoining(true);
-      const result = await joinTeam(team.teamId, { quantity: 1 });
-
-      alert(
-        (result && result.message
-          ? result.message
-          : "팀 참여에 성공했습니다.") +
-          (result && result.teamId ? `\nteamId: ${result.teamId}` : "")
-      );
-
-      // ✅ 성공적으로 팀에 참여했으니, 이제 이 페이지에서는 다시 참여 불가
-      setHasParticipated(true);
-
-      const latestTeams = await getGroupDealTeams(deal.groupDealId);
-      setTeams(latestTeams || []);
-    } catch (e) {
-      console.error(e);
-      alert(
-        e?.response?.data?.message ||
-          `팀 참여 실패: ${e.message || "알 수 없는 오류"}`
-      );
-    } finally {
-      setJoining(false);
-    }
-  };
 
   // 🔥 혼자 구매: 이미 들고 있는 deal(= GroupDealDetailDto 매핑 결과)을 주문 페이지로 넘김
   const handleSoloBuy = () => {
@@ -234,10 +150,10 @@ function GroupDealDetailPage() {
       ? Math.round((saveAmount / soloPrice) * 100)
       : deal.discountRate;
 
-  const progressPercent =
-    deal.maxMemberCount && deal.maxMemberCount > 0
-      ? (deal.currentMemberCount / deal.maxMemberCount) * 100
-      : 0;
+  const safeCurrent = Number(deal.currentMemberCount) || 0;
+  const safeMax = Number(deal.maxMemberCount) || 0;
+
+  const progressPercent = safeMax > 0 ? (safeCurrent / safeMax) * 100 : 0;
 
   const handleShare = async () => {
     try {
@@ -356,7 +272,7 @@ function GroupDealDetailPage() {
           </div>
           <div className="d-flex justify-content-between small text-muted mb-3">
             <span>
-              {deal.currentMemberCount}/{deal.maxMemberCount}명 참여중
+              {safeCurrent}/{safeMax}명 참여중
             </span>
             <span>
               마감:{" "}
@@ -431,18 +347,6 @@ function GroupDealDetailPage() {
               혼자 구매
             </button>
 
-            <button
-              className="btn flex-fill fw-semibold"
-              style={{
-                backgroundColor: PRIMARY_DEEP_GREEN,
-                borderColor: PRIMARY_DEEP_GREEN,
-                color: "#ffffff",
-              }}
-              onClick={handleCreateTeam}
-              disabled={joining}
-            >
-              {joining ? "처리 중..." : "함께 구매"}
-            </button>
           </div>
         </div>
       </div>
@@ -450,12 +354,6 @@ function GroupDealDetailPage() {
       {/* 아래 탭 섹션 시작 위치 */}
       <div ref={priceSectionRef} className="mt-4">
         <GroupDealDetailTabs deal={deal} />
-      </div>
-
-      {/* 팀 목록 */}
-      <div className="mt-4 mb-5">
-        <h5 className="mb-2 fw-semibold">현재 진행 중인 팀</h5>
-        <GroupDealTeamList teams={teams} onJoin={handleJoinTeam} />
       </div>
 
       {/* 하단 고정 바 */}
@@ -539,18 +437,6 @@ function GroupDealDetailPage() {
                 onClick={handleSoloBuy}
               >
                 혼자 구매
-              </button>
-              <button
-                className="btn fw-semibold"
-                style={{
-                  backgroundColor: PRIMARY_DEEP_GREEN,
-                  borderColor: PRIMARY_DEEP_GREEN,
-                  color: "#ffffff",
-                }}
-                onClick={handleCreateTeam}
-                disabled={joining}
-              >
-                {joining ? "처리 중..." : "함께 구매"}
               </button>
             </div>
           </div>

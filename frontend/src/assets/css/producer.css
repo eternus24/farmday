@@ -4,8 +4,7 @@
 
 /* 상단 헤더 아래 + 하단 푸터와 간격 */
 .producer-page-root {
-  margin-top: 80px;
-  padding: 0 40px 80px;
+  padding: 30px 40px 80px;
   background-color: #f6f8fa;
   min-height: calc(100vh - 160px);
 }

@@ -23,4 +23,5 @@ public interface ProducerMapper {
 
     void rejectProducer(@Param("producerId") Long producerId,
                         @Param("rejectReason") String rejectReason);
+                        
 }

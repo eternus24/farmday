@@ -17,4 +17,7 @@ public interface ProducerService {
 
     // 반려
     void rejectProducer(Long producerId, String rejectReason);
+
+    Producer findByUserNo(Long userNo);
+    
 }

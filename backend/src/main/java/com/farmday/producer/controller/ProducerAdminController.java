@@ -2,8 +2,10 @@ package com.farmday.producer.controller;
 
 import com.farmday.producer.domain.Producer;
 import com.farmday.producer.service.ProducerService;
+
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,7 +13,7 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/admin/producers")
+@RequestMapping("/admin/producer")
 public class ProducerAdminController {
 
     private final ProducerService producerService;
@@ -44,4 +46,7 @@ public class ProducerAdminController {
     static class RejectRequest {
         private String rejectReason;
     }
+
 }
+
+
