@@ -1,10 +1,13 @@
 package com.farmday.producer.service;
 
 import com.farmday.producer.domain.Producer;
+import com.farmday.producer.dto.LowStockProductDto;
+import com.farmday.producer.dto.ProducerDashboardSummaryDto;
 import com.farmday.producer.mapper.ProducerMapper;
 import com.farmday.user.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -61,6 +64,18 @@ public class ProducerServiceImpl implements ProducerService {
     @Override
     public Producer findByUserNo(Long userNo) {
         return producerMapper.findByUserNo(userNo);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ProducerDashboardSummaryDto getDashboardSummary(Long producerId) {
+        return producerMapper.getDashboardSummary(producerId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<LowStockProductDto> getLowStockProducts(Long producerId) {
+        return producerMapper.findLowStockProducts(producerId);
     }
     
 }

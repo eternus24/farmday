@@ -1,12 +1,17 @@
 // src/pages/producer/ProducerProductsPage.jsx
 import { useEffect, useState } from 'react'
+// 나중에 AuthContext / axios 가져와서 API 연동 가능
+// import { useContext } from 'react'
+// import axios from 'axios'
+// import { AuthContext } from '../../contexts/AuthContext'
+// const API_BASE = import.meta.env.VITE_API_BASE_URL
 
 export default function ProducerProductsPage() {
   const [products, setProducts] = useState([])
   const [selectedProduct, setSelectedProduct] = useState(null)
 
   useEffect(() => {
-    // TODO: 내 상품 목록 API 호출
+    // TODO: 내 상품 목록 API 호출로 교체 예정
     setProducts([
       {
         id: 1,
@@ -31,7 +36,7 @@ export default function ProducerProductsPage() {
 
   const handleSaveProduct = (product) => {
     // TODO: 가격/재고 업데이트 API
-    alert(`상품(${product.name}) 정보 저장`)
+    alert(`상품(${product.name}) 정보 저장 (API 연동 예정)`)
   }
 
   const handleClickStockHistory = (product) => {
@@ -115,7 +120,6 @@ export default function ProducerProductsPage() {
           <h3>
             {selectedProduct.name} 재고 히스토리 (기간 지정 UI 나중에 추가)
           </h3>
-          {/* TODO: 기간 선택 + 그래프 or 리스트 */}
           <p>재고 변동 기록을 여기에 표시할 예정입니다.</p>
         </section>
       )}

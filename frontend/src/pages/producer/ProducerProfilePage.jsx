@@ -1,47 +1,44 @@
 // src/pages/producer/ProducerProfilePage.jsx
 import { useEffect, useState } from 'react'
+import { useOutletContext } from 'react-router-dom'
 
 export default function ProducerProfilePage() {
+  const { producer } = useOutletContext()
   const [profile, setProfile] = useState(null)
-  const [certificates, setCertificates] = useState([])
+  const [certificates, setCertificates] = useState([]) // 🔹 초기값: 빈 배열
 
   useEffect(() => {
-    // TODO: 프로필/농장정보/인증서 API 조회
-    setProfile({
-      name: '홍길동',
-      email: 'test@test.com',
-      phone: '010-0000-0000',
-      farmName: '길동 농원',
-      farmAddress: '강원도 어딘가 123',
-      farmIntro: '사과와 배를 재배하는 농원입니다.',
-    })
+    if (producer) {
+      // /api/producer/me 에서 받은 기본 정보로 폼 초기화
+      setProfile({
+        name: producer.name || '',
+        email: producer.email || '',
+        phone: producer.phone || '',
+        farmName: producer.farmName || '',
+        farmAddress: '', // TODO: backend에서 farmAddr 내려주면 채우기
+        farmIntro: '',   // TODO: 나중에 별도 필드 생기면 채우기
+        photoUrl: producer.photoUrl || '',
+      })
+    }
 
-    setCertificates([
-      {
-        id: 1,
-        type: 'GAP 인증',
-        status: 'APPROVED', // APPROVED | PENDING | REJECTED
-      },
-      {
-        id: 2,
-        type: '유기농 인증',
-        status: 'PENDING',
-      },
-    ])
-  }, [])
+    // ✅ 더미 인증서 절대 넣지 않음
+    // 나중에 실제 API 만들면 여기서 axios로 setCertificates(...) 할 예정
+    // setCertificates(res.data) 이런 식으로
+  }, [producer])
 
   const handleSaveProfile = (e) => {
     e.preventDefault()
-    // TODO: 프로필 저장 API
-    alert('프로필 정보 저장')
+    // TODO: 프로필 저장 API 호출 (예: PATCH /api/producer/profile)
+    alert('프로필 정보 저장 (API 연동 예정)')
   }
 
   const handleRequestCertificateUpdate = (cert) => {
-    // TODO: 수정 요청 API (메모 내용까지 받으려면 모달 추가)
-    alert(`${cert.type} 인증서 수정 요청을 보냈습니다.`)
+    // TODO: 수정 요청 API 연동
+    alert(`${cert.type} 인증서 수정 요청을 보냈습니다. (API 연동 예정)`)
   }
 
-  if (!profile) return <div>로딩중...</div>
+  if (!producer) return <div>생산자 정보를 불러오는 중입니다...</div>
+  if (!profile) return <div>프로필 정보를 불러오는 중입니다...</div>
 
   return (
     <div className="producer-profile-page">
@@ -123,34 +120,39 @@ export default function ProducerProfilePage() {
         </form>
       </section>
 
-      {/* 인증서 목록/수정요청 */}
+      {/* 인증서 섹션 – 더미 없음, 데이터 없으면 안내만 */}
       <section>
         <h3>인증서</h3>
-        <table className="cert-table">
-          <thead>
-            <tr>
-              <th>인증서 종류</th>
-              <th>상태</th>
-              <th>수정 요청</th>
-            </tr>
-          </thead>
-          <tbody>
-            {certificates.map((c) => (
-              <tr key={c.id}>
-                <td>{c.type}</td>
-                <td>{renderCertStatus(c.status)}</td>
-                <td>
-                  <button
-                    type="button"
-                    onClick={() => handleRequestCertificateUpdate(c)}
-                  >
-                    수정 요청
-                  </button>
-                </td>
+
+        {certificates.length === 0 ? (
+          <p>등록된 인증서가 없습니다. (추후 인증서 API 연동 예정)</p>
+        ) : (
+          <table className="cert-table">
+            <thead>
+              <tr>
+                <th>인증서 종류</th>
+                <th>상태</th>
+                <th>수정 요청</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {certificates.map((c) => (
+                <tr key={c.id}>
+                  <td>{c.type}</td>
+                  <td>{renderCertStatus(c.status)}</td>
+                  <td>
+                    <button
+                      type="button"
+                      onClick={() => handleRequestCertificateUpdate(c)}
+                    >
+                      수정 요청
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </section>
     </div>
   )

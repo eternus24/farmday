@@ -1,6 +1,8 @@
 package com.farmday.producer.service;
 
 import com.farmday.producer.domain.Producer;
+import com.farmday.producer.dto.LowStockProductDto;
+import com.farmday.producer.dto.ProducerDashboardSummaryDto;
 
 import java.util.List;
 
@@ -19,5 +21,9 @@ public interface ProducerService {
     void rejectProducer(Long producerId, String rejectReason);
 
     Producer findByUserNo(Long userNo);
+
+    ProducerDashboardSummaryDto getDashboardSummary(Long producerId);
+
+    List<LowStockProductDto> getLowStockProducts(Long producerId);
     
 }

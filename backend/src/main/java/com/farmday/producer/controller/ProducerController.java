@@ -1,6 +1,8 @@
 package com.farmday.producer.controller;
 
 import com.farmday.producer.domain.Producer;
+import com.farmday.producer.dto.LowStockProductDto;
+import com.farmday.producer.dto.ProducerDashboardSummaryDto;
 import com.farmday.producer.service.ProducerService;
 import com.farmday.user.domain.User;
 import com.farmday.user.service.UserService;
@@ -8,6 +10,8 @@ import com.farmday.user.service.UserService;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -72,6 +76,39 @@ public class ProducerController {
         );
 
         return ResponseEntity.ok(dto);
+    }
+
+    @GetMapping("/dashboard")
+    public ResponseEntity<?> getDashboard(@AuthenticationPrincipal String loginUserId) {
+
+        User user = userService.findByUserId(loginUserId);
+        
+        if (user == null) {
+            return ResponseEntity.status(401).body("유저 없음");
+        }
+
+        Producer producer = producerService.findByUserNo(user.getUserNo());
+
+        if (producer == null) {
+            return ResponseEntity.status(403).body("생산자 권한이 없습니다.");
+        }
+
+        Long producerId = producer.getProducerId();
+
+        ProducerDashboardSummaryDto summary =
+                producerService.getDashboardSummary(producerId);
+
+        List<LowStockProductDto> lowStocks =
+                producerService.getLowStockProducts(producerId);
+
+        return ResponseEntity.ok(new ProducerDashboardResponse(summary, lowStocks));
+    }
+
+    @Data
+    @AllArgsConstructor
+    static class ProducerDashboardResponse {
+        private ProducerDashboardSummaryDto summary;
+        private List<LowStockProductDto> lowStockProducts;
     }
 
     @Data

@@ -133,4 +133,58 @@
         WHERE producer_id = #{producerId}
     </update>
 
+    <select id="getDashboardSummary"
+        parameterType="long"
+        resultType="com.farmday.producer.dto.ProducerDashboardSummaryDto">
+        <![CDATA[
+        SELECT
+            #{producerId} AS producerId,
+
+            (
+                SELECT NVL(SUM(oi.quantity * oi.unit_price), 0)
+                FROM ORDER_ITEM oi
+                JOIN ORDERS o ON oi.order_id = o.order_id
+                WHERE o.producer_id = #{producerId}
+                AND TRUNC(o.created_date) = TRUNC(SYSDATE)
+                AND o.order_status IN ('PAID', 'SHIPPED', 'DELIVERED')
+            ) AS todaySalesAmount,
+
+            (
+                SELECT NVL(SUM(oi.quantity * oi.unit_price), 0)
+                FROM ORDER_ITEM oi
+                JOIN ORDERS o ON oi.order_id = o.order_id
+                WHERE o.producer_id = #{producerId}
+                AND TRUNC(o.created_date, 'MM') = TRUNC(SYSDATE, 'MM')
+                AND o.order_status IN ('PAID', 'SHIPPED', 'DELIVERED')
+            ) AS monthSalesAmount,
+
+            (
+                SELECT COUNT(*)
+                FROM ORDERS o
+                WHERE o.producer_id = #{producerId}
+                AND TRUNC(o.created_date) = TRUNC(SYSDATE)
+                AND o.order_status IN ('PAID', 'READY', 'ORDERED')
+            ) AS newOrderCount
+
+        FROM DUAL
+        ]]>
+    </select>
+
+    <!-- 재고 부족 상품 목록 -->
+    <select id="findLowStockProducts"
+            parameterType="long"
+            resultType="com.farmday.producer.dto.LowStockProductDto">
+        <![CDATA[
+        SELECT
+            p.product_id    AS productId,
+            p.product_name  AS productName,
+            p.stock_qty     AS stockQty,
+            p.safety_stock  AS safetyStockQty
+        FROM PRODUCT p
+        WHERE p.producer_id = #{producerId}
+        AND p.stock_qty < p.safety_stock
+        ORDER BY p.stock_qty ASC
+        ]]>
+    </select>
+
 </mapper>
