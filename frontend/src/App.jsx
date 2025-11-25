@@ -42,6 +42,7 @@ import { SuccessPage } from './pages/orders/Success'
 import { FailPage } from './pages/orders/Fail'
 import MyPage from './pages/mypage/mypage'
 import ScrollToTop from "./components/common/ScrollToTop";
+import Membership from "./pages/mypage/Membership";
 
 // JWT 파싱 헬퍼
 function parseJwt(token) {
@@ -66,8 +67,24 @@ function parseJwt(token) {
 function getInitialAuth() {
   let token = localStorage.getItem("accessToken");
 
+  // 🔹 loginUser에서 userNo / photo 먼저 꺼내두기
+  let userNo = null;
+  let photo = null;
+
+  const loginUserStr = localStorage.getItem("loginUser");
+  if (loginUserStr) {
+    try {
+      const user = JSON.parse(loginUserStr);
+      userNo = user.userNo ?? null;
+      photo = user.photo || null;
+    } catch (e) {
+      console.error("[App] loginUser 파싱 실패:", e);
+    }
+  }
+
+  // 🔹 토큰이 아예 없으면 완전 비로그인 상태
   if (!token) {
-    return { loggedIn: false, name: "손님", photo: null };
+    return { loggedIn: false, name: "손님", photo, userNo };
   }
 
   if (token.startsWith("Bearer ")) {
@@ -76,27 +93,13 @@ function getInitialAuth() {
 
   const payload = parseJwt(token);
   if (!payload) {
-    return { loggedIn: false, name: "손님", photo: null };
+    return { loggedIn: false, name: "손님", photo, userNo };
   }
 
   const nameFromToken =
     payload.name || payload.username || payload.userId || payload.sub;
 
-   // 🔹 photo 값 찾기
-  let photo = null;
-
-  // 1) loginUser에 실제 photo가 있으면 우선
-  const loginUserStr = localStorage.getItem("loginUser");
-  if (loginUserStr) {
-    try {
-      const user = JSON.parse(loginUserStr);
-      photo = user.photo || null;
-    } catch (e) {
-      console.error("[App] loginUser 파싱 실패:", e);
-    }
-  }
-
-  // 2) 없으면 이전에 고른 야채 아바타 사용
+  // 🔹 photo가 아직 없으면 이전에 저장해둔 loginAvatar 사용
   if (!photo) {
     const storedAvatar = localStorage.getItem("loginAvatar");
     if (storedAvatar) {
@@ -108,6 +111,7 @@ function getInitialAuth() {
     loggedIn: true,
     name: nameFromToken || "손님",
     photo,
+    userNo,          // ★ 여기 추가가 핵심
   };
 }
 
@@ -129,7 +133,8 @@ function App() {
             <Route path="/orders/success" element={<SuccessPage/>} />
             <Route path="/orders/fail" element={<FailPage/>} />
 
-            <Route path="/mypage" element={<MyPage/>} />
+            <Route path="/mypage" element={<MyPage/>}/>
+            <Route path="/mypage/membership" element={<Membership/>} />
 
             {/*  사용자 SHOP */}
             <Route path="/shop" element={<ShopMain />} />

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.farmday.membership.mapper.UserMembershipMapper">
+
+    <!-- 가입 시 기본 멤버십 INSERT (이미 만든 거 있으면 그대로 두면 됨) -->
+    <insert id="insertDefaultForNewUser">
+        INSERT INTO USER_MEMBERSHIP (
+            user_no,
+            grade_code,
+            grade_name,
+            year_spent_amount,
+            lifetime_spent_amount,
+            created_date,
+            updated_date
+        ) VALUES (
+            #{userNo},
+            #{gradeCode},
+            CASE #{gradeCode}
+                WHEN 'SEASAK'        THEN '새싹단골'
+                WHEN 'DANGOL'        THEN '단골'
+                WHEN 'DANGOL_VIP'    THEN '단골VIP'
+                WHEN 'DANGOL_FAMILY' THEN '단골패밀리'
+                ELSE '새싹단골'
+            END,
+            0,
+            0,
+            SYSDATE,
+            SYSDATE
+        )
+    </insert>
+
+    <!-- ★ 현재 멤버십 상태 조회 -->
+    <select id="findMembershipStatus"
+            parameterType="long"
+            resultType="com.farmday.membership.dto.MembershipStatusResponse">
+
+        SELECT
+            um.user_no              AS userNo,
+            um.grade_code           AS gradeCode,
+            um.grade_name           AS gradeName,
+            um.year_spent_amount    AS yearSpentAmount,
+            um.lifetime_spent_amount AS lifetimeSpentAmount,
+            mg.discount_rate        AS discountRate,
+            mg.point_rate           AS pointRate,
+            mg.free_shipping_cnt    AS freeShippingCnt
+        FROM USER_MEMBERSHIP um
+        JOIN MEMBERSHIP_GRADE mg
+          ON um.grade_code = mg.grade_code
+        WHERE um.user_no = #{userNo}
+
+    </select>
+
+    <!-- 누적금액만 증가시키기 -->
+    <update id="addSpentAmount">
+        UPDATE USER_MEMBERSHIP
+        SET
+            year_spent_amount     = year_spent_amount + #{deltaAmount},
+            lifetime_spent_amount = lifetime_spent_amount + #{deltaAmount},
+            updated_date          = SYSDATE
+        WHERE user_no = #{userNo}
+    </update>
+
+    <!-- 등급 변경 -->
+    <update id="updateGrade">
+        UPDATE USER_MEMBERSHIP
+        SET
+            grade_code            = #{gradeCode},
+            grade_name            = #{gradeName},
+            last_grade_changed_at = SYSDATE,
+            updated_date          = SYSDATE
+        WHERE user_no = #{userNo}
+    </update>
+
+</mapper>

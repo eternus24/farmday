@@ -12,6 +12,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+
+import com.farmday.coupon.service.MembershipCouponService;
+import com.farmday.membership.mapper.UserMembershipMapper;
 import com.farmday.producer.domain.Producer;
 import com.farmday.producer.service.ProducerService;
 
@@ -28,6 +31,9 @@ public class UserServiceImpl implements UserService {
         // ✅ (추가)
     private final EmailVerificationMapper emailVerificationMapper;
     private final JavaMailSender mailSender;
+
+    private final UserMembershipMapper userMembershipMapper;
+    private final MembershipCouponService membershipCouponService;
 
     @Value("${app.frontend-url}")
     private String frontendUrl;
@@ -67,6 +73,13 @@ public class UserServiceImpl implements UserService {
 
         // 5) INSERT
         userMapper.insertUser(user);
+
+        // 6) USER_MEMBERSHIP 기본 등급 등록 ★ 추가
+        userMembershipMapper.insertDefaultForNewUser(userNo, "SEASAK");
+
+        // 7) 웰컴 쿠폰 발급 ★ 추가
+        membershipCouponService.issueWelcomeCouponOnSignup(userNo);
+
     }
 
     @Override

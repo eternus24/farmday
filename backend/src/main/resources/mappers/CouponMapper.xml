@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.farmday.coupon.mapper.CouponMapper">
+
+    <!-- 쿠폰 템플릿 조회 -->
+    <select id="findTemplateByCode"
+            parameterType="string"
+            resultType="com.farmday.coupon.domain.CouponTemplate">
+        SELECT
+            coupon_type_code  AS couponTypeCode,
+            coupon_name       AS couponName,
+            default_discount_type AS defaultDiscountType,
+            default_discount_value AS defaultDiscountValue,
+            default_min_order_amount AS defaultMinOrderAmount,
+            valid_days        AS validDays,
+            description,
+            is_active         AS isActive
+        FROM COUPON_TEMPLATE
+        WHERE coupon_type_code = #{couponTypeCode}
+          AND is_active = 'Y'
+    </select>
+
+    <!-- 웰컴 쿠폰 이미 있는지 -->
+    <select id="existsWelcomeCoupon"
+            parameterType="long"
+            resultType="int">
+        SELECT COUNT(*)
+        FROM COUPON
+        WHERE user_no = #{userNo}
+          AND coupon_type_code = 'WELCOME'
+    </select>
+
+    <!-- 올해 생일쿠폰 있는지 -->
+    <select id="existsBirthdayCouponThisYear"
+            parameterType="long"
+            resultType="int">
+        SELECT COUNT(*)
+        FROM COUPON
+        WHERE user_no = #{userNo}
+          AND coupon_type_code = 'BDAY'
+          AND TO_CHAR(issued_at, 'YYYY') = TO_CHAR(SYSDATE, 'YYYY')
+    </select>
+
+    <!-- 이번달 등급 쿠폰 있는지 -->
+    <select id="existsMonthlyGradeCouponThisMonth"
+            parameterType="long"
+            resultType="int">
+        SELECT COUNT(*)
+        FROM COUPON
+        WHERE user_no = #{userNo}
+          AND coupon_type_code = 'MONTHLY_GRADE'
+          AND TO_CHAR(issued_at, 'YYYYMM') = TO_CHAR(SYSDATE, 'YYYYMM')
+    </select>
+
+    <!-- 오늘 생일인 유저 목록 (생일 쿠폰 대상) -->
+    <select id="findUsersHavingBirthdayToday"
+            resultType="com.farmday.user.domain.User">
+        SELECT
+            user_no AS userNo,
+            role,
+            userId,
+            userPwd,
+            addr,
+            name,
+            phone,
+            phone_verified,
+            email,
+            email_verified,
+            email_verify_token,
+            email_verify_expired_at,
+            birth,
+            gender,
+            photo,
+            last_login_at,
+            created_date,
+            updated_date,
+            is_blocked,
+            block_reason,
+            blocked_at
+        FROM USERS
+        WHERE birth IS NOT NULL
+          AND TO_CHAR(birth, 'MMDD') = TO_CHAR(SYSDATE, 'MMDD')
+          AND NVL(is_blocked, 'N') = 'N'
+    </select>
+
+    <!-- 등급별 월 쿠폰 발급 대상 (모든 활성 유저 멤버십) -->
+    <select id="findUserMembershipsForMonthlyCoupon"
+            resultType="map">
+        SELECT
+            um.user_no   AS userNo,
+            um.grade_code AS gradeCode
+        FROM USER_MEMBERSHIP um
+        JOIN USERS u ON u.user_no = um.user_no
+        WHERE NVL(u.is_blocked, 'N') = 'N'
+    </select>
+
+    <!-- 쿠폰 INSERT -->
+    <insert id="insertCoupon" parameterType="com.farmday.coupon.domain.Coupon">
+        INSERT INTO COUPON (
+            coupon_id,
+            user_no,
+            coupon_type_code,
+            coupon_name,
+            discount_type,
+            discount_value,
+            min_order_amount,
+            max_discount_amount,
+            is_first_order_only,
+            issued_at,
+            expires_at,
+            used_yn,
+            grade_code_issued_from,
+            created_date,
+            updated_date
+        ) VALUES (
+            #{couponId},
+            #{userNo},
+            #{couponTypeCode},
+            #{couponName},
+            #{discountType},
+            #{discountValue},
+            #{minOrderAmount},
+            #{maxDiscountAmount},
+            #{firstOrderOnly},
+            #{issuedAt},
+            #{expiresAt},
+            'N',
+            #{gradeCodeIssuedFrom},
+            SYSDATE,
+            SYSDATE
+        )
+    </insert>
+
+    <select id="findCouponsByUserNo" parameterType="long"
+            resultType="com.farmday.coupon.dto.MyCouponResponse">
+
+        SELECT
+            coupon_id        AS couponId,
+            coupon_name      AS couponName,
+            discount_type    AS discountType,
+            discount_value   AS discountValue,
+            min_order_amount AS minOrderAmount,
+            TO_CHAR(expires_at, 'YYYY-MM-DD HH24:MI') AS expiresAt,
+            used_yn          AS usedYn
+        FROM COUPON
+        WHERE user_no = #{userNo}
+        ORDER BY issued_at DESC
+        
+    </select>
+
+</mapper>

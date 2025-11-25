@@ -36,6 +36,9 @@ export default function Login() {
       return;
     }
 
+    console.log("로그인 응답 data:", data);      // ✅ 추가
+    console.log("userNo 체크:", data?.user?.userNo);  // ✅ 추가
+
     // 토큰 저장
     localStorage.setItem("accessToken", data.accessToken);
     localStorage.setItem("refreshToken", data.refreshToken);
@@ -56,6 +59,7 @@ export default function Login() {
       loggedIn: true,
       name: data.user?.name || data.user?.userId || "회원",
       photo: finalPhoto,
+      userNo: data.user?.userNo,
     });
 
     setMessage("로그인 성공!");

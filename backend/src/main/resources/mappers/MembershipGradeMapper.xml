@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.farmday.membership.mapper.MembershipGradeMapper">
+
+    <!-- 공통 ResultMap -->
+    <resultMap id="MembershipGradeResultMap"
+               type="com.farmday.membership.domain.MembershipGrade">
+        <id     column="grade_code"          property="gradeCode"/>
+        <result column="grade_name"          property="gradeName"/>
+        <result column="min_amount"          property="minAmount"/>
+        <result column="max_amount"          property="maxAmount"/>
+        <result column="discount_rate"       property="discountRate"/>
+        <result column="point_rate"          property="pointRate"/>
+        <result column="free_shipping_cnt"   property="freeShippingCnt"/>
+        <result column="birthday_coupon_yn"  property="birthdayCouponYn"/>
+        <result column="is_active"           property="isActive"/>
+        <result column="sort_order"          property="sortOrder"/>
+        <result column="created_date"        property="createdDate"/>
+        <result column="updated_date"        property="updatedDate"/>
+    </resultMap>
+
+    <!-- 현재 금액에 해당하는 등급 찾기 -->
+    <select id="findGradeByAmount"
+            parameterType="long"
+            resultMap="MembershipGradeResultMap">
+        <![CDATA[
+        SELECT
+            grade_code,
+            grade_name,
+            min_amount,
+            max_amount,
+            discount_rate,
+            point_rate,
+            free_shipping_cnt,
+            birthday_coupon_yn,
+            is_active,
+            sort_order,
+            created_date,
+            updated_date
+        FROM MEMBERSHIP_GRADE
+        WHERE min_amount <= #{amount}
+          AND (max_amount IS NULL OR max_amount >= #{amount})
+          AND is_active = 'Y'
+        ]]>
+    </select>
+
+    <!-- 다음 등급 (현재 금액보다 큰 min_amount 중 제일 작은 등급) -->
+    <select id="findNextGradeByAmount"
+            parameterType="long"
+            resultMap="MembershipGradeResultMap">
+        <![CDATA[
+        SELECT *
+        FROM (
+            SELECT
+                grade_code,
+                grade_name,
+                min_amount,
+                max_amount,
+                discount_rate,
+                point_rate,
+                free_shipping_cnt,
+                birthday_coupon_yn,
+                is_active,
+                sort_order,
+                created_date,
+                updated_date
+            FROM MEMBERSHIP_GRADE
+            WHERE min_amount > #{amount}
+              AND is_active = 'Y'
+            ORDER BY min_amount ASC
+        )
+        WHERE ROWNUM = 1
+        ]]>
+    </select>
+
+</mapper>
