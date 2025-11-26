@@ -342,4 +342,13 @@
         WHERE user_no = #{userNo}
     </update>
 
+    <!-- 프로필 사진 수정 -->
+    <update id="updateUserPhoto">
+        UPDATE USERS
+        SET
+            photo        = #{photo},
+            updated_date = SYSDATE
+        WHERE user_no   = #{userNo}
+    </update>
+
 </mapper>

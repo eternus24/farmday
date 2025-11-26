@@ -36,5 +36,7 @@ public interface UserService {
     EmailVerification completePreSignupEmailVerification(String token);
 
     void updateLastLogin(Long userNo);
+
+    void updateUserPhoto(Long userNo, String photoUrl);
     
 }

@@ -259,4 +259,9 @@ public class UserServiceImpl implements UserService {
         userMapper.updateLastLogin(userNo);
     }
 
+    @Override
+    public void updateUserPhoto(Long userNo, String photoUrl) {
+        userMapper.updateUserPhoto(userNo, photoUrl);
+    }
+
 }

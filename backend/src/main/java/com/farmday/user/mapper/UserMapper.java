@@ -49,4 +49,6 @@ public interface UserMapper {
 
     void updateLastLogin(@Param("userNo") Long userNo);
 
+    void updateUserPhoto(@Param("userNo") Long userNo, @Param("photo") String photo);
+
 }

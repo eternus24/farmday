@@ -1,8 +1,14 @@
 package com.farmday.producer.service;
 
 import com.farmday.producer.domain.Producer;
+import com.farmday.producer.dto.DailySalesDto;
 import com.farmday.producer.dto.LowStockProductDto;
 import com.farmday.producer.dto.ProducerDashboardSummaryDto;
+import com.farmday.producer.dto.ProducerOrderItemDto;
+import com.farmday.producer.dto.ProducerOrderSummaryDto;
+import com.farmday.producer.dto.ProducerProductItemDto;
+import com.farmday.producer.dto.SalesItemDto;
+import com.farmday.producer.dto.TopProductDto;
 
 import java.util.List;
 
@@ -25,5 +31,28 @@ public interface ProducerService {
     ProducerDashboardSummaryDto getDashboardSummary(Long producerId);
 
     List<LowStockProductDto> getLowStockProducts(Long producerId);
+
+    // 판매관리 - 주문 목록
+    List<ProducerOrderSummaryDto> getActiveOrders(Long producerId);
+
+    List<ProducerOrderSummaryDto> getCompletedOrders(Long producerId);
+
+    // 배송 상태 변경
+    void changeDeliveryStatus(Long producerId, Long orderItemId, String deliveryStatus);
+
+    // 매출 현황
+    List<DailySalesDto> getMonthlyDailySales(Long producerId);
+
+    List<SalesItemDto> getMonthlySalesItems(Long producerId);
+
+    List<TopProductDto> getTopSellingProductsThisMonth(Long producerId, int limit);
     
+    // 상품관리 - 내 상품 목록 조회
+    List<ProducerProductItemDto> getMyProductItems(Long producerId, String status);
+
+    // 상품관리 - 옵션 수정
+    void updateMyProductDetail(Long producerId, Long detailId, String unitName, Integer price, Integer stockQty);
+
+    List<ProducerOrderItemDto> getOrderItems(Long producerId, Long orderId);
+
 }
