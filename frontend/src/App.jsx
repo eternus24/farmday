@@ -8,24 +8,28 @@ import NotFound404 from "./pages/404/404";
 import Cart from "./pages/cart/cart";
 import Contact from "./pages/contact/contact";
 import Layout from "./layouts/Layout";
+
 import ProducerLayout from "./pages/producer/ProducerLayout";
 import ProducerDashboard from "./pages/producer/ProducerDashboard";
 import ProducerOrdersPage from "./pages/producer/ProducerOrdersPage";
 import ProducerOrderDetailPage from "./pages/producer/ProducerOrderDetailPage";
 import ProducerProductsPage from "./pages/producer/ProducerProductsPage";
 import ProducerProfilePage from "./pages/producer/ProducerProfilePage";
+
 import Login from "./pages/login/Login";
 import Signup from "./pages/signup/Signup";
 import PreSignupEmail from "./pages/signup/PreSignupEmail";
-import AdminLogin from "./pages/admin/AdminLogin";
-import AdminSignup from "./pages/admin/AdminSignup";
-import AdminLayout from "./layouts/AdminLayout";
-import RequireAdmin from "./routes/RequireAdmin";
-import GroupDealListPage from "./pages/groupdeal/GroupDealListPage";
-import GroupDealDetailPage from "./pages/groupdeal/GroupDealDetailPage";
+
 import { AuthContext } from "./contexts/AuthContext";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUserList from "./pages/admin/AdminUserList";
+import AdminLogin from "./pages/admin/AdminLogin";
+import AdminSignup from "./pages/admin/AdminSignup";
+import AdminLayout from "./layouts/AdminLayout";
+
+import RequireAdmin from "./routes/RequireAdmin";
+import GroupDealListPage from "./pages/groupdeal/GroupDealListPage";
+import GroupDealDetailPage from "./pages/groupdeal/GroupDealDetailPage";
 
 // 사용자 SHOP 관련
 import ShopMain from './pages/shop/ShopMain';
@@ -126,7 +130,7 @@ function App() {
         <Routes>
           <Route path="/pre-signup" element={<PreSignupEmail />} />
           <Route element={<Layout />}>
-            <Route path="/" element={<Index />} />
+            {/* <Route path="/" element={<Index />} /> */}
             <Route path="/cart" element={<Cart />} />
             <Route path="/contact" element={<Contact />} />
 
@@ -139,7 +143,7 @@ function App() {
             <Route path="/mypage/orders/${order.orderId}/delivery" element={<OrderDelivery/>} />
 
             {/*  사용자 SHOP */}
-            <Route path="/shop" element={<ShopMain />} />
+            <Route path="/" element={<ShopMain />} />
             <Route path="/shop/qa" element={<ShopQA />} />
 
             <Route path="/shop/detail/:id" element={<ShopDetail />} />

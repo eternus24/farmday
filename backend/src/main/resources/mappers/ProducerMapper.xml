@@ -136,54 +136,62 @@
     <select id="getDashboardSummary"
         parameterType="long"
         resultType="com.farmday.producer.dto.ProducerDashboardSummaryDto">
-        <![CDATA[
+    <![CDATA[
         SELECT
             #{producerId} AS producerId,
 
+            /* 오늘 매출 */
             (
-                SELECT NVL(SUM(oi.quantity * oi.unit_price), 0)
-                FROM ORDER_ITEM oi
+                SELECT NVL(SUM(oi.line_total_amount), 0)
+                FROM ORDERS_ITEM oi
+                JOIN PRODUCT p ON oi.product_id = p.product_id
                 JOIN ORDERS o ON oi.order_id = o.order_id
-                WHERE o.producer_id = #{producerId}
+                WHERE p.producer_id = #{producerId}
                 AND TRUNC(o.created_date) = TRUNC(SYSDATE)
                 AND o.order_status IN ('PAID', 'SHIPPED', 'DELIVERED')
             ) AS todaySalesAmount,
 
+            /* 이번달 매출 */
             (
-                SELECT NVL(SUM(oi.quantity * oi.unit_price), 0)
-                FROM ORDER_ITEM oi
+                SELECT NVL(SUM(oi.line_total_amount), 0)
+                FROM ORDERS_ITEM oi
+                JOIN PRODUCT p ON oi.product_id = p.product_id
                 JOIN ORDERS o ON oi.order_id = o.order_id
-                WHERE o.producer_id = #{producerId}
+                WHERE p.producer_id = #{producerId}
                 AND TRUNC(o.created_date, 'MM') = TRUNC(SYSDATE, 'MM')
                 AND o.order_status IN ('PAID', 'SHIPPED', 'DELIVERED')
             ) AS monthSalesAmount,
 
+            /* 신규 주문 수 (오늘 생성된 주문) — 상품 한 개라도 producer 소유면 1건으로 센다 */
             (
-                SELECT COUNT(*)
-                FROM ORDERS o
-                WHERE o.producer_id = #{producerId}
+                SELECT COUNT(DISTINCT o.order_id)
+                FROM ORDERS_ITEM oi
+                JOIN PRODUCT p ON oi.product_id = p.product_id
+                JOIN ORDERS o ON oi.order_id = o.order_id
+                WHERE p.producer_id = #{producerId}
                 AND TRUNC(o.created_date) = TRUNC(SYSDATE)
-                AND o.order_status IN ('PAID', 'READY', 'ORDERED')
+                AND o.order_status IN ('ORDERED', 'PAID', 'READY')
             ) AS newOrderCount
 
         FROM DUAL
-        ]]>
+    ]]>
     </select>
 
-    <!-- 재고 부족 상품 목록 -->
     <select id="findLowStockProducts"
-            parameterType="long"
-            resultType="com.farmday.producer.dto.LowStockProductDto">
+        parameterType="long"
+        resultType="com.farmday.producer.dto.LowStockProductDto">
         <![CDATA[
         SELECT
-            p.product_id    AS productId,
-            p.product_name  AS productName,
-            p.stock_qty     AS stockQty,
-            p.safety_stock  AS safetyStockQty
+            p.product_id           AS productId,
+            p.name                 AS productName,      -- 상품명 컬럼 이름: name
+            d.stock_qty            AS stockQty,         -- 실제 재고
+            10                     AS safetyStockQty    -- 임시 안전 재고 기준 (예: 10개)
         FROM PRODUCT p
+        JOIN PRODUCT_DETAIL d
+        ON d.product_id = p.product_id
         WHERE p.producer_id = #{producerId}
-        AND p.stock_qty < p.safety_stock
-        ORDER BY p.stock_qty ASC
+        AND d.stock_qty < 10
+        ORDER BY d.stock_qty ASC
         ]]>
     </select>
 
