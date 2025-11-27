@@ -140,15 +140,15 @@
         SELECT
             #{producerId} AS producerId,
 
-            /* 오늘 매출 */
+            /* 오늘 매출: 실제 매출로 인정되는 상태들 */
             (
                 SELECT NVL(SUM(oi.line_total_amount), 0)
                 FROM ORDERS_ITEM oi
                 JOIN PRODUCT p ON oi.product_id = p.product_id
                 JOIN ORDERS o ON oi.order_id = o.order_id
                 WHERE p.producer_id = #{producerId}
-                AND TRUNC(o.created_date) = TRUNC(SYSDATE)
-                AND o.order_status IN ('PAID', 'SHIPPED', 'DELIVERED')
+                  AND TRUNC(o.created_date) = TRUNC(SYSDATE)
+                  AND oi.order_status IN ('A1', 'A2', 'E1', 'E2', 'E3')
             ) AS todaySalesAmount,
 
             /* 이번달 매출 */
@@ -158,19 +158,19 @@
                 JOIN PRODUCT p ON oi.product_id = p.product_id
                 JOIN ORDERS o ON oi.order_id = o.order_id
                 WHERE p.producer_id = #{producerId}
-                AND TRUNC(o.created_date, 'MM') = TRUNC(SYSDATE, 'MM')
-                AND o.order_status IN ('PAID', 'SHIPPED', 'DELIVERED')
+                  AND TRUNC(o.created_date, 'MM') = TRUNC(SYSDATE, 'MM')
+                  AND oi.order_status IN ('A1', 'A2', 'E1', 'E2', 'E3')
             ) AS monthSalesAmount,
 
-            /* 신규 주문 수 (오늘 생성된 주문) — 상품 한 개라도 producer 소유면 1건으로 센다 */
+            /* 신규 주문 수 (오늘 / 진행 중 상태만) */
             (
                 SELECT COUNT(DISTINCT o.order_id)
                 FROM ORDERS_ITEM oi
                 JOIN PRODUCT p ON oi.product_id = p.product_id
                 JOIN ORDERS o ON oi.order_id = o.order_id
                 WHERE p.producer_id = #{producerId}
-                AND TRUNC(o.created_date) = TRUNC(SYSDATE)
-                AND o.order_status IN ('ORDERED', 'PAID', 'READY')
+                  AND TRUNC(o.created_date) = TRUNC(SYSDATE)
+                  AND oi.order_status IN ('A1', 'B1')
             ) AS newOrderCount
 
         FROM DUAL
@@ -196,10 +196,108 @@
     </select>
 
     <!-- ======================= -->
-    <!-- 판매관리 - 주문 목록    -->
+    <!-- 판매관리 - 주문 상세    -->
     <!-- ======================= -->
+    <select id="findOrderItemsByProducerIdAndOrderId"
+        parameterType="map"
+        resultType="com.farmday.producer.dto.ProducerOrderItemDto">
+      <![CDATA[
+      SELECT
+          oi.order_item_id          AS orderItemId,
+          o.order_id                AS orderId,
+          o.order_date              AS orderDate,
+          oi.order_status           AS orderStatus,
 
-    <!-- 신규/진행 주문 (ORDERED, PAID) -->
+          d.delivery_status         AS deliveryStatus,
+          d.carrier_name            AS carrierName,
+          d.tracking_number         AS trackingNumber,
+
+          o.receiver_name           AS receiverName,
+          o.receiver_phone          AS receiverPhone,
+          o.receiver_addr           AS receiverAddr,
+
+          p.product_id              AS productId,
+          oi.product_name           AS productName,
+
+          oi.quantity               AS quantity,
+          oi.price_at_order         AS priceAtOrder,
+          oi.line_total_amount      AS lineTotalAmount
+
+      FROM ORDERS_ITEM oi
+      JOIN PRODUCT p
+        ON oi.product_id = p.product_id
+      JOIN PRODUCER pr
+        ON p.producer_id = pr.producer_id
+      JOIN ORDERS o
+        ON oi.order_id = o.order_id
+      LEFT JOIN DELIVERY d
+        ON d.order_item_id = oi.order_item_id
+
+      WHERE pr.producer_id = #{producerId}
+        AND o.order_id      = #{orderId}
+
+      ORDER BY oi.order_item_id ASC
+      ]]>
+  </select>
+
+    <!-- ======================= -->
+    <!-- 배송 상태 변경 + 주문상태 코드 반영 -->
+    <!-- ======================= -->
+    <update id="updateDeliveryStatusByOrderItemId"
+            parameterType="map">
+
+        <![CDATA[
+        BEGIN
+          -- 1) DELIVERY 테이블 배송 상태 / 시간 업데이트
+          UPDATE DELIVERY d
+          SET
+              d.delivery_status = #{deliveryStatus},
+              d.updated_date    = SYSDATE,
+              d.shipped_at      = CASE
+                                     WHEN #{deliveryStatus} IN ('출고완료', '배송중', '배송완료')
+                                          AND d.shipped_at IS NULL
+                                     THEN SYSDATE
+                                     ELSE d.shipped_at
+                                  END,
+              d.delivered_at    = CASE
+                                     WHEN #{deliveryStatus} = '배송완료'
+                                          AND d.delivered_at IS NULL
+                                     THEN SYSDATE
+                                     ELSE d.delivered_at
+                                  END
+          WHERE d.order_item_id = #{orderItemId}
+            AND EXISTS (
+                SELECT 1
+                FROM ORDERS_ITEM oi
+                JOIN PRODUCT p
+                  ON oi.product_id = p.product_id
+                JOIN PRODUCER pr
+                  ON p.producer_id = pr.producer_id
+                WHERE oi.order_item_id = d.order_item_id
+                  AND pr.producer_id = #{producerId}
+            );
+
+          -- 2) ORDERS_ITEM 주문 상태 코드 업데이트 (A1 / A2)
+          UPDATE ORDERS_ITEM oi
+          SET oi.order_status =
+                CASE
+                  WHEN #{deliveryStatus} = '배송완료' THEN 'A2'  -- 결제 완료 + 배송 완료
+                  ELSE 'A1'                                    -- 결제 완료 + 배송 준비/중
+                END
+          WHERE oi.order_item_id = #{orderItemId}
+            AND EXISTS (
+              SELECT 1
+              FROM PRODUCT p
+              JOIN PRODUCER pr
+                ON p.producer_id = pr.producer_id
+              WHERE p.product_id = oi.product_id
+                AND pr.producer_id = #{producerId}
+            );
+        END;
+        ]]>
+    </update>
+
+    <!-- 신규/진행 주문 (A1: 결제완료+배송중, B1: 환불요청중) -->
     <select id="findActiveOrderItemsByProducerId"
             parameterType="long"
             resultType="com.farmday.producer.dto.ProducerOrderItemDto">
@@ -209,20 +307,16 @@
             oi.order_item_id          AS orderItemId,
             o.order_id                AS orderId,
             o.order_date              AS orderDate,
-            o.order_status            AS orderStatus,
-
+            oi.order_status           AS orderStatus,
             d.delivery_status         AS deliveryStatus,
-
             o.receiver_name           AS receiverName,
             o.receiver_phone          AS receiverPhone,
-
+            o.receiver_addr           AS receiverAddr,
             p.product_id              AS productId,
             oi.product_name           AS productName,
-
             oi.quantity               AS quantity,
             oi.price_at_order         AS priceAtOrder,
             oi.line_total_amount      AS lineTotalAmount
-
         FROM ORDERS_ITEM oi
         JOIN PRODUCT p
           ON oi.product_id = p.product_id
@@ -232,15 +326,13 @@
           ON oi.order_id = o.order_id
         LEFT JOIN DELIVERY d
           ON d.order_item_id = oi.order_item_id
-
         WHERE pr.producer_id = #{producerId}
           AND oi.order_status IN ('A1')
-
         ORDER BY o.order_date DESC, o.order_id DESC, oi.order_item_id DESC
         ]]>
     </select>
 
-    <!-- 완료된 판매 (DELIVERED, CANCELED, REFUND) -->
+    <!-- 완료된 판매 (A2 / R1 / E1~E3) -->
     <select id="findCompletedOrderItemsByProducerId"
             parameterType="long"
             resultType="com.farmday.producer.dto.ProducerOrderItemDto">
@@ -250,20 +342,16 @@
             oi.order_item_id          AS orderItemId,
             o.order_id                AS orderId,
             o.order_date              AS orderDate,
-            o.order_status            AS orderStatus,
-
+            oi.order_status           AS orderStatus,
             d.delivery_status         AS deliveryStatus,
-
             o.receiver_name           AS receiverName,
             o.receiver_phone          AS receiverPhone,
-
+            o.receiver_addr           AS receiverAddr,
             p.product_id              AS productId,
             oi.product_name           AS productName,
-
             oi.quantity               AS quantity,
             oi.price_at_order         AS priceAtOrder,
             oi.line_total_amount      AS lineTotalAmount
-
         FROM ORDERS_ITEM oi
         JOIN PRODUCT p
           ON oi.product_id = p.product_id
@@ -273,107 +361,24 @@
           ON oi.order_id = o.order_id
         LEFT JOIN DELIVERY d
           ON d.order_item_id = oi.order_item_id
-
         WHERE pr.producer_id = #{producerId}
-          AND oi.order_status IN ('R', 'C')
-
+          AND oi.order_status IN ('A2', 'R1', 'E1', 'E2', 'E3')
         ORDER BY o.order_date DESC, o.order_id DESC, oi.order_item_id DESC
         ]]>
     </select>
-
-    <!-- ======================= -->
-    <!-- 판매관리 - 주문 상세    -->
-    <!-- ======================= -->
-    <select id="findOrderItemsByProducerIdAndOrderId"
-            parameterType="map"
-            resultType="com.farmday.producer.dto.ProducerOrderItemDto">
-
-        <![CDATA[
-        SELECT
-            oi.order_item_id          AS orderItemId,
-            o.order_id                AS orderId,
-            o.order_date              AS orderDate,
-            o.order_status            AS orderStatus,
-
-            d.delivery_status         AS deliveryStatus,
-
-            o.receiver_name           AS receiverName,
-            o.receiver_phone          AS receiverPhone,
-
-            p.product_id              AS productId,
-            oi.product_name           AS productName,
-
-            oi.quantity               AS quantity,
-            oi.price_at_order         AS priceAtOrder,
-            oi.line_total_amount      AS lineTotalAmount
-
-        FROM ORDERS_ITEM oi
-        JOIN PRODUCT p
-          ON oi.product_id = p.product_id
-        JOIN PRODUCER pr
-          ON p.producer_id = pr.producer_id
-        JOIN ORDERS o
-          ON oi.order_id = o.order_id
-        LEFT JOIN DELIVERY d
-          ON d.order_item_id = oi.order_item_id
-
-        WHERE pr.producer_id = #{producerId}
-          AND o.order_id      = #{orderId}
-
-        ORDER BY oi.order_item_id ASC
-        ]]>
-    </select>
-
-    <!-- ======================= -->
-    <!-- 배송 상태 변경          -->
-    <!-- ======================= -->
-    <update id="updateDeliveryStatusByOrderItemId"
-            parameterType="map">
-
-        <![CDATA[
-        UPDATE DELIVERY d
-        SET
-            d.delivery_status = #{deliveryStatus},
-            d.updated_date    = SYSDATE,
-            d.shipped_at      = CASE
-                                   WHEN #{deliveryStatus} = 'SHIPPED'
-                                        AND d.shipped_at IS NULL
-                                   THEN SYSDATE
-                                   ELSE d.shipped_at
-                                END,
-            d.delivered_at    = CASE
-                                   WHEN #{deliveryStatus} = 'DELIVERED'
-                                        AND d.delivered_at IS NULL
-                                   THEN SYSDATE
-                                   ELSE d.delivered_at
-                                END
-        WHERE d.order_item_id = #{orderItemId}
-          AND EXISTS (
-              SELECT 1
-              FROM ORDERS_ITEM oi
-              JOIN PRODUCT p
-                ON oi.product_id = p.product_id
-              JOIN PRODUCER pr
-                ON p.producer_id = pr.producer_id
-              WHERE oi.order_item_id = d.order_item_id
-                AND pr.producer_id = #{producerId}
-          )
-        ]]>
-    </update>
 
     <!-- ======================= -->
     <!-- 매출 현황 - 이번달      -->
     <!-- ======================= -->
 
     <!-- 이번달 일자별 매출 -->
-    <select id="findMonthlyDailySalesByProducerId"
-            parameterType="long"
-            resultType="com.farmday.producer.dto.DailySalesDto">
+    <select id="findMonthlyDailySalesByProducerId" parameterType="long" resultType="com.farmday.producer.dto.DailySalesDto">
 
         <![CDATA[
         SELECT
             TRUNC(o.order_date)       AS salesDate,
-            SUM(oi.line_total_amount) AS totalAmount
+            SUM(oi.line_total_amount) AS totalAmount,
+            COUNT(DISTINCT o.order_id) AS orderCount
         FROM ORDERS_ITEM oi
         JOIN PRODUCT p
           ON oi.product_id = p.product_id
@@ -383,7 +388,6 @@
           ON oi.order_id = o.order_id
         WHERE pr.producer_id = #{producerId}
           AND TRUNC(o.order_date, 'MM') = TRUNC(SYSDATE, 'MM')
-          AND o.order_status IN ('PAID', 'DELIVERED')
         GROUP BY TRUNC(o.order_date)
         ORDER BY salesDate
         ]]>
@@ -399,20 +403,16 @@
             oi.order_item_id          AS orderItemId,
             o.order_id                AS orderId,
             o.order_date              AS orderDate,
-            o.order_status            AS orderStatus,
-
+            oi.order_status           AS orderStatus,
             d.delivery_status         AS deliveryStatus,
-
             o.receiver_name           AS receiverName,
             o.receiver_phone          AS receiverPhone,
-
+            o.receiver_addr           AS receiverAddr,
             p.product_id              AS productId,
             oi.product_name           AS productName,
-
             oi.quantity               AS quantity,
             oi.price_at_order         AS priceAtOrder,
             oi.line_total_amount      AS lineTotalAmount
-
         FROM ORDERS_ITEM oi
         JOIN PRODUCT p
           ON oi.product_id = p.product_id
@@ -424,7 +424,7 @@
           ON d.order_item_id = oi.order_item_id
         WHERE pr.producer_id = #{producerId}
           AND TRUNC(o.order_date, 'MM') = TRUNC(SYSDATE, 'MM')
-          AND oi.order_status IN ('PAID', 'DELIVERED')
+          AND oi.order_status IN ('A2', 'E1', 'E2', 'E3')
         ORDER BY o.order_date DESC, o.order_id DESC, oi.order_item_id DESC
         ]]>
     </select>
@@ -447,14 +447,14 @@
                 SUM(oi.line_total_amount) AS totalAmount
             FROM ORDERS_ITEM oi
             JOIN PRODUCT p
-            ON oi.product_id = p.product_id
+              ON oi.product_id = p.product_id
             JOIN PRODUCER pr
-            ON p.producer_id = pr.producer_id
+              ON p.producer_id = pr.producer_id
             JOIN ORDERS o
-            ON oi.order_id = o.order_id
+              ON oi.order_id = o.order_id
             WHERE pr.producer_id = #{producerId}
-            AND TRUNC(o.order_date, 'MM') = TRUNC(SYSDATE, 'MM')
-            AND o.order_status IN ('PAID', 'DELIVERED')
+              AND TRUNC(o.order_date, 'MM') = TRUNC(SYSDATE, 'MM')
+              AND oi.order_status IN ('A2', 'E1', 'E2', 'E3')
             GROUP BY p.product_id, oi.product_name
             ORDER BY totalQuantity DESC
         ) t
@@ -512,5 +512,88 @@
           )
         ]]>
     </update>
+
+    <!-- 택배사 / 송장번호 수정 -->
+    <update id="updateDeliveryInfoByOrderItemId"
+            parameterType="map">
+        <![CDATA[
+        UPDATE DELIVERY d
+        SET
+            d.carrier_name    = #{carrierName},
+            d.tracking_number = #{trackingNumber},
+            d.updated_date    = SYSDATE
+        WHERE d.order_item_id = #{orderItemId}
+          AND EXISTS (
+              SELECT 1
+              FROM ORDERS_ITEM oi
+              JOIN PRODUCT p
+                ON oi.product_id = p.product_id
+              JOIN PRODUCER pr
+                ON p.producer_id = pr.producer_id
+              WHERE oi.order_item_id = d.order_item_id
+                AND pr.producer_id = #{producerId}
+          )
+        ]]>
+    </update>
+
+    <!-- 환불 내역 (B1: 환불요청, R1: 환불완료) -->
+    <select id="findRefundOrderItemsByProducerId"
+            parameterType="long"
+            resultType="com.farmday.producer.dto.ProducerOrderItemDto">
+
+        <![CDATA[
+        SELECT
+            oi.order_item_id          AS orderItemId,
+            o.order_id                AS orderId,
+            o.order_date              AS orderDate,
+            oi.order_status           AS orderStatus,
+            d.delivery_status         AS deliveryStatus,
+            o.receiver_name           AS receiverName,
+            o.receiver_phone          AS receiverPhone,
+            o.receiver_addr           AS receiverAddr,
+            p.product_id              AS productId,
+            oi.product_name           AS productName,
+            oi.quantity               AS quantity,
+            oi.price_at_order         AS priceAtOrder,
+            oi.line_total_amount      AS lineTotalAmount
+        FROM ORDERS_ITEM oi
+        JOIN PRODUCT p
+          ON oi.product_id = p.product_id
+        JOIN PRODUCER pr
+          ON p.producer_id = pr.producer_id
+        JOIN ORDERS o
+          ON oi.order_id = o.order_id
+        LEFT JOIN DELIVERY d
+          ON d.order_item_id = oi.order_item_id
+        WHERE pr.producer_id = #{producerId}
+          AND oi.order_status IN ('B1', 'R1')
+        ORDER BY o.order_date DESC, o.order_id DESC, oi.order_item_id DESC
+        ]]>
+  </select>
+
+  <!-- 환불 내역 요약 (B1: 환불요청, R1: 환불완료) -->
+  <select id="findRefundOrderSummariesByProducerId"
+          parameterType="long"
+          resultType="com.farmday.producer.dto.ProducerOrderSummaryDto">
+      <![CDATA[
+      SELECT
+          o.order_id                               AS orderId,
+          o.order_id                               AS orderNo,
+          o.receiver_name                          AS buyerName,
+          MIN(oi.product_name)                     AS firstProductName,
+          COUNT(*)                                 AS itemCount,
+          SUM(oi.line_total_amount)                AS totalAmount,
+          MIN(oi.order_status)                     AS status,
+          TO_CHAR(o.order_date, 'YYYY-MM-DD"T"HH24:MI:SS') AS orderDate
+      FROM ORDERS_ITEM oi
+      JOIN PRODUCT p   ON oi.product_id = p.product_id
+      JOIN PRODUCER pr ON p.producer_id = pr.producer_id
+      JOIN ORDERS o    ON oi.order_id = o.order_id
+      WHERE pr.producer_id = #{producerId}
+        AND oi.order_status IN ('B1', 'R1')   -- 🔥 환불 관련 상태만
+      GROUP BY o.order_id, o.receiver_name, o.order_date
+      ORDER BY o.order_date DESC, o.order_id DESC
+      ]]>
+  </select>
 
 </mapper>

@@ -91,18 +91,6 @@ export default function ProducerDashboard() {
       {/* 상단 인사 영역 */}
       <section className="dashboard-header">
         <h2>{producer.name} 생산자님, 환영합니다 👋</h2>
-        <p>
-          농장명:{" "}
-          <strong>
-            {producer.farmName || "농장명이 아직 등록되지 않았어요"}
-          </strong>
-        </p>
-        <p>이메일: {producer.email}</p>
-        <p>연락처: {producer.phone}</p>
-        <p>
-          스토어 상태:{" "}
-          {storeExists ? "스토어 개설 완료 ✅" : "아직 스토어가 없습니다."}
-        </p>
       </section>
 
       {/* 상단 KPI 카드 */}

@@ -5,6 +5,7 @@ import com.farmday.producer.dto.DailySalesDto;
 import com.farmday.producer.dto.LowStockProductDto;
 import com.farmday.producer.dto.ProducerDashboardSummaryDto;
 import com.farmday.producer.dto.ProducerOrderItemDto;
+import com.farmday.producer.dto.ProducerOrderSummaryDto;
 import com.farmday.producer.dto.ProducerProductItemDto;
 import com.farmday.producer.dto.SalesItemDto;
 import com.farmday.producer.dto.TopProductDto;
@@ -67,5 +68,9 @@ public interface ProducerMapper {
 
     
     List<ProducerOrderItemDto> findOrderItemsByProducerIdAndOrderId( @Param("producerId") Long producerId, @Param("orderId") Long orderId);
-                        
+
+    void updateDeliveryInfoByOrderItemId(@Param("producerId") Long producerId, @Param("orderItemId") Long orderItemId, @Param("carrierName") String carrierName, @Param("trackingNumber") String trackingNumber);
+
+    List<ProducerOrderItemDto> findRefundOrderItemsByProducerId(Long producerId);
+
 }

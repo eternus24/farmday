@@ -55,4 +55,9 @@ public interface ProducerService {
 
     List<ProducerOrderItemDto> getOrderItems(Long producerId, Long orderId);
 
+    void updateDeliveryInfo(Long producerId, Long orderItemId, String carrierName, String trackingNumber);
+
+    // 🔥 새로 추가: 환불 내역 조회
+    List<ProducerOrderSummaryDto> getRefundOrders(Long producerId);
+
 }

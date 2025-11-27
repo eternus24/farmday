@@ -9,4 +9,5 @@ import lombok.Data;
 public class DailySalesDto {
     private Date salesDate;   // TRUNC(order_date)
     private Long totalAmount; // SUM(line_total_amount)
+    private Long orderCount;  // COUNT(DISTINCT order_id)
 }

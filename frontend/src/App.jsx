@@ -130,7 +130,7 @@ function App() {
         <Routes>
           <Route path="/pre-signup" element={<PreSignupEmail />} />
           <Route element={<Layout />}>
-            {/* <Route path="/" element={<Index />} /> */}
+            <Route path="/" element={<Index />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/contact" element={<Contact />} />
 
@@ -143,7 +143,7 @@ function App() {
             <Route path="/mypage/orders/${order.orderId}/delivery" element={<OrderDelivery/>} />
 
             {/*  사용자 SHOP */}
-            <Route path="/" element={<ShopMain />} />
+            <Route path="/shop" element={<ShopMain />} />
             <Route path="/shop/qa" element={<ShopQA />} />
 
             <Route path="/shop/detail/:id" element={<ShopDetail />} />

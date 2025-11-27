@@ -2,6 +2,7 @@
 import { useEffect, useState, useContext } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
+import styled from 'styled-components'
 import { AuthContext } from '../../contexts/AuthContext'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL
@@ -10,9 +11,12 @@ export default function ProducerOrdersPage() {
   const navigate = useNavigate()
   const { auth } = useContext(AuthContext)
 
-  const [tab, setTab] = useState('ACTIVE') // 'ACTIVE' | 'COMPLETED' | 'SALES'
+  // ACTIVE | COMPLETED | REFUNDS | SALES
+  const [tab, setTab] = useState('ACTIVE')
+
   const [activeOrders, setActiveOrders] = useState([])
   const [completedOrders, setCompletedOrders] = useState([])
+  const [refundOrders, setRefundOrders] = useState([]) // 환불 내역
   const [monthlySummary, setMonthlySummary] = useState(null)
 
   const [loading, setLoading] = useState(true)
@@ -40,8 +44,14 @@ export default function ProducerOrdersPage() {
         setLoading(true)
         setError('')
 
-        // ✅ 백엔드 설계에 맞게 type 파라미터 사용
-        const [activeRes, completedRes, salesRes] = await Promise.all([
+        // ACTIVE / COMPLETED / REFUNDS / SALES / DASHBOARD 한 번에 조회
+        const [
+          activeRes,
+          completedRes,
+          refundRes,
+          salesRes,
+          dashboardRes,
+        ] = await Promise.all([
           axios.get(`${API_BASE}/api/producer/orders`, {
             headers: commonHeaders,
             params: { type: 'ACTIVE' },
@@ -50,14 +60,27 @@ export default function ProducerOrdersPage() {
             headers: commonHeaders,
             params: { type: 'COMPLETED' },
           }),
+          axios.get(`${API_BASE}/api/producer/orders`, {
+            headers: commonHeaders,
+            params: { type: 'REFUNDS' },
+          }),
           axios.get(`${API_BASE}/api/producer/sales/monthly`, {
+            headers: commonHeaders,
+          }),
+          axios.get(`${API_BASE}/api/producer/dashboard`, {
             headers: commonHeaders,
           }),
         ])
 
         setActiveOrders(activeRes.data || [])
         setCompletedOrders(completedRes.data || [])
-        setMonthlySummary(salesRes.data || null)
+        setRefundOrders(refundRes.data || [])
+
+        // 🔥 월간 매출 + 대시보드 서머리(오늘 기준 집계)를 함께 저장
+        setMonthlySummary({
+          ...(salesRes.data || {}),
+          dashboardSummary: dashboardRes.data?.summary || null,
+        })
       } catch (err) {
         console.error('생산자 주문/매출 조회 에러:', err)
         setError('주문/매출 정보를 불러오는 중 오류가 발생했습니다.')
@@ -74,65 +97,102 @@ export default function ProducerOrdersPage() {
   }
 
   return (
-    <div className="producer-orders-page">
-      <h2>판매 관리</h2>
+    <OrdersPageContainer>
+      <PageTitle>판매 관리</PageTitle>
 
-      <div className="orders-tabs">
-        <button
-          className={tab === 'ACTIVE' ? 'active' : ''}
+      <OrdersTabs>
+        <TabButton
+          type="button"
+          $active={tab === 'ACTIVE'}
           onClick={() => setTab('ACTIVE')}
         >
           신규/진행중 주문
-        </button>
-        <button
-          className={tab === 'COMPLETED' ? 'active' : ''}
+        </TabButton>
+        <TabButton
+          type="button"
+          $active={tab === 'COMPLETED'}
           onClick={() => setTab('COMPLETED')}
         >
           완료된 판매 내역
-        </button>
-        <button
-          className={tab === 'SALES' ? 'active' : ''}
+        </TabButton>
+        <TabButton
+          type="button"
+          $active={tab === 'REFUNDS'}
+          onClick={() => setTab('REFUNDS')}
+        >
+          환불 내역
+        </TabButton>
+        <TabButton
+          type="button"
+          $active={tab === 'SALES'}
           onClick={() => setTab('SALES')}
         >
           매출 현황
-        </button>
-      </div>
+        </TabButton>
+      </OrdersTabs>
 
-      {loading && <p>데이터를 불러오는 중입니다...</p>}
-      {!loading && error && <p style={{ color: 'red' }}>{error}</p>}
+      {loading && <Message>데이터를 불러오는 중입니다...</Message>}
+      {!loading && error && <Message $error>{error}</Message>}
 
       {!loading && !error && tab === 'ACTIVE' && (
-        <section>
-          <h3>신규/진행중 주문 리스트</h3>
+        <SectionCard>
+          <SectionTitle>신규/진행중 주문 리스트</SectionTitle>
           <OrderTable orders={activeOrders} onClickDetail={handleGoDetail} />
-        </section>
+        </SectionCard>
       )}
 
       {!loading && !error && tab === 'COMPLETED' && (
-        <section>
-          <h3>완료된 판매 내역</h3>
-          <OrderTable orders={completedOrders} onClickDetail={handleGoDetail} />
-        </section>
+        <SectionCard>
+          <SectionTitle>완료된 판매 내역</SectionTitle>
+          <OrderTable
+            orders={completedOrders}
+            onClickDetail={handleGoDetail}
+          />
+        </SectionCard>
+      )}
+
+      {!loading && !error && tab === 'REFUNDS' && (
+        <SectionCard>
+          <SectionTitle>환불 내역</SectionTitle>
+          <OrderTable orders={refundOrders} onClickDetail={handleGoDetail} />
+        </SectionCard>
       )}
 
       {!loading && !error && tab === 'SALES' && (
-        <section>
-          <h3>이번 달 매출 현황</h3>
+        <SectionCard>
+          <SectionTitle>이번 달 매출 현황</SectionTitle>
           <MonthlySalesSection summary={monthlySummary} />
-        </section>
+        </SectionCard>
       )}
-    </div>
+    </OrdersPageContainer>
   )
 }
 
-// =====================
-// 주문 리스트 테이블
-// =====================
+/* =====================
+   공통 포맷터 / 유틸
+   ===================== */
+
+function formatDate(dateTimeString) {
+  if (!dateTimeString) return '-'
+  return dateTimeString.slice(0, 10) // 2025-11-26
+}
+
+function getDateKey(dateTimeString) {
+  if (!dateTimeString) return ''
+  return dateTimeString.slice(0, 10)
+}
+
+/* =====================
+   주문 리스트 테이블
+   ===================== */
+
 function OrderTable({ orders, onClickDetail }) {
-  if (!orders || orders.length === 0) return <p>주문이 없습니다.</p>
+  if (!orders || orders.length === 0) {
+    return <Message>주문이 없습니다.</Message>
+  }
 
   return (
-    <table className="orders-table">
+    <StyledTable>
       <thead>
         <tr>
           <th>주문일</th>
@@ -146,73 +206,115 @@ function OrderTable({ orders, onClickDetail }) {
       </thead>
       <tbody>
         {orders.map((o) => (
-          <tr key={o.orderId}>
-            <td>{o.orderDate}</td>
-            <td>{o.orderNo}</td>
-            <td>{o.buyerName}</td>
+          <tr key={`${o.orderId}-${o.orderItemId || ''}`}>
+            <td>{formatDate(o.orderDate)}</td>
+            <td>{o.orderNo || o.orderId}</td>
+            <td>{o.buyerName || o.receiverName}</td>
             <td>
-              {o.firstProductName}
+              {o.firstProductName || o.productName}
               {o.itemCount > 1 && <> 외 {o.itemCount - 1}건</>}
             </td>
-            <td>{o.totalAmount?.toLocaleString()}원</td>
-            <td>{o.status}</td>
             <td>
-              <button type="button" onClick={() => onClickDetail(o.orderId)}>
+              {(o.totalAmount ?? o.lineTotalAmount ?? 0).toLocaleString()}원
+            </td>
+            <td>{o.status || o.orderStatus}</td>
+            <td>
+              <TableButton
+                type="button"
+                onClick={() => onClickDetail(o.orderId)}
+              >
                 주문 처리
-              </button>
+              </TableButton>
             </td>
           </tr>
         ))}
       </tbody>
-    </table>
+    </StyledTable>
   )
 }
 
-// =====================
-// 매출 현황 섹션
-// =====================
-function MonthlySalesSection({ summary }) {
-  if (!summary) return <p>매출 데이터가 없습니다.</p>
+/* =====================
+   매출 현황 섹션
+   ===================== */
 
-  const dailySales = summary.dailySales || []
+function MonthlySalesSection({ summary }) {
+  if (!summary) return <Message>매출 데이터가 없습니다.</Message>
+
+  const rawDailySales = summary.dailySales || []
   const salesItems = summary.salesItems || []
   const topProducts = summary.topProducts || []
 
-  // 일별 매출 합산해서 이번달 총 매출 구해보기 (백엔드에 총합 필드가 없다면)
+  // 🔥 대시보드 서머리(오늘 기준 집계)
+  const dashboard = summary.dashboardSummary || {}
+  const todaySalesAmount = dashboard.todaySalesAmount || 0
+  const todayOrderCount = dashboard.newOrderCount || 0
+
+  // 🔸 salesItems 기준으로 일자별 주문 수 다시 계산
+  const dailyOrderCountMap = {}
+  salesItems.forEach((item) => {
+    const key = getDateKey(item.orderDate || item.salesDate)
+    if (!key) return
+    dailyOrderCountMap[key] = (dailyOrderCountMap[key] || 0) + 1
+  })
+
+  const dailySales = rawDailySales.map((d) => {
+    const key = getDateKey(d.salesDate || d.orderDate)
+    const computedCount = dailyOrderCountMap[key] || 0
+
+    const orderCount =
+      d.orderCount ?? d.orderCnt ?? d.order_cnt ?? computedCount
+    const totalAmount = d.totalAmount ?? d.salesAmount ?? 0
+
+    return {
+      ...d,
+      _dateKey: key,
+      _orderCount: orderCount,
+      _totalAmount: totalAmount,
+    }
+  })
+
   const monthTotal = dailySales.reduce(
-    (sum, d) => sum + (d.totalAmount || 0),
+    (sum, d) => sum + (d._totalAmount || 0),
     0,
   )
 
   return (
-    <div className="monthly-sales-section">
-      {/* 상단 요약 */}
-      <div className="sales-summary-cards">
-        <div className="sales-card">
-          <h4>이번 달 총 매출</h4>
-          <p>{monthTotal.toLocaleString()}원</p>
-        </div>
-        <div className="sales-card">
-          <h4>일별 매출 집계</h4>
-          <p>{dailySales.length}일치 데이터</p>
-        </div>
-        <div className="sales-card">
-          <h4>판매 내역 건수</h4>
-          <p>{salesItems.length}건</p>
-        </div>
-        <div className="sales-card">
-          <h4>TOP 판매 상품</h4>
-          <p>{topProducts.length}개</p>
-        </div>
-      </div>
+    <MonthlySalesWrapper>
+      {/* 상단 요약 카드 */}
+      <SummaryCardRow>
+        {/* 오늘 매출 + 오늘 주문 수 */}
+        <SummaryCard>
+          <SummaryTitle>오늘 매출</SummaryTitle>
+          <SummaryValue>{todaySalesAmount.toLocaleString()}원</SummaryValue>
+          <SummarySub>{todayOrderCount}건</SummarySub>
+        </SummaryCard>
 
-      {/* 일별 매출 테이블 */}
-      <section className="sales-block">
-        <h4>일별 매출</h4>
+        {/* 이번 달 총 매출 */}
+        <SummaryCard>
+          <SummaryTitle>이번 달 총 매출</SummaryTitle>
+          <SummaryValue>{monthTotal.toLocaleString()}원</SummaryValue>
+        </SummaryCard>
+
+        {/* 이번 달 판매 내역 건수 */}
+        <SummaryCard>
+          <SummaryTitle>판매 내역 건수</SummaryTitle>
+          <SummaryValue>{salesItems.length}건</SummaryValue>
+        </SummaryCard>
+
+        {/* TOP 판매 상품 개수 */}
+        <SummaryCard>
+          <SummaryTitle>TOP 판매 상품</SummaryTitle>
+          <SummaryValue>{topProducts.length}개</SummaryValue>
+        </SummaryCard>
+      </SummaryCardRow>
+
+      {/* 일별 매출 */}
+      <SalesBlock>
+        <SalesBlockTitle>일별 매출</SalesBlockTitle>
         {dailySales.length === 0 ? (
-          <p>일별 매출 데이터가 없습니다.</p>
+          <Message>일별 매출 데이터가 없습니다.</Message>
         ) : (
-          <table className="sales-table">
+          <StyledTable>
             <thead>
               <tr>
                 <th>날짜</th>
@@ -223,24 +325,23 @@ function MonthlySalesSection({ summary }) {
             <tbody>
               {dailySales.map((d, idx) => (
                 <tr key={idx}>
-                  {/* DailySalesDto: salesDate / totalAmount / orderCount 기준으로 사용 */}
-                  <td>{d.salesDate}</td>
-                  <td>{(d.totalAmount || 0).toLocaleString()}원</td>
-                  <td>{d.orderCount || 0}건</td>
+                  <td>{d._dateKey || formatDate(d.salesDate || d.orderDate)}</td>
+                  <td>{(d._totalAmount || 0).toLocaleString()}원</td>
+                  <td>{d._orderCount || 0}건</td>
                 </tr>
               ))}
             </tbody>
-          </table>
+          </StyledTable>
         )}
-      </section>
+      </SalesBlock>
 
-      {/* 이번달 판매 내역 */}
-      <section className="sales-block">
-        <h4>이번 달 판매 내역</h4>
+      {/* 이번 달 판매 내역 */}
+      <SalesBlock>
+        <SalesBlockTitle>이번 달 판매 내역</SalesBlockTitle>
         {salesItems.length === 0 ? (
-          <p>판매 내역이 없습니다.</p>
+          <Message>판매 내역이 없습니다.</Message>
         ) : (
-          <table className="sales-table">
+          <StyledTable>
             <thead>
               <tr>
                 <th>일자</th>
@@ -251,29 +352,37 @@ function MonthlySalesSection({ summary }) {
               </tr>
             </thead>
             <tbody>
-              {salesItems.map((item, idx) => (
-                <tr key={idx}>
-                  {/* SalesItemDto는 아래 필드 기준으로 맞춰두면 좋아:
-                      orderDate, orderId, productName, quantity, amount */}
-                  <td>{item.orderDate}</td>
-                  <td>{item.orderId}</td>
-                  <td>{item.productName}</td>
-                  <td>{item.quantity}</td>
-                  <td>{(item.amount || 0).toLocaleString()}원</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </section>
+              {salesItems.map((item, idx) => {
+                const amount =
+                  item.amount ??
+                  item.totalAmount ??
+                  item.lineTotalAmount ??
+                  0
 
-      {/* 가장 많이 팔린 상품 */}
-      <section className="sales-block">
-        <h4>가장 많이 팔린 상품 TOP {topProducts.length}</h4>
+                return (
+                  <tr key={idx}>
+                    <td>{formatDate(item.orderDate)}</td>
+                    <td>{item.orderId}</td>
+                    <td>{item.productName}</td>
+                    <td>{item.quantity}</td>
+                    <td>{amount.toLocaleString()}원</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </StyledTable>
+        )}
+      </SalesBlock>
+
+      {/* TOP 상품 */}
+      <SalesBlock>
+        <SalesBlockTitle>
+          가장 많이 팔린 상품 TOP {topProducts.length}
+        </SalesBlockTitle>
         {topProducts.length === 0 ? (
-          <p>TOP 상품 데이터가 없습니다.</p>
+          <Message>TOP 상품 데이터가 없습니다.</Message>
         ) : (
-          <table className="sales-table">
+          <StyledTable>
             <thead>
               <tr>
                 <th>상품명</th>
@@ -282,18 +391,171 @@ function MonthlySalesSection({ summary }) {
               </tr>
             </thead>
             <tbody>
-              {topProducts.map((p, idx) => (
-                <tr key={idx}>
-                  {/* TopProductDto: productName, totalQuantity, totalAmount 기준 */}
-                  <td>{p.productName}</td>
-                  <td>{p.totalQuantity}</td>
-                  <td>{(p.totalAmount || 0).toLocaleString()}원</td>
-                </tr>
-              ))}
+              {topProducts.map((p, idx) => {
+                const amount = p.totalAmount ?? p.salesAmount ?? 0
+                return (
+                  <tr key={idx}>
+                    <td>{p.productName}</td>
+                    <td>{p.totalQuantity}</td>
+                    <td>{amount.toLocaleString()}원</td>
+                  </tr>
+                )
+              })}
             </tbody>
-          </table>
+          </StyledTable>
         )}
-      </section>
-    </div>
+      </SalesBlock>
+    </MonthlySalesWrapper>
   )
 }
+
+/* =============================
+   styled-components
+   ============================= */
+
+const OrdersPageContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+`
+
+const PageTitle = styled.h2`
+  font-size: 18px;
+  margin: 0 0 4px;
+  color: #111827;
+`
+
+const OrdersTabs = styled.div`
+  display: inline-flex;
+  border-radius: 999px;
+  background-color: #f3f4f6;
+  padding: 4px;
+  margin-bottom: 8px;
+`
+
+const TabButton = styled.button`
+  border: none;
+  background: transparent;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  cursor: pointer;
+  color: ${({ $active }) => ($active ? '#ffffff' : '#6b7280')};
+  background-color: ${({ $active }) => ($active ? '#10b981' : 'transparent')};
+  transition: background-color 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background-color: ${({ $active }) =>
+      $active ? '#059669' : 'rgba(15, 118, 110, 0.08)'};
+  }
+`
+
+const SectionCard = styled.section`
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+`
+
+const SectionTitle = styled.h3`
+  font-size: 16px;
+  margin: 0 0 10px;
+  color: #111827;
+`
+
+const Message = styled.p`
+  margin: 8px 0;
+  font-size: 14px;
+  color: ${({ $error }) => ($error ? '#dc2626' : '#6b7280')};
+`
+
+const StyledTable = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+  font-size: 13px;
+
+  thead th {
+    text-align: left;
+    padding: 10px 8px;
+    border-bottom: 1px solid #e5e7eb;
+    color: #6b7280;
+    font-weight: 600;
+  }
+
+  tbody td {
+    padding: 10px 8px;
+    border-bottom: 1px solid #f3f4f6;
+    color: #111827;
+  }
+
+  tbody tr:hover {
+    background-color: #f9fafb;
+  }
+`
+
+const TableButton = styled.button`
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid #10b981;
+  background-color: #ecfdf5;
+  color: #047857;
+  font-size: 12px;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #d1fae5;
+  }
+`
+
+/* 매출 현황 전용 래퍼 */
+
+const MonthlySalesWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+`
+
+const SummaryCardRow = styled.div`
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+`
+
+const SummaryCard = styled.div`
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 10px 12px;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.06);
+`
+
+const SummaryTitle = styled.h4`
+  font-size: 13px;
+  margin: 0 0 4px;
+  color: #6b7280;
+`
+
+const SummaryValue = styled.p`
+  font-size: 18px;
+  margin: 0;
+  font-weight: 700;
+  color: #111827;
+  text-align: right;
+`
+
+const SummarySub = styled.p`
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: #6b7280;
+  text-align: right;
+`
+
+const SalesBlock = styled.section`
+  margin-top: 4px;
+`
+
+const SalesBlockTitle = styled.h4`
+  font-size: 15px;
+  margin: 0 0 8px;
+  color: #111827;
+`

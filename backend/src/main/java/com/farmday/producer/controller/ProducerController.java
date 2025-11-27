@@ -158,10 +158,17 @@ public class ProducerController {
 
         Long producerId = producer.getProducerId();
 
-        // 3) 타입에 따라 ACTIVE/COMPLETED 분기
+        // 3) 타입에 따라 분기
         if ("COMPLETED".equalsIgnoreCase(type)) {
+            // 완료된 판매 내역
             return ResponseEntity.ok(producerService.getCompletedOrders(producerId));
+
+        } else if ("REFUNDS".equalsIgnoreCase(type)) {
+            // ✅ 환불 내역 탭용
+            return ResponseEntity.ok(producerService.getRefundOrders(producerId));
+
         } else {
+            // 기본: ACTIVE (신규/진행 중)
             return ResponseEntity.ok(producerService.getActiveOrders(producerId));
         }
     }
@@ -225,6 +232,46 @@ public class ProducerController {
         producerService.changeDeliveryStatus(producerId, orderItemId, deliveryStatus);
 
         return ResponseEntity.ok().build();
+    }
+
+    // =========================
+    // 송장 정보 수정
+    // =========================
+    @PatchMapping("/orders/{orderItemId}/delivery-info")
+    public ResponseEntity<Void> updateDeliveryInfo(
+            @AuthenticationPrincipal String loginUserId,
+            @PathVariable Long orderItemId,
+            @RequestBody UpdateDeliveryInfoRequest request
+    ) {
+
+        if (loginUserId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        // 1) 로그인 유저 → User 조회
+        User user = userService.findByUserId(loginUserId);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        // 2) User의 userNo로 Producer 조회
+        Producer producer = producerService.findByUserNo(user.getUserNo());
+        if (producer == null) {
+            // 생산자 등록 안 된 계정이면 403
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        Long producerId = producer.getProducerId();
+
+        // 3) 서비스 호출 (권한 체크는 Mapper의 EXISTS 조건으로 한 번 더 보장)
+        producerService.updateDeliveryInfo(
+                producerId,
+                orderItemId,
+                request.getCarrierName(),
+                request.getTrackingNumber()
+        );
+
+        return ResponseEntity.noContent().build();
     }
 
     // =========================
@@ -328,6 +375,16 @@ public class ProducerController {
     static class ProducerDashboardResponse {
         private ProducerDashboardSummaryDto summary;
         private List<LowStockProductDto> lowStockProducts;
+    }
+
+    @Data
+    @AllArgsConstructor
+    static class UpdateDeliveryInfoRequest {
+        private String carrierName;
+        private String trackingNumber;
+
+        public UpdateDeliveryInfoRequest() {
+        }
     }
 
     @Data

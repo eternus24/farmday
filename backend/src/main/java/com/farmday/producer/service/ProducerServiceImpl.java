@@ -113,6 +113,7 @@ public class ProducerServiceImpl implements ProducerService {
                 // 구매자는 수령인 기준으로
                 summary.setBuyerName(item.getReceiverName());
                 summary.setBuyerPhone(item.getReceiverPhone());
+                summary.setBuyerAddr(item.getReceiverAddr());
 
                 // 첫 번째 상품 이름
                 summary.setFirstProductName(item.getProductName());
@@ -207,4 +208,29 @@ public class ProducerServiceImpl implements ProducerService {
             throw new IllegalStateException("해당 상품을 수정할 권한이 없거나 존재하지 않습니다.");
         }
     }
+
+    @Override
+    @Transactional
+    public void updateDeliveryInfo(Long producerId, Long orderItemId, String carrierName, String trackingNumber) {
+
+        if (producerId == null || orderItemId == null) {
+            throw new IllegalArgumentException("producerId와 orderItemId는 필수입니다.");
+        }
+
+        producerMapper.updateDeliveryInfoByOrderItemId(producerId, orderItemId, carrierName, trackingNumber);
+        
+    }
+
+    // 🔥 환불 내역
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProducerOrderSummaryDto> getRefundOrders(Long producerId) {
+        // 1) 환불 아이템들 조회 (B1, R1)
+        List<ProducerOrderItemDto> items =
+                producerMapper.findRefundOrderItemsByProducerId(producerId);
+
+        // 2) 이미 잘 쓰던 toOrderSummary 재사용
+        return toOrderSummary(items);
+    }
+
 }

@@ -1,12 +1,21 @@
 // src/pages/producer/ProducerOrderDetailPage.jsx
 import { useEffect, useState, useContext } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import OrderStatusPanel from '../../components/producer/OrderStatusPanel.jsx'
 import axios from 'axios'
 import { AuthContext } from '../../contexts/AuthContext'
 import styled from 'styled-components'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL
+
+// 택배사 목록 (기타는 모달로 처리)
+const CARRIER_OPTIONS = [
+  'CJ대한통운',
+  '로젠택배',
+  '우체국택배',
+  '한진택배',
+  '롯데택배',
+  '경동택배',
+]
 
 export default function ProducerOrderDetailPage() {
   const { orderId } = useParams()
@@ -17,6 +26,58 @@ export default function ProducerOrderDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+
+  // 택배사 / 송장번호 임시 입력값
+  const [deliveryEdits, setDeliveryEdits] = useState({})
+
+  // 기타 선택 시 사용할 모달 상태
+  const [customCarrierModal, setCustomCarrierModal] = useState({
+    open: false,
+    orderItemId: null,
+    tempValue: '',
+  })
+
+  // 셀렉트에서 택배사 변경 처리 (기타 선택 포함)
+  const handleChangeCarrierSelect = (orderItemId, value) => {
+    if (value === '__OTHER__') {
+      // 기타 선택 → 모달 오픈
+      setCustomCarrierModal({
+        open: true,
+        orderItemId,
+        tempValue: '',
+      })
+    } else {
+      // 일반 택배사 선택
+      handleChangeDeliveryField(orderItemId, 'carrierName', value)
+    }
+  }
+
+  // 모달에서 확인 눌렀을 때
+  const handleConfirmCustomCarrier = () => {
+    const name = customCarrierModal.tempValue.trim()
+    if (!name) {
+      alert('택배사 이름을 입력해 주세요.')
+      return
+    }
+
+    handleChangeDeliveryField(customCarrierModal.orderItemId, 'carrierName', name)
+
+    setCustomCarrierModal({
+      open: false,
+      orderItemId: null,
+      tempValue: '',
+    })
+  }
+
+  // 모달 닫기
+  const handleCloseCustomCarrierModal = () => {
+    setCustomCarrierModal({
+      open: false,
+      orderItemId: null,
+      tempValue: '',
+    })
+  }
+
 
   // =========================
   // 주문 상세 조회
@@ -52,7 +113,6 @@ export default function ProducerOrderDetailPage() {
 
         const data = res.data
 
-        // 응답이 List<ProducerOrderItemDto> 인 경우
         if (Array.isArray(data)) {
           if (data.length === 0) {
             setError('해당 주문의 주문 상품이 없습니다.')
@@ -73,6 +133,7 @@ export default function ProducerOrderDetailPage() {
             deliveryStatus: item.deliveryStatus,
             carrierName: item.carrierName,
             trackingNumber: item.trackingNumber,
+            orderStatus: item.orderStatus,
           }))
 
           const productTotalAmount = items.reduce(
@@ -89,17 +150,16 @@ export default function ProducerOrderDetailPage() {
             status: first.orderStatus,
             buyerName: first.receiverName,
             buyerPhone: first.receiverPhone,
-            address: '',
+            address: first.receiverAddr,
             deliveryMessage: '',
             productTotalAmount,
             deliveryFee: 0,
             orderTotalAmount: productTotalAmount,
-            items,
+            items: items,
           }
 
           setOrder(normalizedOrder)
         } else {
-          // 이미 우리가 기대하는 형태
           setOrder(data)
         }
       } catch (err) {
@@ -116,52 +176,7 @@ export default function ProducerOrderDetailPage() {
   }, [orderId, auth])
 
   // =========================
-  // 주문 상태 변경 (상단 패널)
-  // =========================
-  const handleChangeOrderStatus = async (nextStatus) => {
-    if (!order) return
-
-    const token =
-      auth?.accessToken ||
-      auth?.token ||
-      localStorage.getItem('accessToken')
-
-    if (!token) {
-      alert('로그인이 필요합니다.')
-      return
-    }
-
-    try {
-      setSaving(true)
-
-      await axios.patch(
-        `${API_BASE}/api/producer/orders/${orderId}/status`,
-        { status: nextStatus },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: token.startsWith('Bearer ')
-              ? token
-              : `Bearer ${token}`,
-          },
-        },
-      )
-
-      setOrder((prev) => ({
-        ...prev,
-        status: nextStatus,
-      }))
-      alert('주문 상태가 변경되었습니다.')
-    } catch (err) {
-      console.error('주문 상태 변경 에러:', err)
-      alert('주문 상태를 변경하는 중 오류가 발생했습니다.')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  // =========================
-  // 개별 상품 배송 상태 변경
+  // 배송 상태 변경
   // =========================
   const handleChangeDeliveryStatus = async (orderItemId, nextStatus) => {
     if (!order) return
@@ -197,16 +212,88 @@ export default function ProducerOrderDetailPage() {
 
       setOrder((prev) => ({
         ...prev,
-        items: prev.items.map((item) =>
-          item.orderItemId === orderItemId
-            ? { ...item, deliveryStatus: nextStatus }
-            : item,
-        ),
+        items: prev.items.map((item) => {
+          if (item.orderItemId !== orderItemId) return item
+          const nextOrderStatus =
+            nextStatus === '배송완료' ? 'A2' : item.orderStatus
+          return {
+            ...item,
+            deliveryStatus: nextStatus,
+            orderStatus: nextOrderStatus,
+          }
+        }),
       }))
       alert('배송 상태가 변경되었습니다.')
     } catch (err) {
       console.error('배송 상태 변경 에러:', err)
       alert('배송 상태를 변경하는 중 오류가 발생했습니다.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // =========================
+  // 택배사 / 송장번호 입력 관리 & 저장
+  // =========================
+  const handleChangeDeliveryField = (orderItemId, field, value) => {
+    setDeliveryEdits((prev) => ({
+      ...prev,
+      [orderItemId]: {
+        ...(prev[orderItemId] || {}),
+        [field]: value,
+      },
+    }))
+  }
+
+  const handleSaveDeliveryInfo = async (orderItemId) => {
+    const token =
+      auth?.accessToken ||
+      auth?.token ||
+      localStorage.getItem('accessToken')
+
+    if (!token) {
+      alert('로그인이 필요합니다.')
+      return
+    }
+
+    const edit = deliveryEdits[orderItemId] || {}
+    const carrierName = edit.carrierName
+    const trackingNumber = edit.trackingNumber
+
+    if (!carrierName || !trackingNumber) {
+      alert('택배사와 송장번호를 모두 입력해 주세요.')
+      return
+    }
+
+    try {
+      setSaving(true)
+
+      await axios.patch(
+        `${API_BASE}/api/producer/orders/${orderItemId}/delivery-info`,
+        { carrierName, trackingNumber },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: token.startsWith('Bearer ')
+              ? token
+              : `Bearer ${token}`,
+          },
+        },
+      )
+
+      setOrder((prev) => ({
+        ...prev,
+        items: prev.items.map((item) =>
+          item.orderItemId === orderItemId
+            ? { ...item, carrierName, trackingNumber }
+            : item,
+        ),
+      }))
+
+      alert('배송 정보가 저장되었습니다.')
+    } catch (err) {
+      console.error('배송 정보 저장 에러:', err)
+      alert('배송 정보를 저장하는 중 오류가 발생했습니다.')
     } finally {
       setSaving(false)
     }
@@ -231,33 +318,53 @@ export default function ProducerOrderDetailPage() {
     '출고완료',
     '배송중',
     '배송완료',
-    '반송요청',
+    '환불요청',
   ]
+
+  const getDisplayDeliveryStatus = (item) => {
+    switch (item.orderStatus) {
+      case 'B1':
+        return '환불요청'
+      case 'A2':
+        return '배송완료'
+      default:
+        return item.deliveryStatus || '배송준비'
+    }
+  }
+
+  const isDeliverySelectDisabled = (item) => {
+    if (saving) return true
+    const s = item.orderStatus
+    if (s === 'A2' || s === 'B1' || s === 'R1') return true
+    return false
+  }
+
+  const isInTransit = (item) => getDisplayDeliveryStatus(item) === '배송중'
 
   return (
     <Page>
-      <BackButton
-        type="button"
-        onClick={() => navigate('/producer/orders')}
-        disabled={saving}
-      >
-        ← 주문 목록으로
-      </BackButton>
+      <Inner>
+        <BackButton
+          type="button"
+          onClick={() => navigate('/producer/orders')}
+          disabled={saving}
+        >
+          ← 주문 목록으로
+        </BackButton>
 
-      <HeaderRow>
-        <div>
-          <Title>주문 처리</Title>
-          <MetaRow>
-            <MetaItem>주문번호: {order.orderNo}</MetaItem>
-            <MetaItem>주문일자: {order.orderDate}</MetaItem>
-          </MetaRow>
-        </div>
-      </HeaderRow>
+        <HeaderRow>
+          <div>
+            <Title>주문 처리</Title>
+            <MetaRow>
+              <MetaItem>주문번호: {order.orderNo}</MetaItem>
+              <MetaItem>주문일자: {order.orderDate}</MetaItem>
+            </MetaRow>
+          </div>
+        </HeaderRow>
 
-      <Card>
-        <MainGrid>
-          {/* 왼쪽 정보 영역 */}
-          <InfoColumn>
+        <Card>
+          {/* 위쪽 정보영역 */}
+          <InfoSection>
             <InfoBlock>
               <InfoTitle>구매자 정보</InfoTitle>
               <InfoRow>
@@ -273,9 +380,7 @@ export default function ProducerOrderDetailPage() {
             <InfoBlock>
               <InfoTitle>배송지 정보</InfoTitle>
               <InfoRowFull>
-                <Value>
-                  {order.address || '배송지 정보가 없습니다.'}
-                </Value>
+                <Value>{order.address || '배송지 정보가 없습니다.'}</Value>
               </InfoRowFull>
               {order.deliveryMessage && (
                 <InfoRowFull>
@@ -299,9 +404,11 @@ export default function ProducerOrderDetailPage() {
                 <StrongValue>{totalAmount.toLocaleString()}원</StrongValue>
               </InfoRow>
             </InfoBlock>
-          </InfoColumn>
+          </InfoSection>
 
-          {/* 오른쪽 상품 영역 */}
+          <Divider />
+
+          {/* 아래쪽 주문 상품 */}
           <ItemsColumn>
             <InfoTitle>주문 상품</InfoTitle>
             {items.length === 0 ? (
@@ -311,66 +418,169 @@ export default function ProducerOrderDetailPage() {
                 <thead>
                   <tr>
                     <th className="col-product">상품명</th>
-                    <th>규격</th>
-                    <th>수량</th>
-                    <th>단가</th>
-                    <th>금액</th>
-                    <th>배송 상태</th>
-                    <th>택배사</th>
-                    <th>송장번호</th>
+                    <th className="col-qty">수량</th>
+                    <th className="col-price">단가</th>
+                    <th className="col-amount">금액</th>
+                    <th className="col-status">배송 상태</th>
+                    <th className="col-carrier">택배사</th>
+                    <th className="col-tracking">송장번호</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {items.map((item) => (
-                    <tr key={item.orderItemId}>
-                      <td className="col-product">
-                        <ProductName>{item.productName}</ProductName>
-                      </td>
-                      <td>{item.unitName}</td>
-                      <td>{item.quantity}</td>
-                      <td className="num">
-                        {item.unitPrice
-                          ? item.unitPrice.toLocaleString()
-                          : '-'}
-                        원
-                      </td>
-                      <td className="num">
-                        {item.lineTotalAmount
-                          ? item.lineTotalAmount.toLocaleString()
-                          : '-'}
-                        원
-                      </td>
-                      <td>
-                        <DeliverySelect
-                          value={
-                            item.deliveryStatus ||
-                            DELIVERY_STATUS_OPTIONS[0]
-                          }
-                          onChange={(e) =>
-                            handleChangeDeliveryStatus(
-                              item.orderItemId,
-                              e.target.value,
-                            )
-                          }
-                          disabled={saving}
-                        >
-                          {DELIVERY_STATUS_OPTIONS.map((opt) => (
-                            <option key={opt} value={opt}>
-                              {opt}
-                            </option>
-                          ))}
-                        </DeliverySelect>
-                      </td>
-                      <td>{item.carrierName || '-'}</td>
-                      <td>{item.trackingNumber || '-'}</td>
-                    </tr>
-                  ))}
+                  {items.map((item) => {
+                    const edit = deliveryEdits[item.orderItemId] || {}
+                    const displayStatus = getDisplayDeliveryStatus(item)
+
+                    const carrierValue =
+                      edit.carrierName ?? item.carrierName ?? ''
+                    const trackingValue =
+                      edit.trackingNumber ?? item.trackingNumber ?? ''
+
+                    return (
+                      <tr key={item.orderItemId}>
+                        <td className="col-product">
+                          <ProductName title={item.productName}>
+                            {item.productName}
+                          </ProductName>
+                        </td>
+                        <td className="col-qty center">{item.quantity}</td>
+                        <td className="col-price num">
+                          {item.unitPrice
+                            ? item.unitPrice.toLocaleString()
+                            : '-'}
+                          원
+                        </td>
+                        <td className="col-amount num">
+                          {item.lineTotalAmount
+                            ? item.lineTotalAmount.toLocaleString()
+                            : '-'}
+                          원
+                        </td>
+                        <td className="col-status">
+                          {['배송완료', '환불요청'].includes(displayStatus) ? (
+                            <span>{displayStatus}</span>
+                          ) : (
+                            <DeliveryStatusSelect
+                              value={displayStatus}
+                              onChange={(e) =>
+                                handleChangeDeliveryStatus(
+                                  item.orderItemId,
+                                  e.target.value,
+                                )
+                              }
+                              disabled={isDeliverySelectDisabled(item)}
+                            >
+                              {DELIVERY_STATUS_OPTIONS.map((opt) => (
+                                <option key={opt} value={opt}>
+                                  {opt}
+                                </option>
+                              ))}
+                            </DeliveryStatusSelect>
+                          )}
+                        </td>
+                        <td className="col-carrier">
+                          {isInTransit(item) ? (
+                            <CarrierSelect
+                              value={
+                                carrierValue && !CARRIER_OPTIONS.includes(carrierValue)
+                                  ? carrierValue // 직접 입력한 값
+                                  : (carrierValue || '')
+                              }
+                              onChange={(e) =>
+                                handleChangeCarrierSelect(item.orderItemId, e.target.value)
+                              }
+                            >
+                              <option value="">택배사 선택</option>
+
+                              {/* 직접 입력한 값이면 옵션으로도 보여주기 */}
+                              {carrierValue && !CARRIER_OPTIONS.includes(carrierValue) && (
+                                <option value={carrierValue}>{carrierValue}</option>
+                              )}
+
+                              {CARRIER_OPTIONS.map((opt) => (
+                                <option key={opt} value={opt}>
+                                  {opt}
+                                </option>
+                              ))}
+
+                              {/* 기타 → 모달 띄우기용 */}
+                              <option value="__OTHER__">기타(직접 입력)</option>
+                            </CarrierSelect>
+                          ) : (
+                            item.carrierName || '-'
+                          )}
+                        </td>
+                        <td className="col-tracking">
+                          {isInTransit(item) ? (
+                            <InputWithButton>
+                              <DeliveryInput
+                                type="text"
+                                placeholder="송장번호 입력"
+                                value={trackingValue}
+                                onChange={(e) =>
+                                  handleChangeDeliveryField(
+                                    item.orderItemId,
+                                    'trackingNumber',
+                                    e.target.value,
+                                  )
+                                }
+                              />
+                              <SaveButton
+                                type="button"
+                                onClick={() =>
+                                  handleSaveDeliveryInfo(item.orderItemId)
+                                }
+                                disabled={saving}
+                              >
+                                등록
+                              </SaveButton>
+                            </InputWithButton>
+                          ) : (
+                            item.trackingNumber || '-'
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </ItemsTable>
             )}
           </ItemsColumn>
-        </MainGrid>
-      </Card>
+        </Card>
+
+        {customCarrierModal.open && (
+          <ModalOverlay onClick={handleCloseCustomCarrierModal}>
+            <ModalBox onClick={(e) => e.stopPropagation()}>
+              <ModalTitle>직접 택배사 입력</ModalTitle>
+              <ModalBody>
+                <ModalLabel>택배사 이름</ModalLabel>
+                <ModalInput
+                  type="text"
+                  value={customCarrierModal.tempValue}
+                  onChange={(e) =>
+                    setCustomCarrierModal((prev) => ({
+                      ...prev,
+                      tempValue: e.target.value,
+                    }))
+                  }
+                  placeholder="예: OO물류, 동네택배 등"
+                />
+              </ModalBody>
+              <ModalActions>
+                <ModalButton type="button" onClick={handleCloseCustomCarrierModal}>
+                  취소
+                </ModalButton>
+                <ModalButtonPrimary
+                  type="button"
+                  onClick={handleConfirmCustomCarrier}
+                >
+                  적용
+                </ModalButtonPrimary>
+              </ModalActions>
+            </ModalBox>
+          </ModalOverlay>
+        )}
+      </Inner>
     </Page>
   )
 }
@@ -380,10 +590,18 @@ export default function ProducerOrderDetailPage() {
    ========================= */
 
 const Page = styled.div`
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 32px 16px 40px;
+  width: 100%;
+  display: flex;
+  justify-content: center;     /* 가운데 정렬 */
+  padding: 32px 16px 40px;     /* 좌우 여백은 조금만 */
 `
+
+/** 실제 내용 폭 */
+const Inner = styled.div`
+  width: 100%;
+  max-width: 830px;            /* 👉 여기서 디테일 페이지 폭 조절 (원하면 860~960 사이로 조절해도 됨) */
+`
+
 
 const BackButton = styled.button`
   background: none;
@@ -425,10 +643,6 @@ const MetaRow = styled.div`
 
 const MetaItem = styled.span``
 
-const HeaderStatus = styled.div`
-  min-width: 260px;
-`
-
 const Card = styled.section`
   background: #ffffff;
   border-radius: 18px;
@@ -437,22 +651,17 @@ const Card = styled.section`
   padding: 24px 28px;
 `
 
-const MainGrid = styled.div`
+const InfoSection = styled.div`
   display: grid;
-  grid-template-columns: 280px 1fr;
-  gap: 32px;
-`
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
 
-const InfoColumn = styled.div`
-  border-right: 1px solid #f3f4f6;
-  padding-right: 24px;
-`
-
-const InfoBlock = styled.div`
-  & + & {
-    margin-top: 20px;
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
   }
 `
+
+const InfoBlock = styled.div``
 
 const InfoTitle = styled.h3`
   font-size: 16px;
@@ -497,6 +706,12 @@ const SubValue = styled.span`
   color: #6b7280;
 `
 
+const Divider = styled.hr`
+  margin: 24px 0 16px;
+  border: none;
+  border-top: 1px solid #f3f4f6;
+`
+
 const ItemsColumn = styled.div``
 
 const EmptyText = styled.p`
@@ -510,6 +725,7 @@ const ItemsTable = styled.table`
   border-collapse: collapse;
   font-size: 14px;
   margin-top: 10px;
+  table-layout: fixed;
 
   thead th {
     padding: 10px 8px;
@@ -517,31 +733,147 @@ const ItemsTable = styled.table`
     color: #6b7280;
     font-weight: 600;
     border-bottom: 1px solid #e5e7eb;
+    white-space: nowrap;
   }
 
   tbody td {
     padding: 10px 8px;
     border-bottom: 1px solid #f3f4f6;
     vertical-align: middle;
+    white-space: nowrap;
   }
 
-  td.num {
-    text-align: right;
-  }
-
-  .col-product {
-    width: 180px;
-  }
+  /* 최소 너비만 지정하고 자동으로 맞춰지게 */
+  .col-product { width: 100px; }
+  .col-qty { width: 50px; text-align: center; }
+  .col-price { width: 80px; text-align: right; }
+  .col-amount { width:80px; text-align: right; }
+  .col-status { width: 85px; }
+  .col-carrier { width: 100px; }
+  .col-tracking { width: 130px; }
 `
 
 const ProductName = styled.div`
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `
 
-const DeliverySelect = styled.select`
+const DeliveryStatusSelect = styled.select`
+  width: 100%;
   padding: 4px 8px;
   border-radius: 6px;
   border: 1px solid #d1d5db;
   font-size: 13px;
   background: #ffffff;
+`
+
+const CarrierSelect = styled.select`
+  width: 100%;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  font-size: 13px;
+  background: #ffffff;
+`
+
+const DeliveryInput = styled.input`
+  flex: 1;
+  min-width: 0;
+  padding: 4px 8px;
+  font-size: 13px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+`
+
+const InputWithButton = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+`
+
+const SaveButton = styled.button`
+  flex-shrink: 0;
+  padding: 6px 12px;
+  font-size: 12px;
+  border-radius: 6px;
+  border: none;
+  background: #10b981;
+  color: #ffffff;
+  cursor: pointer;
+  white-space: nowrap; /* 줄바꿈 방지 */
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+`
+
+const ModalOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+`
+
+const ModalBox = styled.div`
+  width: 320px;
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 18px 20px 16px;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.18);
+`
+
+const ModalTitle = styled.h4`
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 10px;
+`
+
+const ModalBody = styled.div`
+  margin-bottom: 14px;
+`
+
+const ModalLabel = styled.div`
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 4px;
+`
+
+const ModalInput = styled.input`
+  width: 100%;
+  padding: 6px 10px;
+  font-size: 13px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+`
+
+const ModalActions = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+`
+
+const ModalButton = styled.button`
+  padding: 6px 12px;
+  font-size: 13px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  cursor: pointer;
+`
+
+const ModalButtonPrimary = styled.button`
+  padding: 6px 14px;
+  font-size: 13px;
+  border-radius: 999px;
+  border: none;
+  background: #10b981;
+  color: #ffffff;
+  cursor: pointer;
 `
