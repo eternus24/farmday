@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.farmday.admin.mapper.AdminDashboardMapper">
+
+    <!-- ===================================================================== -->
+    <!-- 1) 회원 요약                                                           -->
+    <!-- ===================================================================== -->
+
+    <!-- 전체 소비자 수 (일반 USER + 차단 안 된 계정 기준) -->
+    <select id="countConsumers" resultType="long">
+        <![CDATA[
+        SELECT COUNT(*)
+        FROM USERS
+        WHERE role = 'USER'
+          AND NVL(is_blocked, 'N') = 'N'
+        ]]>
+    </select>
+
+    <!-- 승인된 생산자 수 -->
+    <select id="countApprovedProducers" resultType="long">
+        <![CDATA[
+        SELECT COUNT(*)
+        FROM PRODUCER
+        WHERE is_verified = 'Y'
+        ]]>
+    </select>
+
+    <!-- 승인 대기 생산자 수 -->
+    <select id="countPendingProducers" resultType="long">
+        <![CDATA[
+        SELECT COUNT(*)
+        FROM PRODUCER
+        WHERE is_verified = 'N'
+        ]]>
+    </select>
+
+    <!-- ===================================================================== -->
+    <!-- 2) 실시간 통계                                                         -->
+    <!-- ===================================================================== -->
+    <!-- 2-1) 최근 등록 상품 TOP 5 (상품 조회수 대신 등록일 기준) -->
+    <select id="selectTopViewedProducts"
+            parameterType="int"
+            resultType="com.farmday.admin.dto.AdminDashboardResponse$ProductRecent">
+      <![CDATA[
+      SELECT *
+      FROM (
+          SELECT
+              p.product_id    AS productId,
+              p.name          AS productName,
+              pr.biz_name     AS producerName,
+              p.created_date  AS createdDate
+          FROM PRODUCT p
+          JOIN PRODUCER pr
+            ON p.producer_id = pr.producer_id
+          WHERE NVL(p.status, 'ON') <> 'DELETED'
+          ORDER BY p.created_date DESC, p.product_id DESC
+      )
+      WHERE ROWNUM <= #{limit}
+      ]]>
+    </select>
+
+    <!-- 2-3) 최근 주문 상품 TOP 5 (가장 최근 주문된 순서) -->
+    <select id="selectRecentOrderedProducts"
+            parameterType="int"
+            resultType="com.farmday.admin.dto.AdminDashboardResponse$ProductTrade">
+      <![CDATA[
+      SELECT *
+      FROM (
+          SELECT
+              p.product_id              AS productId,
+              p.name                    AS productName,
+              pr.biz_name               AS producerName,
+              COUNT(*)                  AS orderCount,
+              SUM(oi.line_total_amount) AS totalAmount,
+              MAX(o.order_date)         AS lastOrderDate
+          FROM ORDERS_ITEM oi
+          JOIN ORDERS o
+            ON oi.order_id = o.order_id
+          JOIN PRODUCT p
+            ON oi.product_id = p.product_id
+          JOIN PRODUCER pr
+            ON p.producer_id = pr.producer_id
+          -- 주문 상태 필터 넣고 싶으면 여기서 추가 (예: 결제완료 이상만)
+          GROUP BY p.product_id, p.name, pr.biz_name
+          ORDER BY MAX(o.order_date) DESC
+      )
+      WHERE ROWNUM <= #{limit}
+      ]]>
+    </select>
+
+    <!-- 거래량 TOP N (최근 30일 기준, 필요하면 기간 조정) -->
+    <select id="selectTopTradedProducts"
+            parameterType="int"
+            resultType="com.farmday.admin.dto.AdminDashboardResponse$ProductTrade">
+        <![CDATA[
+        SELECT *
+        FROM (
+            SELECT
+                p.product_id                    AS productId,
+                MIN(oi.product_name)           AS productName,
+                MIN(pr.biz_name)               AS producerName,
+                COUNT(DISTINCT o.order_id)     AS orderCount,
+                SUM(oi.line_total_amount)      AS totalAmount
+            FROM ORDERS_ITEM oi
+            JOIN PRODUCT p
+              ON oi.product_id = p.product_id
+            JOIN PRODUCER pr
+              ON p.producer_id = pr.producer_id
+            JOIN ORDERS o
+              ON oi.order_id = o.order_id
+            WHERE TRUNC(o.created_date) >= TRUNC(SYSDATE) - 30
+              AND oi.order_status IN ('A1','A2','E1','E2','E3')
+            GROUP BY p.product_id
+            ORDER BY SUM(oi.line_total_amount) DESC
+        )
+        WHERE ROWNUM <= #{limit}
+        ]]>
+    </select>
+
+    <!-- ===================================================================== -->
+    <!-- 3) 생산자 랭킹                                                         -->
+    <!-- ===================================================================== -->
+
+    <!-- 생산자 랭킹 - 일일 (오늘 기준) -->
+    <select id="selectProducerRankingDaily"
+            parameterType="int"
+            resultType="com.farmday.admin.dto.AdminDashboardResponse$ProducerRank">
+        <![CDATA[
+        SELECT *
+        FROM (
+            SELECT
+                pr.producer_id                 AS producerId,
+                pr.biz_name                    AS producerName,
+                COUNT(DISTINCT o.order_id)     AS orderCount,
+                SUM(oi.line_total_amount)      AS totalAmount
+            FROM ORDERS_ITEM oi
+            JOIN PRODUCT p
+              ON oi.product_id = p.product_id
+            JOIN PRODUCER pr
+              ON p.producer_id = pr.producer_id
+            JOIN ORDERS o
+              ON oi.order_id = o.order_id
+            WHERE TRUNC(o.created_date) = TRUNC(SYSDATE)
+              AND oi.order_status IN ('A1','A2','E1','E2','E3')
+            GROUP BY pr.producer_id, pr.biz_name
+            ORDER BY SUM(oi.line_total_amount) DESC
+        )
+        WHERE ROWNUM <= #{limit}
+        ]]>
+    </select>
+
+    <!-- 생산자 랭킹 - 월별 (이번 달 기준) -->
+    <select id="selectProducerRankingMonthly"
+            parameterType="int"
+            resultType="com.farmday.admin.dto.AdminDashboardResponse$ProducerRank">
+        <![CDATA[
+        SELECT *
+        FROM (
+            SELECT
+                pr.producer_id                 AS producerId,
+                pr.biz_name                    AS producerName,
+                COUNT(DISTINCT o.order_id)     AS orderCount,
+                SUM(oi.line_total_amount)      AS totalAmount
+            FROM ORDERS_ITEM oi
+            JOIN PRODUCT p
+              ON oi.product_id = p.product_id
+            JOIN PRODUCER pr
+              ON p.producer_id = pr.producer_id
+            JOIN ORDERS o
+              ON oi.order_id = o.order_id
+            WHERE TRUNC(o.created_date, 'MM') = TRUNC(SYSDATE, 'MM')
+              AND oi.order_status IN ('A1','A2','E1','E2','E3')
+            GROUP BY pr.producer_id, pr.biz_name
+            ORDER BY SUM(oi.line_total_amount) DESC
+        )
+        WHERE ROWNUM <= #{limit}
+        ]]>
+    </select>
+
+    <!-- ===================================================================== -->
+    <!-- 4) 주문 통계                                                           -->
+    <!-- ===================================================================== -->
+
+    <!-- 오늘 주문 수 (결제완료/구매완료 계열만 카운트) -->
+    <select id="countTodayOrders" resultType="long">
+        <![CDATA[
+        SELECT COUNT(DISTINCT o.order_id)
+        FROM ORDERS o
+        JOIN ORDERS_ITEM oi
+          ON oi.order_id = o.order_id
+        WHERE TRUNC(o.created_date) = TRUNC(SYSDATE)
+          AND oi.order_status IN ('A1','A2','E1','E2','E3')
+        ]]>
+    </select>
+
+    <!-- 최근 N일 일별 주문 수 -->
+    <select id="selectDailyOrderStats"
+            parameterType="int"
+            resultType="com.farmday.admin.dto.AdminDashboardResponse$OrderPoint">
+        <![CDATA[
+        SELECT
+            TO_CHAR(TRUNC(o.created_date), 'MM/DD') AS dateLabel,
+            COUNT(DISTINCT o.order_id)             AS orderCount
+        FROM ORDERS o
+        JOIN ORDERS_ITEM oi
+          ON oi.order_id = o.order_id
+        WHERE TRUNC(o.created_date) BETWEEN
+              TRUNC(SYSDATE) - (#{days} - 1)
+          AND TRUNC(SYSDATE)
+          AND oi.order_status IN ('A1','A2','E1','E2','E3')
+        GROUP BY TRUNC(o.created_date)
+        ORDER BY TRUNC(o.created_date)
+        ]]>
+    </select>
+
+    <!-- 최근 N개월 월별 주문 수 -->
+    <select id="selectMonthlyOrderStats"
+            parameterType="int"
+            resultType="com.farmday.admin.dto.AdminDashboardResponse$OrderPoint">
+        <![CDATA[
+        SELECT
+            TO_CHAR(TRUNC(o.created_date, 'MM'), 'YYYY-MM') AS dateLabel,
+            COUNT(DISTINCT o.order_id)                     AS orderCount
+        FROM ORDERS o
+        JOIN ORDERS_ITEM oi
+          ON oi.order_id = o.order_id
+        WHERE TRUNC(o.created_date, 'MM') >=
+              ADD_MONTHS(TRUNC(SYSDATE, 'MM'), - (#{months} - 1))
+          AND TRUNC(o.created_date, 'MM') <= TRUNC(SYSDATE, 'MM')
+          AND oi.order_status IN ('A1','A2','E1','E2','E3')
+        GROUP BY TRUNC(o.created_date, 'MM')
+        ORDER BY TRUNC(o.created_date, 'MM')
+        ]]>
+    </select>
+
+</mapper>

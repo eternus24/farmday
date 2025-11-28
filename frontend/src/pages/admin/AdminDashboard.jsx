@@ -14,7 +14,6 @@ import {
 } from "chart.js";
 import { Doughnut, Line, Bar } from "react-chartjs-2";
 
-// Chart.js 등록
 ChartJS.register(
   ArcElement,
   Tooltip,
@@ -166,26 +165,47 @@ export default function AdminDashboard() {
         <Card>
           <CardHeader>
             <h3>실시간 통계</h3>
-            <span className="sub">상품 조회수 / 거래량 TOP</span>
+            <span className="sub">최근 등록 · 주문 · 거래량 TOP</span>
           </CardHeader>
           <RealtimeWrap>
+            {/* 1) 최근 등록 상품 TOP5 (기존 topViewedProducts 사용) */}
             <RealtimeSection>
-              <h4>조회수 TOP 5</h4>
+              <h4>최근 등록 상품 TOP 5</h4>
               <ul>
-                {realtimeStats.topViewedProducts.map((p, idx) => (
+                {realtimeStats.topViewedProducts?.map((p, idx) => (
                   <li key={p.productId}>
                     <span className="rank">{idx + 1}</span>
                     <div className="info">
                       <span className="name">{p.productName}</span>
                       <span className="sub">
-                        {p.producerName} · {p.viewCount.toLocaleString()}회
+                        {p.producerName} ·{" "}
+                        {p.createdDate ? p.createdDate.slice(0, 10) : "-"}
                       </span>
                     </div>
                   </li>
-                ))}
+                )) || null}
               </ul>
             </RealtimeSection>
 
+            {/* 2) 최근 주문 상품 TOP5 */}
+            <RealtimeSection>
+              <h4>최근 주문 상품 TOP 5</h4>
+              <ul>
+                {realtimeStats.recentOrderedProducts?.map((p, idx) => (
+                  <li key={`${p.productId}-${idx}`}>
+                    <span className="rank">{idx + 1}</span>
+                    <div className="info">
+                      <span className="name">{p.productName}</span>
+                      <span className="sub">
+                        {p.producerName} · {p.orderCount?.toLocaleString() ?? 0}건
+                      </span>
+                    </div>
+                  </li>
+                )) || null}
+              </ul>
+            </RealtimeSection>
+
+            {/* 3) 거래량 TOP5 (기존 그대로) */}
             <RealtimeSection>
               <h4>거래량 TOP 5</h4>
               <ul>
