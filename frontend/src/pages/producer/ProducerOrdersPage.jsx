@@ -92,8 +92,15 @@ export default function ProducerOrdersPage() {
     fetchAll()
   }, [auth])
 
-  const handleGoDetail = (orderId) => {
-    navigate(`/producer/orders/${orderId}`)
+  // ✅ 여기서 두 번째 인자로 "환불 탭에서 왔는지" 플래그 받기
+  const handleGoDetail = (orderId, fromRefund = false) => {
+    if (fromRefund) {
+      navigate(`/producer/orders/${orderId}`, {
+        state: { fromRefund: true },
+      })
+    } else {
+      navigate(`/producer/orders/${orderId}`)
+    }
   }
 
   return (
@@ -137,7 +144,10 @@ export default function ProducerOrdersPage() {
       {!loading && !error && tab === 'ACTIVE' && (
         <SectionCard>
           <SectionTitle>신규/진행중 주문 리스트</SectionTitle>
-          <OrderTable orders={activeOrders} onClickDetail={handleGoDetail} />
+          <OrderTable
+            orders={activeOrders}
+            onClickDetail={(id) => handleGoDetail(id, false)} // 일반 모드
+          />
         </SectionCard>
       )}
 
@@ -146,7 +156,7 @@ export default function ProducerOrdersPage() {
           <SectionTitle>완료된 판매 내역</SectionTitle>
           <OrderTable
             orders={completedOrders}
-            onClickDetail={handleGoDetail}
+            onClickDetail={(id) => handleGoDetail(id, false)} // 일반 모드
           />
         </SectionCard>
       )}
@@ -154,7 +164,11 @@ export default function ProducerOrdersPage() {
       {!loading && !error && tab === 'REFUNDS' && (
         <SectionCard>
           <SectionTitle>환불 내역</SectionTitle>
-          <OrderTable orders={refundOrders} onClickDetail={handleGoDetail} />
+          <OrderTable
+            orders={refundOrders}
+            // ✅ 환불 탭에서 들어갈 때만 fromRefund = true
+            onClickDetail={(id) => handleGoDetail(id, true)}
+          />
         </SectionCard>
       )}
 

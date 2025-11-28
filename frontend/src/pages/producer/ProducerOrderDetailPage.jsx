@@ -1,6 +1,6 @@
 // src/pages/producer/ProducerOrderDetailPage.jsx
 import { useEffect, useState, useContext } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import axios from 'axios'
 import { AuthContext } from '../../contexts/AuthContext'
 import styled from 'styled-components'
@@ -20,7 +20,11 @@ const CARRIER_OPTIONS = [
 export default function ProducerOrderDetailPage() {
   const { orderId } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const { auth } = useContext(AuthContext)
+
+  // 환불내역 탭에서 들어온 경우 플래그
+  const isRefundMode = location.state?.fromRefund === true
 
   const [order, setOrder] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -78,7 +82,6 @@ export default function ProducerOrderDetailPage() {
     })
   }
 
-
   // =========================
   // 주문 상세 조회
   // =========================
@@ -133,7 +136,7 @@ export default function ProducerOrderDetailPage() {
             deliveryStatus: item.deliveryStatus,
             carrierName: item.carrierName,
             trackingNumber: item.trackingNumber,
-            orderStatus: item.orderStatus,
+            orderStatus: item.orderStatus, // A1/A2/B1/R1/E2 등
           }))
 
           const productTotalAmount = items.reduce(
@@ -176,7 +179,7 @@ export default function ProducerOrderDetailPage() {
   }, [orderId, auth])
 
   // =========================
-  // 배송 상태 변경
+  // 배송 상태 변경 (일반 주문 모드에서만 사용)
   // =========================
   const handleChangeDeliveryStatus = async (orderItemId, nextStatus) => {
     if (!order) return
@@ -227,6 +230,58 @@ export default function ProducerOrderDetailPage() {
     } catch (err) {
       console.error('배송 상태 변경 에러:', err)
       alert('배송 상태를 변경하는 중 오류가 발생했습니다.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // =========================
+  // 환불 상태 변경 (환불내역 모드에서 사용)
+  // =========================
+  const handleChangeRefundStatus = async (orderItemId, nextStatusCode) => {
+    const token =
+      auth?.accessToken ||
+      auth?.token ||
+      localStorage.getItem('accessToken')
+
+    if (!token) {
+      alert('로그인이 필요합니다.')
+      return
+    }
+
+    try {
+      setSaving(true)
+
+      // ⚠️ 백엔드 엔드포인트/파라미터 이름은 실제 구현에 맞게 조정 필요
+      await axios.patch(
+        `${API_BASE}/api/producer/orders/${orderItemId}/refund-status`,
+        null,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: token.startsWith('Bearer ')
+              ? token
+              : `Bearer ${token}`,
+          },
+          params: {
+            refundStatus: nextStatusCode, // 'R1' 또는 'E2'
+          },
+        },
+      )
+
+      setOrder((prev) => ({
+        ...prev,
+        items: prev.items.map((item) =>
+          item.orderItemId === orderItemId
+            ? { ...item, orderStatus: nextStatusCode }
+            : item,
+        ),
+      }))
+
+      alert('환불 상태가 변경되었습니다.')
+    } catch (err) {
+      console.error('환불 상태 변경 에러:', err)
+      alert('환불 상태를 변경하는 중 오류가 발생했습니다.')
     } finally {
       setSaving(false)
     }
@@ -319,23 +374,39 @@ export default function ProducerOrderDetailPage() {
     '배송중',
     '배송완료',
     '환불요청',
+    '배송취소', // 필요 없다면 제거해도 됨
   ]
 
   const getDisplayDeliveryStatus = (item) => {
-    switch (item.orderStatus) {
-      case 'B1':
-        return '환불요청'
-      case 'A2':
-        return '배송완료'
-      default:
-        return item.deliveryStatus || '배송준비'
+    // 주문 상태 코드에 따른 강제 표시 우선
+    if (item.orderStatus === 'B1') {
+      return '환불요청'
     }
+    if (item.orderStatus === 'R1') {
+      return '환불완료'
+    }
+    if (item.orderStatus === 'E2') {
+      return '환불불가'
+    }
+    if (item.orderStatus === 'A2') {
+      return '배송완료'
+    }
+
+    // DB에 저장된 배송상태가 있으면 그대로 사용
+    if (item.deliveryStatus && item.deliveryStatus.trim() !== '') {
+      return item.deliveryStatus.trim()
+    }
+
+    // 아무것도 없을 때만 기본값
+    return '배송준비'
   }
+
+  const isTemplateStatus = (status) => DELIVERY_STATUS_OPTIONS.includes(status)
 
   const isDeliverySelectDisabled = (item) => {
     if (saving) return true
     const s = item.orderStatus
-    if (s === 'A2' || s === 'B1' || s === 'R1') return true
+    if (s === 'A2' || s === 'B1' || s === 'R1' || s === 'E2') return true
     return false
   }
 
@@ -358,6 +429,7 @@ export default function ProducerOrderDetailPage() {
             <MetaRow>
               <MetaItem>주문번호: {order.orderNo}</MetaItem>
               <MetaItem>주문일자: {order.orderDate}</MetaItem>
+              {isRefundMode && <MetaItem>모드: 환불 내역</MetaItem>}
             </MetaRow>
           </div>
         </HeaderRow>
@@ -422,8 +494,15 @@ export default function ProducerOrderDetailPage() {
                     <th className="col-price">단가</th>
                     <th className="col-amount">금액</th>
                     <th className="col-status">배송 상태</th>
-                    <th className="col-carrier">택배사</th>
-                    <th className="col-tracking">송장번호</th>
+
+                    {isRefundMode ? (
+                      <th className="col-refund">환불 처리</th>
+                    ) : (
+                      <>
+                        <th className="col-carrier">택배사</th>
+                        <th className="col-tracking">송장번호</th>
+                      </>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -435,6 +514,10 @@ export default function ProducerOrderDetailPage() {
                       edit.carrierName ?? item.carrierName ?? ''
                     const trackingValue =
                       edit.trackingNumber ?? item.trackingNumber ?? ''
+                    
+                      // 🔽 여기 추가
+                    const isRefundRequested = item.orderStatus === 'B1' || displayStatus === '환불요청'
+                    const isRefundCompleted = item.orderStatus === 'R1'
 
                     return (
                       <tr key={item.orderItemId}>
@@ -456,89 +539,142 @@ export default function ProducerOrderDetailPage() {
                             : '-'}
                           원
                         </td>
+
+                        {/* 배송 상태 */}
                         <td className="col-status">
-                          {['배송완료', '환불요청'].includes(displayStatus) ? (
+                          {isRefundMode ? (
+                            // 환불내역 모드: 항상 텍스트만
                             <span>{displayStatus}</span>
                           ) : (
-                            <DeliveryStatusSelect
-                              value={displayStatus}
-                              onChange={(e) =>
-                                handleChangeDeliveryStatus(
-                                  item.orderItemId,
-                                  e.target.value,
-                                )
-                              }
-                              disabled={isDeliverySelectDisabled(item)}
-                            >
-                              {DELIVERY_STATUS_OPTIONS.map((opt) => (
-                                <option key={opt} value={opt}>
-                                  {opt}
-                                </option>
-                              ))}
-                            </DeliveryStatusSelect>
-                          )}
-                        </td>
-                        <td className="col-carrier">
-                          {isInTransit(item) ? (
-                            <CarrierSelect
-                              value={
-                                carrierValue && !CARRIER_OPTIONS.includes(carrierValue)
-                                  ? carrierValue // 직접 입력한 값
-                                  : (carrierValue || '')
-                              }
-                              onChange={(e) =>
-                                handleChangeCarrierSelect(item.orderItemId, e.target.value)
-                              }
-                            >
-                              <option value="">택배사 선택</option>
-
-                              {/* 직접 입력한 값이면 옵션으로도 보여주기 */}
-                              {carrierValue && !CARRIER_OPTIONS.includes(carrierValue) && (
-                                <option value={carrierValue}>{carrierValue}</option>
-                              )}
-
-                              {CARRIER_OPTIONS.map((opt) => (
-                                <option key={opt} value={opt}>
-                                  {opt}
-                                </option>
-                              ))}
-
-                              {/* 기타 → 모달 띄우기용 */}
-                              <option value="__OTHER__">기타(직접 입력)</option>
-                            </CarrierSelect>
-                          ) : (
-                            item.carrierName || '-'
-                          )}
-                        </td>
-                        <td className="col-tracking">
-                          {isInTransit(item) ? (
-                            <InputWithButton>
-                              <DeliveryInput
-                                type="text"
-                                placeholder="송장번호 입력"
-                                value={trackingValue}
+                            // 일반 주문 모드
+                            (['배송완료', '환불요청', '환불완료', '환불불가'].includes(
+                              displayStatus,
+                            ) ||
+                              !isTemplateStatus(displayStatus)) ? (
+                              <span>{displayStatus}</span>
+                            ) : (
+                              <DeliveryStatusSelect
+                                value={displayStatus}
                                 onChange={(e) =>
-                                  handleChangeDeliveryField(
+                                  handleChangeDeliveryStatus(
                                     item.orderItemId,
-                                    'trackingNumber',
                                     e.target.value,
                                   )
                                 }
-                              />
-                              <SaveButton
-                                type="button"
-                                onClick={() =>
-                                  handleSaveDeliveryInfo(item.orderItemId)
-                                }
-                                disabled={saving}
+                                disabled={isDeliverySelectDisabled(item)}
                               >
-                                등록
-                              </SaveButton>
-                            </InputWithButton>
-                          ) : (
-                            item.trackingNumber || '-'
+                                {DELIVERY_STATUS_OPTIONS.map((opt) => (
+                                  <option key={opt} value={opt}>
+                                    {opt}
+                                  </option>
+                                ))}
+                              </DeliveryStatusSelect>
+                            )
                           )}
                         </td>
+
+                        {/* 환불 모드 / 일반 모드에 따라 다른 칼럼 */}
+                        {isRefundMode ? (
+                          // 🔁 환불 내역 모드일 때 환불 처리 영역
+                          <td className="col-refund">
+                            {isRefundRequested ? (
+                              // 1) 환불요청일 때만 버튼 두 개 활성
+                              <RefundActionGroup>
+                                <RefundButton
+                                  type="button"
+                                  disabled={saving}
+                                  onClick={() =>
+                                    handleChangeRefundStatus(item.orderItemId, 'R1')
+                                  }
+                                >
+                                  환불완료
+                                </RefundButton>
+                                <RefundButton
+                                  type="button"
+                                  $danger
+                                  disabled={saving}
+                                  onClick={() =>
+                                    handleChangeRefundStatus(item.orderItemId, 'E2')
+                                  }
+                                >
+                                  환불불가
+                                </RefundButton>
+                              </RefundActionGroup>
+                            ) : isRefundCompleted ? (
+                              // 2) 환불완료인 상품은 확인용으로 "환불완료" 버튼만 표시 (비활성)
+                              <RefundActionGroup>
+                                <RefundButton type="button" disabled>
+                                  환불완료
+                                </RefundButton>
+                              </RefundActionGroup>
+                            ) : null}
+                            {/* 3) 그 외 상태는 아무것도 표시하지 않음 */}
+                          </td>
+                        ) : (
+                          <>
+                            {/* 택배사 / 송장번호 기존 코드 그대로 */}
+                            <td className="col-carrier">
+                              {isInTransit(item) ? (
+                                <CarrierSelect
+                                  value={
+                                    carrierValue && !CARRIER_OPTIONS.includes(carrierValue)
+                                      ? carrierValue
+                                      : carrierValue || ''
+                                  }
+                                  onChange={(e) =>
+                                    handleChangeCarrierSelect(
+                                      item.orderItemId,
+                                      e.target.value,
+                                    )
+                                  }
+                                >
+                                  <option value="">택배사 선택</option>
+                                  {carrierValue &&
+                                    !CARRIER_OPTIONS.includes(carrierValue) && (
+                                      <option value={carrierValue}>{carrierValue}</option>
+                                    )}
+                                  {CARRIER_OPTIONS.map((opt) => (
+                                    <option key={opt} value={opt}>
+                                      {opt}
+                                    </option>
+                                  ))}
+                                  <option value="__OTHER__">기타(직접 입력)</option>
+                                </CarrierSelect>
+                              ) : (
+                                item.carrierName || '-'
+                              )}
+                            </td>
+                            <td className="col-tracking">
+                              {isInTransit(item) ? (
+                                <InputWithButton>
+                                  <DeliveryInput
+                                    type="text"
+                                    placeholder="송장번호 입력"
+                                    value={trackingValue}
+                                    onChange={(e) =>
+                                      handleChangeDeliveryField(
+                                        item.orderItemId,
+                                        'trackingNumber',
+                                        e.target.value,
+                                      )
+                                    }
+                                  />
+                                  <SaveButton
+                                    type="button"
+                                    onClick={() =>
+                                      handleSaveDeliveryInfo(item.orderItemId)
+                                    }
+                                    disabled={saving}
+                                  >
+                                    등록
+                                  </SaveButton>
+                                </InputWithButton>
+                              ) : (
+                                item.trackingNumber || '-'
+                              )}
+                            </td>
+                          </>
+                        )}
                       </tr>
                     )
                   })}
@@ -548,7 +684,7 @@ export default function ProducerOrderDetailPage() {
           </ItemsColumn>
         </Card>
 
-        {customCarrierModal.open && (
+        {customCarrierModal.open && !isRefundMode && (
           <ModalOverlay onClick={handleCloseCustomCarrierModal}>
             <ModalBox onClick={(e) => e.stopPropagation()}>
               <ModalTitle>직접 택배사 입력</ModalTitle>
@@ -592,16 +728,15 @@ export default function ProducerOrderDetailPage() {
 const Page = styled.div`
   width: 100%;
   display: flex;
-  justify-content: center;     /* 가운데 정렬 */
-  padding: 32px 16px 40px;     /* 좌우 여백은 조금만 */
+  justify-content: center;
+  padding: 32px 16px 40px;
 `
 
 /** 실제 내용 폭 */
 const Inner = styled.div`
   width: 100%;
-  max-width: 830px;            /* 👉 여기서 디테일 페이지 폭 조절 (원하면 860~960 사이로 조절해도 됨) */
+  max-width: 830px;
 `
-
 
 const BackButton = styled.button`
   background: none;
@@ -743,14 +878,14 @@ const ItemsTable = styled.table`
     white-space: nowrap;
   }
 
-  /* 최소 너비만 지정하고 자동으로 맞춰지게 */
   .col-product { width: 100px; }
   .col-qty { width: 50px; text-align: center; }
   .col-price { width: 80px; text-align: right; }
-  .col-amount { width:80px; text-align: right; }
-  .col-status { width: 85px; }
-  .col-carrier { width: 100px; }
+  .col-amount { width: 80px; text-align: right; }
+  .col-status { width: 90px; }
+  .col-carrier { width: 110px; }
   .col-tracking { width: 130px; }
+  .col-refund { width: 150px; }
 `
 
 const ProductName = styled.div`
@@ -803,7 +938,27 @@ const SaveButton = styled.button`
   background: #10b981;
   color: #ffffff;
   cursor: pointer;
-  white-space: nowrap; /* 줄바꿈 방지 */
+  white-space: nowrap;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+`
+
+const RefundActionGroup = styled.div`
+  display: flex;
+  gap: 6px;
+`
+
+const RefundButton = styled.button`
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 999px;
+  border: 1px solid ${({ $danger }) => ($danger ? '#fecaca' : '#bbf7d0')};
+  background: ${({ $danger }) => ($danger ? '#fee2e2' : '#dcfce7')};
+  color: ${({ $danger }) => ($danger ? '#b91c1c' : '#047857')};
+  cursor: pointer;
 
   &:disabled {
     opacity: 0.6;
