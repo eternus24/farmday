@@ -456,4 +456,13 @@ public class ProducerServiceImpl implements ProducerService {
 
     }
 
+    @Override
+    public void updateRefundStatus(Long producerId, Long orderItemId, String refundStatus) {
+        // 1) 아이템 상태 변경 (R1 / E2)
+        producerMapper.updateRefundStatusByOrderItemId(producerId, orderItemId, refundStatus);
+
+        // 2) 해당 주문 헤더의 updated_date 갱신
+        producerMapper.touchOrderUpdatedDateByItemId(producerId, orderItemId);
+    }
+
 }

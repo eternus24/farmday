@@ -170,4 +170,11 @@ public interface ProducerMapper {
 
     int updateProducerFullProfile(Map<String, Object> params);
 
+    int updateRefundStatusByOrderItemId(@Param("producerId") Long producerId,
+                                        @Param("orderItemId") Long orderItemId,
+                                        @Param("refundStatus") String refundStatus);
+
+    int touchOrderUpdatedDateByItemId(@Param("producerId") Long producerId,
+                                      @Param("orderItemId") Long orderItemId);
+
 }

@@ -323,6 +323,33 @@ public class ProducerController {
         return ResponseEntity.noContent().build();
     }
 
+    // 환불 상태 변경 (R1: 환불완료, E2: 환불불가)
+    @PatchMapping("/orders/{orderItemId}/refund-status")
+    public ResponseEntity<Void> updateRefundStatus(
+            @AuthenticationPrincipal String loginUserId,
+            @PathVariable Long orderItemId,
+            @RequestParam("refundStatus") String refundStatus
+    ) {
+        // 1) 로그인 유저 확인
+        User user = userService.findByUserId(loginUserId);
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        // 2) 생산자 확인
+        Producer producer = producerService.findByUserNo(user.getUserNo());
+        if (producer == null) {
+            return ResponseEntity.status(403).build();
+        }
+
+        Long producerId = producer.getProducerId();
+
+        // 3) 서비스 호출 (본인 상품인지까지 안에서 체크)
+        producerService.updateRefundStatus(producerId, orderItemId, refundStatus);
+
+        return ResponseEntity.ok().build();
+    }
+
     // =========================
     // 매출 현황 - 이번달
     // =========================

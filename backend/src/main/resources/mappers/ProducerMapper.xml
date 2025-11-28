@@ -297,6 +297,36 @@
         ]]>
     </update>
 
+    <!-- 환불 상태 코드 변경 (ORDERS_ITEM.order_status) -->
+    <update id="updateRefundStatusByOrderItemId">
+      <![CDATA[
+      UPDATE ORDERS_ITEM oi
+        SET oi.order_status = #{refundStatus}
+      WHERE oi.order_item_id = #{orderItemId}
+        AND oi.product_id IN (
+              SELECT p.product_id
+                FROM PRODUCT p
+                WHERE p.producer_id = #{producerId}
+            )
+      ]]>
+    </update>
+
+    <!-- ORDERS.updated_date 갱신 (이 생산자의 해당 주문만) -->
+    <update id="touchOrderUpdatedDateByItemId">
+      <![CDATA[
+      UPDATE ORDERS o
+        SET o.updated_date = SYSDATE
+      WHERE o.order_id = (
+              SELECT oi.order_id
+                FROM ORDERS_ITEM oi
+                JOIN PRODUCT p
+                  ON oi.product_id = p.product_id
+                WHERE oi.order_item_id = #{orderItemId}
+                  AND p.producer_id = #{producerId}
+            )
+      ]]>
+    </update>
+
     <!-- 신규/진행 주문 (A1: 결제완료+배송중, B1: 환불요청중) -->
     <select id="findActiveOrderItemsByProducerId"
             parameterType="long"

@@ -75,4 +75,6 @@ public interface ProducerService {
 
     void updateProducerProfile(Long producerId, ProducerProfileUpdateRequest request);
 
+    void updateRefundStatus(Long producerId, Long orderItemId, String refundStatus);
+
 }
