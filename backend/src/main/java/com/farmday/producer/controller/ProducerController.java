@@ -8,6 +8,8 @@ import com.farmday.producer.dto.ProducerMonthlySalesResponseDto;
 import com.farmday.producer.dto.ProducerOrderItemDto;
 import com.farmday.producer.dto.ProducerOrderSummaryDto;
 import com.farmday.producer.dto.ProducerProductItemDto;
+import com.farmday.producer.dto.ProducerProductSaveRequest;
+import com.farmday.producer.dto.ProducerProfileUpdateRequest;
 import com.farmday.producer.dto.SalesItemDto;
 import com.farmday.producer.dto.TopProductDto;
 import com.farmday.producer.service.ProducerService;
@@ -18,12 +20,18 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequiredArgsConstructor
@@ -37,39 +45,30 @@ public class ProducerController {
     public ResponseEntity<ProducerMeResponse> getMyProducerInfo(
             @AuthenticationPrincipal String loginUserId
     ) {
-
-        System.out.println(">>> /api/producer/me loginUserId = " + loginUserId);
-
         String userId = loginUserId;
         User user = userService.findByUserId(userId);
 
         if (user == null) {
-            System.out.println(">>> USER NOT FOUND for userId = " + userId);
             return ResponseEntity.notFound().build();
         }
-
-        System.out.println(">>> FOUND USER: userNo = " + user.getUserNo());
 
         Producer producer = producerService.findByUserNo(user.getUserNo());
         if (producer == null) {
-            System.out.println(">>> PRODUCER NOT FOUND for userNo = " + user.getUserNo());
             return ResponseEntity.notFound().build();
         }
 
-        System.out.println(">>> FOUND PRODUCER: producerId = " + producer.getProducerId());
-
-        // DTO 생성
         ProducerMeResponse dto = new ProducerMeResponse(
-                // 🔹 유저 정보
+                // 유저
                 user.getUserId(),
                 user.getName(),
                 user.getEmail(),
                 user.getPhone(),
                 user.getPhoto(),
+                user.getAddr(),
 
-                // 🔹 기존 Producer 정보 그대로 유지
+                // 생산자
                 producer.getProducerId(),
-                producer.getBizName(),   // farmName
+                producer.getBizName(),
                 producer.getBizNo(),
                 producer.getBizAddr(),
                 producer.getBizPhone(),
@@ -78,12 +77,41 @@ public class ProducerController {
                 producer.getBankAccountNo(),
                 producer.getAccountHolder(),
                 producer.getIsVerified(),
-
-                // 스토어 여부는 당장은 false
                 false
         );
 
         return ResponseEntity.ok(dto);
+    }
+
+    // =========================
+    // 생산자 프로필 수정
+    // (이름/연락처/주소/이메일 + 사업장/계좌)
+    // =========================
+    @PatchMapping("/me")
+    public ResponseEntity<Void> updateMyProducerProfile(
+            @AuthenticationPrincipal String loginUserId,
+            @RequestBody ProducerProfileUpdateRequest request
+    ) {
+        if (loginUserId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        User user = userService.findByUserId(loginUserId);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Producer producer = producerService.findByUserNo(user.getUserNo());
+        if (producer == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        Long producerId = producer.getProducerId();
+
+        // 서비스에서 USERS + PRODUCER 동시에 UPDATE
+        producerService.updateProducerProfile(producerId, request);
+
+        return ResponseEntity.noContent().build();
     }
 
     @Data
@@ -91,23 +119,44 @@ public class ProducerController {
         private String photoUrl;
     }
 
-    @PatchMapping("/me/photo")
-    public ResponseEntity<Void> updateMyProfilePhoto(
-            @AuthenticationPrincipal String loginUserId,
-            @RequestBody UpdatePhotoRequest request
-    ) {
+    @PatchMapping( value = "/me/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Void> updateMyProfilePhoto( @AuthenticationPrincipal String loginUserId, @RequestParam("file") MultipartFile file) {
         System.out.println(">>> /api/producer/me/photo loginUserId = " + loginUserId);
+        System.out.println("file name = " + file.getOriginalFilename());
 
-        // 1) 로그인 유저 조회
         User user = userService.findByUserId(loginUserId);
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        // 2) USERS.photo 업데이트
-        userService.updateUserPhoto(user.getUserNo(), request.getPhotoUrl());
+        try {
+            // 🔹 1. 저장할 기본 경로 (D 드라이브 고정)
+            String uploadDir = "D:/farmday/uploads/profile";   // ★ 여기만 바꿔!
 
-        return ResponseEntity.ok().build();
+            Path uploadPath = Paths.get(uploadDir);
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+
+            String originalFilename = file.getOriginalFilename();
+            String ext = StringUtils.getFilenameExtension(originalFilename);
+            if (ext == null) {
+                ext = "jpg";
+            }
+
+            String filename = "user-" + user.getUserNo() + "." + ext;
+            Path filePath = uploadPath.resolve(filename);
+
+            file.transferTo(filePath.toFile());
+
+            String photoUrl = "/uploads/profile/" + filename;
+            userService.updateUserPhoto(user.getUserNo(), photoUrl);
+
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @GetMapping("/dashboard")
@@ -317,13 +366,13 @@ public class ProducerController {
         // 1) 로그인 유저 검증
         User user = userService.findByUserId(loginUserId);
         if (user == null) {
-            return ResponseEntity.status(401).build();   // 또는 body("유저 없음")
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
         // 2) 생산자 검증
         Producer producer = producerService.findByUserNo(user.getUserNo());
         if (producer == null) {
-            return ResponseEntity.status(403).build();   // 또는 body("생산자 권한이 없습니다.")
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
         Long producerId = producer.getProducerId();
@@ -336,7 +385,7 @@ public class ProducerController {
     }
 
     // =========================
-    // 상품관리 - 옵션 수정
+    // 상품관리 - 옵션 수정 (규격/가격/재고)
     // =========================
     @PatchMapping("/products/details/{detailId}")
     public ResponseEntity<Void> updateProductDetail(
@@ -347,18 +396,18 @@ public class ProducerController {
         // 1) 로그인 유저 검증
         User user = userService.findByUserId(loginUserId);
         if (user == null) {
-            return ResponseEntity.status(401).build();
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
         // 2) 생산자 검증
         Producer producer = producerService.findByUserNo(user.getUserNo());
         if (producer == null) {
-            return ResponseEntity.status(403).build();
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
         Long producerId = producer.getProducerId();
 
-        // 3) 서비스 호출 (권한 + 존재 여부는 서비스/쿼리에서 체크)
+        // 3) 서비스 호출
         producerService.updateMyProductDetail(
                 producerId,
                 detailId,
@@ -368,6 +417,94 @@ public class ProducerController {
         );
 
         return ResponseEntity.ok().build();
+    }
+
+    // =========================
+    // 상품관리 - 상품 등록 (모달)
+    // =========================
+    @PostMapping(value = "/products")
+    public ResponseEntity<ProducerProductItemDto> createProduct(
+            @AuthenticationPrincipal String loginUserId,
+            @ModelAttribute ProducerProductSaveRequest request,   // name, baseCategoryId, grade, unitName, price, stockQty, summary, detailDesc ...
+            @RequestPart(name = "mainImageFile", required = false) MultipartFile mainImageFile,
+            @RequestPart(name = "descriptionImageFiles", required = false) List<MultipartFile> descriptionImageFiles
+    ) {
+        // 1) 로그인 유저 검증
+        User user = userService.findByUserId(loginUserId);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        // 2) 생산자 검증
+        Producer producer = producerService.findByUserNo(user.getUserNo());
+        if (producer == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        Long producerId = producer.getProducerId();
+
+        // 3) 상품 생성 (대표 + 상세 이미지들까지 같이)
+        ProducerProductItemDto dto =
+                producerService.createProduct(producerId, request, mainImageFile, descriptionImageFiles);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(dto);
+    }
+
+    // =========================
+    // 상품관리 - 상품 정보 수정 (모달)
+    // =========================
+    @PatchMapping(value = "/products/{productId}")
+    public ResponseEntity<ProducerProductItemDto> updateProduct(
+            @AuthenticationPrincipal String loginUserId,
+            @PathVariable Long productId,
+            @ModelAttribute ProducerProductSaveRequest request,
+            @RequestPart(name = "mainImageFile", required = false) MultipartFile mainImageFile,
+            @RequestPart(name = "descriptionImageFiles", required = false) List<MultipartFile> descriptionImageFiles
+    ) {
+        // 1) 로그인 유저 검증
+        User user = userService.findByUserId(loginUserId);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        // 2) 생산자 검증
+        Producer producer = producerService.findByUserNo(user.getUserNo());
+        if (producer == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        Long producerId = producer.getProducerId();
+
+        // 3) 상품 수정
+        ProducerProductItemDto dto =
+                producerService.updateProduct(producerId, productId, request, mainImageFile, descriptionImageFiles);
+
+        return ResponseEntity.ok(dto);
+    }
+
+    // =========================
+    // 상품관리 - 상품 삭제
+    // =========================
+    @DeleteMapping("/products/{productId}")
+    public ResponseEntity<Void> deleteProduct(
+            @AuthenticationPrincipal String loginUserId,
+            @PathVariable Long productId
+    ) {
+        User user = userService.findByUserId(loginUserId);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Producer producer = producerService.findByUserNo(user.getUserNo());
+        if (producer == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        Long producerId = producer.getProducerId();
+
+        producerService.deleteProduct(producerId, productId);
+
+        return ResponseEntity.noContent().build();
     }
 
     @Data
@@ -397,6 +534,7 @@ public class ProducerController {
         private String email;
         private String phone;
         private String photoUrl;
+        private String addr;
 
         // 🔹 생산자 정보
         private Long producerId;

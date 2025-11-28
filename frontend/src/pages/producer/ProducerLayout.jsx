@@ -44,13 +44,10 @@ export default function ProducerLayout() {
         })
 
         const data = res.data
-        setProducer({
-          name: data.name,
-          farmName: data.farmName,
-          email: data.email,
-          phone: data.phone,
-          photoUrl: data.photoUrl || '',
-        })
+        console.log('producer /me 응답:', data)
+
+        // 🔥 전체 DTO 그대로 저장 (필드 안 자름)
+        setProducer(data)
         setStoreExists(!!data.hasStore)
       } catch (err) {
         console.error('생산자 정보 조회 에러:', err)
@@ -80,6 +77,7 @@ export default function ProducerLayout() {
       <div className="producer-layout">
         {/* 좌측 프로필 + 메뉴 */}
         <aside className="producer-sidebar">
+          {/* 🔹 ProducerProfileCard는 계속 producer.name, producer.farmName 등 써도 됨 */}
           <ProducerProfileCard producer={producer} />
 
           <nav className="producer-nav">
@@ -116,6 +114,7 @@ export default function ProducerLayout() {
           </header>
 
           <section className="producer-main">
+            {/* 🔥 이제 Outlet 쪽에서 producer.addr, producer.bankName 등 전부 사용 가능 */}
             <Outlet context={{ producer, storeExists }} />
           </section>
         </main>

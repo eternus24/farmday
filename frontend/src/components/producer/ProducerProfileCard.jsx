@@ -32,7 +32,7 @@ export default function ProducerProfileCard({ producer }) {
       );
 
       if (!response.ok) {
-        alert("프로필 변경 실패 ㅠㅠ");
+        alert("프로필 변경에 실패했습니다.");
         return;
       }
 
@@ -48,10 +48,6 @@ export default function ProducerProfileCard({ producer }) {
   input.click();
 };
 
-  const handleProfileEdit = () => {
-    alert('프로필 수정은 프로필 관리 탭에서 처리합니다.')
-  }
-
   return (
     <div className="producer-profile-card">
       {/* ✅ 프로필 사진 전체를 클릭 가능 영역으로 */}
@@ -66,19 +62,8 @@ export default function ProducerProfileCard({ producer }) {
           }
         }}
       >
-        <img
-          src={producer.photoUrl || '/default-profile.png'}
-          alt="프로필"
-          className="profile-photo"
-        />
-        {/* ⛔ 기존 버튼은 삭제 */}
-        {/* <button
-          type="button"
-          className="photo-edit-btn"
-          onClick={handlePhotoChange}
-        >
-          사진 변경
-        </button> */}
+        <img src={producer.photoUrl ? `${import.meta.env.VITE_API_BASE_URL}${producer.photoUrl}?t=${Date.now()}` : '/default-profile.png'}
+          alt="프로필" className="profile-photo"/>
       </div>
 
       <div className="profile-info">

@@ -1,19 +1,73 @@
 // src/pages/producer/ProducerProductsPage.jsx
 import { useEffect, useState, useContext } from 'react'
 import axios from 'axios'
+import styled from 'styled-components'
 import { AuthContext } from '../../contexts/AuthContext'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL
 
-/**
- * 상품 관리 탭
- * - GET  /api/producer/products
- *   → ProducerProductItemDto[]
- *   → { productId, detailId, productName, unitName, price, stockQty, status, updatedDate }
- *
- * - PATCH /api/producer/products/details/{detailId}
- *   body: { unitName, price, stockQty }
- */
+// ★ 임시 대분류 카테고리(나중에 API로 교체)
+const CATEGORY_TOP_LEVEL = [
+  { id: 1, name: '과일·견과' },
+  { id: 2, name: '채소·버섯' },
+  { id: 3, name: '곡물·콩류' },
+  { id: 4, name: '수산물·해산물' },
+  { id: 5, name: '축산물·육류' },
+]
+
+// ★ 임시 등급/규격 선택 버튼
+const GRADE_OPTIONS = ['특', '상', '중', '하']
+const UNIT_OPTIONS = ['1kg', '2kg', '3kg', '5kg', '1봉', '1박스']
+
+const KEYWORD_GROUPS = [
+  {
+    group: "신선도",
+    items: [
+      { code: "FRESH_TODAY", label: "당일 수확" },
+      { code: "SEASONAL", label: "제철 수확" },
+    ]
+  },
+  {
+    group: "재배 방식",
+    items: [
+      { code: "DIRECT_FROM_FARM", label: "산지 직송" },
+      { code: "NO_PESTICIDE", label: "무농약/저농약" },
+      { code: "ORGANIC", label: "유기농" },
+    ]
+  },
+  {
+    group: "맛 / 식감",
+    items: [
+      { code: "SWEET_TASTE", label: "고당도" },
+      { code: "JUICY", label: "과즙가득" },
+      { code: "CRUNCHY", label: "아삭한 식감" },
+      { code: "SOFT_TEXTURE", label: "부드러운 식감" },
+    ]
+  },
+  {
+    group: "용도",
+    items: [
+      { code: "FOR_SALAD", label: "샐러드용" },
+      { code: "FOR_SNACK", label: "간식용" },
+      { code: "FOR_COOK", label: "요리·조리용" },
+    ]
+  },
+  {
+    group: "보관",
+    items: [
+      { code: "STORAGE_COOL", label: "냉장 보관" },
+      { code: "STORAGE_ROOM", label: "실온 보관" },
+    ]
+  },
+  {
+    group: "선물",
+    items: [
+      { code: "GOOD_FOR_GIFT", label: "선물용 포장" },
+    ]
+  }
+];
+
+// modalMode: 'create' | 'edit'
 export default function ProducerProductsPage() {
   const { auth } = useContext(AuthContext)
 
@@ -21,8 +75,34 @@ export default function ProducerProductsPage() {
   const [loading, setLoading] = useState(true)
   const [savingId, setSavingId] = useState(null)
   const [error, setError] = useState('')
-  const [selectedProduct, setSelectedProduct] = useState(null) // 재고 히스토리용 (나중에 API 연동)
 
+  // ===== 모달 관련 상태 =====
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [modalMode, setModalMode] = useState('create')
+  const [editingTarget, setEditingTarget] = useState(null) // 수정 대상 row
+  const [selectedKeywords, setSelectedKeywords] = useState([]);
+
+  const [formProduct, setFormProduct] = useState({
+    productName: '',
+    baseCategoryId: null,
+    grade: '',
+    unitName: '',
+    price: '',
+    stockQty: '',
+    summary: '', // ★ 짧은 설명
+    detailDesc: '', // ★ 상세 설명
+    origin: '',          // ★ 원산지
+    harvestDate: '',     // ★ 수확일
+    expireDate: '',      // ★ 유통기한
+  })
+  const [imageFile, setImageFile] = useState(null) // 대표 이미지
+  const [detailImages, setDetailImages] = useState([]) // ★ 상세 이미지들
+  const [imagePreview, setImagePreview] = useState('')
+  const [isUnitCustom, setIsUnitCustom] = useState(false)
+
+  // =========================
+  // 상품 목록 조회
+  // =========================
   useEffect(() => {
     const token =
       auth?.accessToken ||
@@ -49,12 +129,10 @@ export default function ProducerProductsPage() {
           headers,
         })
 
-        // 백엔드: ProducerProductItemDto[]
         const list = Array.isArray(res.data) ? res.data : []
         setProducts(
           list.map((p) => ({
             ...p,
-            // 안전하게 숫자 보장
             price: p.price ?? 0,
             stockQty: p.stockQty ?? 0,
           })),
@@ -70,6 +148,9 @@ export default function ProducerProductsPage() {
     fetchProducts()
   }, [auth])
 
+  // =========================
+  // 테이블 인라인 수정(가격/재고/규격)
+  // =========================
   const handleChangeField = (detailId, field, value) => {
     setProducts((prev) =>
       prev.map((p) =>
@@ -110,7 +191,6 @@ export default function ProducerProductsPage() {
       )
 
       alert('상품 정보가 저장되었습니다.')
-      // updatedDate만 갱신해도 되고, 필요하면 다시 목록 조회해도 됨
       setProducts((prev) =>
         prev.map((p) =>
           p.detailId === product.detailId
@@ -126,24 +206,296 @@ export default function ProducerProductsPage() {
     }
   }
 
-  const handleClickStockHistory = (product) => {
-    // TODO: 재고 히스토리 조회 API 연동 예정
-    setSelectedProduct(product)
+  // =========================
+  // 상품 삭제
+  // =========================
+  const handleDeleteProduct = async (product) => {
+    if (!window.confirm('정말 이 상품을 삭제하시겠습니까?')) return
+
+    const token =
+      auth?.accessToken ||
+      auth?.token ||
+      localStorage.getItem('accessToken')
+
+    if (!token) {
+      alert('로그인이 필요합니다.')
+      return
+    }
+
+    try {
+      await axios.delete(`${API_BASE}/api/producer/products/${product.productId}`, {
+        headers: {
+          Authorization: token.startsWith('Bearer ')
+            ? token
+            : `Bearer ${token}`,
+        },
+      })
+
+      setProducts((prev) =>
+        prev.filter((p) => p.productId !== product.productId),
+      )
+      alert('상품이 삭제되었습니다.')
+    } catch (err) {
+      console.error('상품 삭제 에러:', err)
+      alert('상품 삭제 중 오류가 발생했습니다.')
+    }
   }
 
+  // =========================
+  // 모달 공통 핸들러
+  // =========================
+  const resetForm = () => {
+    setFormProduct({
+      productName: '',
+      baseCategoryId: null,
+      grade: '',
+      unitName: '',
+      price: '',
+      stockQty: '',
+      summary: '',
+      detailDesc: '',
+    })
+    setImageFile(null)
+    setDetailImages([])
+    setImagePreview('')
+    setIsUnitCustom(false)
+  }
+
+  const openCreateModal = () => {
+    setModalMode('create')
+    setEditingTarget(null)
+    resetForm()
+    setIsModalOpen(true)
+  }
+
+  const openEditModal = async (product) => {
+    setModalMode('edit')
+    setEditingTarget(product)
+    resetForm()
+
+    const baseCategoryId = product.baseCategoryId || null
+    const grade = product.grade || ''
+    const unitName = product.unitName || ''
+    const price = product.price ?? ''
+    const stockQty = product.stockQty ?? ''
+
+    setFormProduct({
+      productName: product.productName || '',
+      baseCategoryId,
+      grade,
+      unitName,
+      price,
+      stockQty,
+      summary: product.summary || '',
+      detailDesc: product.detailDesc || '',
+    })
+
+    if (unitName && !UNIT_OPTIONS.includes(unitName)) {
+      setIsUnitCustom(true)
+    }
+
+    // 이미지 미리보기 (대표 이미지)
+    if (product.mainImage) {
+      setImagePreview(product.mainImage)
+    }
+
+    setIsModalOpen(true)
+  }
+
+  const closeModal = () => {
+    setIsModalOpen(false)
+  }
+
+  const handleFormChange = (field, value) => {
+    setFormProduct((prev) => ({
+      ...prev,
+      [field]: value,
+    }))
+  }
+
+  // 대표 이미지 변경
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) {
+      setImageFile(null)
+      if (modalMode === 'create') {
+        setImagePreview('')
+      }
+      return
+    }
+    setImageFile(file)
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      setImagePreview(ev.target?.result || '')
+    }
+    reader.readAsDataURL(file)
+  }
+
+  // 상세 이미지 여러 장
+  const handleDetailImagesChange = (e) => {
+    const files = Array.from(e.target.files || [])
+    setDetailImages(files)
+  }
+
+  // =========================
+  // 모달 저장 (등록 / 수정)
+  // =========================
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+
+    const token =
+      auth?.accessToken ||
+      auth?.token ||
+      localStorage.getItem('accessToken')
+
+    if (!token) {
+      alert('로그인이 필요합니다.')
+      return
+    }
+
+    if (!formProduct.productName) {
+      alert('상품명을 입력해 주세요.')
+      return
+    }
+    if (!formProduct.baseCategoryId) {
+      alert('카테고리를 선택해 주세요.')
+      return
+    }
+    if (!formProduct.unitName) {
+      alert('규격(단위)을 입력해 주세요.')
+      return
+    }
+    if (!formProduct.price) {
+      alert('가격을 입력해 주세요.')
+      return
+    }
+
+    try {
+      const formData = new FormData()
+      formData.append('productName', formProduct.productName)
+      formData.append('baseCategoryId', formProduct.baseCategoryId)
+      formData.append('grade', formProduct.grade || '')
+      formData.append('unitName', formProduct.unitName)
+      formData.append('price', formProduct.price)
+      formData.append('stockQty', formProduct.stockQty || 0)
+      formData.append('summary', formProduct.summary || '')
+      formData.append('detailDesc', formProduct.detailDesc || '')
+      formData.append('origin', formProduct.origin || '')
+      formData.append('harvestDate', formProduct.harvestDate || '')
+      formData.append('expireDate', formProduct.expireDate || '')
+
+      if (imageFile) {
+        formData.append('mainImageFile', imageFile)
+      }
+
+      if (detailImages && detailImages.length > 0) {
+        detailImages.forEach((file) => {
+          formData.append('descriptionImageFiles', file)
+        })
+      }
+
+      if (modalMode === 'create') {
+        // ====================
+        // 신규 등록
+        // ====================
+        const res = await axios.post(
+          `${API_BASE}/api/producer/products`,
+          formData,
+          {
+            headers: {
+              Authorization: token.startsWith('Bearer ')
+                ? token
+                : `Bearer ${token}`,
+            },
+          },
+        )
+
+        alert('상품이 등록되었습니다.')
+
+        if (res.data) {
+          setProducts((prev) => [...prev, res.data])
+        }
+      } else if (modalMode === 'edit' && editingTarget) {
+        // ====================
+        // 정보 수정
+        // ====================
+        const res = await axios.patch(
+          `${API_BASE}/api/producer/products/${editingTarget.productId}`,
+          formData,
+          {
+            headers: {
+              Authorization: token.startsWith('Bearer ')
+                ? token
+                : `Bearer ${token}`,
+            },
+          },
+        )
+
+        alert('상품 정보가 수정되었습니다.')
+
+        if (res.data) {
+          const updated = res.data
+          setProducts((prev) =>
+            prev.map((p) =>
+              p.productId === updated.productId
+                ? {
+                    ...p,
+                    productName: updated.productName,
+                    unitName: updated.unitName,
+                    price: updated.price,
+                    stockQty: updated.stockQty,
+                    status: updated.status ?? p.status,
+                  }
+                : p,
+            ),
+          )
+        } else {
+          setProducts((prev) =>
+            prev.map((p) =>
+              p.productId === editingTarget.productId
+                ? {
+                    ...p,
+                    productName: formProduct.productName,
+                    unitName: formProduct.unitName,
+                    price: Number(formProduct.price),
+                    stockQty: Number(formProduct.stockQty || 0),
+                  }
+                : p,
+            ),
+          )
+        }
+      }
+
+      closeModal()
+    } catch (err) {
+      console.error('상품 등록/수정 에러:', err)
+      alert('상품을 저장하는 중 오류가 발생했습니다.')
+    }
+  }
+
+  // =========================
+  // 렌더링
+  // =========================
   if (loading) return <div>상품 정보를 불러오는 중입니다...</div>
   if (error) return <div style={{ color: 'red' }}>{error}</div>
 
   return (
-    <div className="producer-products-page">
-      <h2>상품 관리</h2>
+    <PageWrapper>
+      <PageHeader>
+        <h2>상품 관리</h2>
+        <HeaderRight>
+          <PrimaryButton type="button" onClick={openCreateModal}>
+            + 상품 등록
+          </PrimaryButton>
+        </HeaderRight>
+      </PageHeader>
 
-      <section>
-        <h3>내 상품 목록</h3>
+      <SectionCard>
+        <SectionTitle>내 상품 목록</SectionTitle>
         {products.length === 0 ? (
-          <p>등록된 상품이 없습니다.</p>
+          <EmptyText>등록된 상품이 없습니다.</EmptyText>
         ) : (
-          <table className="products-table">
+          <StyledTable>
             <thead>
               <tr>
                 <th>상품명</th>
@@ -151,8 +503,9 @@ export default function ProducerProductsPage() {
                 <th>가격</th>
                 <th>재고</th>
                 <th>상태</th>
-                <th>재고 히스토리</th>
+                <th>정보 수정</th>
                 <th>저장</th>
+                <th>삭제</th>
               </tr>
             </thead>
             <tbody>
@@ -160,7 +513,7 @@ export default function ProducerProductsPage() {
                 <tr key={p.detailId}>
                   <td>{p.productName}</td>
                   <td>
-                    <input
+                    <TableInput
                       type="text"
                       value={p.unitName || ''}
                       onChange={(e) =>
@@ -169,7 +522,7 @@ export default function ProducerProductsPage() {
                     />
                   </td>
                   <td>
-                    <input
+                    <TableInput
                       type="number"
                       min={0}
                       value={p.price}
@@ -183,7 +536,7 @@ export default function ProducerProductsPage() {
                     />
                   </td>
                   <td>
-                    <input
+                    <StockInput
                       type="number"
                       min={0}
                       value={p.stockQty}
@@ -196,58 +549,741 @@ export default function ProducerProductsPage() {
                       }
                     />
                   </td>
-                  <td>{p.status}</td>
                   <td>
-                    <button
-                      type="button"
-                      onClick={() => handleClickStockHistory(p)}
-                    >
-                      보기
-                    </button>
+                    <StatusCircle status={p.status}>{p.status}</StatusCircle>
                   </td>
                   <td>
-                    <button
+                    <EditCircleButton type="button" onClick={() => openEditModal(p)}>
+                      수정
+                    </EditCircleButton>
+                  </td>
+                  <td>
+                    <SaveCircleButton
                       type="button"
                       disabled={savingId === p.detailId}
                       onClick={() => handleSaveProduct(p)}
                     >
-                      {savingId === p.detailId ? '저장 중...' : '저장'}
-                    </button>
+                      저장
+                    </SaveCircleButton>
+                  </td>
+                  <td>
+                    <DeleteCircleButton
+                      type="button"
+                      onClick={() => handleDeleteProduct(p)}
+                    >
+                      삭제
+                    </DeleteCircleButton>
                   </td>
                 </tr>
               ))}
             </tbody>
-          </table>
+          </StyledTable>
         )}
-      </section>
+      </SectionCard>
 
-      <section>
-        <h3>재고 현황 (간단 요약)</h3>
+      <SectionCard>
+        <SectionTitle>재고 현황 (간단 요약)</SectionTitle>
         {products.length === 0 ? (
-          <p>표시할 상품이 없습니다.</p>
+          <EmptyText>표시할 상품이 없습니다.</EmptyText>
         ) : (
-          <ul>
+          <StockList>
             {products.map((p) => (
               <li key={p.detailId}>
-                {p.productName} ({p.unitName}) : {p.stockQty}개
+                <span className="name">{p.productName}</span>
+                <span className="unit">({p.unitName})</span>
+                <span className="qty">{p.stockQty}개</span>
               </li>
             ))}
-          </ul>
+          </StockList>
         )}
-      </section>
+      </SectionCard>
 
-      {selectedProduct && (
-        <section className="stock-history-section">
-          <h3>
-            {selectedProduct.productName} ({selectedProduct.unitName}) 재고
-            히스토리
-          </h3>
-          <p>재고 변동 기록을 여기에 표시할 예정입니다. (추후 API 연동)</p>
-          <button type="button" onClick={() => setSelectedProduct(null)}>
-            닫기
-          </button>
-        </section>
+      {/* ====================== */}
+      {/*  등록 / 수정 공용 모달   */}
+      {/* ====================== */}
+      {isModalOpen && (
+        <ModalOverlay>
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>
+                {modalMode === 'create' ? '상품 등록' : '상품 정보 수정'}
+              </ModalTitle>
+              <ModalCloseButton type="button" onClick={closeModal}>
+                ×
+              </ModalCloseButton>
+            </ModalHeader>
+
+            <ModalBody>
+              <form onSubmit={handleSubmit}>
+                {/* 상품명 */}
+                <FormRow>
+                  <FormLabel>상품명</FormLabel>
+                  <TextInput
+                    type="text"
+                    value={formProduct.productName}
+                    onChange={(e) =>
+                      handleFormChange('productName', e.target.value)
+                    }
+                    placeholder="예) 꿀사과 3kg 박스"
+                  />
+                </FormRow>
+
+                {/* 짧은 소개 */}
+                <FormRow>
+                  <FormLabel>짧은 소개</FormLabel>
+                  <TextInput
+                    type="text"
+                    value={formProduct.summary}
+                    onChange={(e) =>
+                      handleFormChange('summary', e.target.value)
+                    }
+                    placeholder="예) 아삭하고 달콤한 꿀사과입니다."
+                  />
+                </FormRow>
+
+                {/* 대표 이미지 */}
+                <FormRow>
+                  <FormLabel>대표 이미지</FormLabel>
+                  <TextInput
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                  />
+                  {modalMode === 'edit' && !imagePreview && (
+                    <HelperText>
+                      * 파일을 선택하지 않으면 기존 이미지를 유지합니다.
+                    </HelperText>
+                  )}
+                  {imagePreview && (
+                    <ImagePreviewWrapper>
+                      <img src={imagePreview} alt="미리보기" />
+                    </ImagePreviewWrapper>
+                  )}
+                </FormRow>
+
+                {/* 상세 이미지 여러 장 */}
+                <FormRow>
+                  <FormLabel>상세 이미지 (최대 5장)</FormLabel>
+                  <TextInput
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleDetailImagesChange}
+                  />
+                  <HelperText>
+                    * 상품 상세 설명에 들어갈 이미지들을 선택해 주세요.
+                  </HelperText>
+                </FormRow>
+
+                {/* 대분류 카테고리 버튼 */}
+                <FormRow>
+                  <FormLabel>카테고리 (대분류)</FormLabel>
+                  <ButtonGroup>
+                    {CATEGORY_TOP_LEVEL.map((c) => (
+                      <OptionButton
+                        key={c.id}
+                        type="button"
+                        $active={formProduct.baseCategoryId === c.id}
+                        onClick={() => handleFormChange('baseCategoryId', c.id)}
+                      >
+                        {c.name}
+                      </OptionButton>
+                    ))}
+                  </ButtonGroup>
+                </FormRow>
+
+                {/* 등급 선택 */}
+                <FormRow>
+                  <FormLabel>등급</FormLabel>
+                  <ButtonGroup>
+                    {GRADE_OPTIONS.map((g) => (
+                      <OptionButton
+                        key={g}
+                        type="button"
+                        $active={formProduct.grade === g}
+                        onClick={() => handleFormChange('grade', g)}
+                      >
+                        {g}
+                      </OptionButton>
+                    ))}
+                  </ButtonGroup>
+                </FormRow>
+
+                {/* 규격(단위) 선택 + 기타 */}
+                <FormRow>
+                  <FormLabel>규격(단위)</FormLabel>
+                  <ButtonGroup>
+                    {UNIT_OPTIONS.map((u) => (
+                      <OptionButton
+                        key={u}
+                        type="button"
+                        $active={!isUnitCustom && formProduct.unitName === u}
+                        onClick={() => {
+                          setIsUnitCustom(false)
+                          handleFormChange('unitName', u)
+                        }}
+                      >
+                        {u}
+                      </OptionButton>
+                    ))}
+
+                    {/* 기타 버튼 */}
+                    <OptionButton
+                      type="button"
+                      $active={isUnitCustom}
+                      onClick={() => {
+                        setIsUnitCustom(true)
+                        handleFormChange('unitName', '')
+                      }}
+                    >
+                      기타
+                    </OptionButton>
+                  </ButtonGroup>
+
+                  {isUnitCustom && (
+                    <TextInput
+                      style={{ marginTop: '8px' }}
+                      type="text"
+                      value={formProduct.unitName}
+                      onChange={(e) =>
+                        handleFormChange('unitName', e.target.value)
+                      }
+                      placeholder="예) 300g, 10개입, 1망 등"
+                    />
+                  )}
+                </FormRow>
+
+                {/* 가격 / 재고 */}
+                <FormRow>
+                  <FormLabel>가격</FormLabel>
+                  <TextInput
+                    type="number"
+                    min={0}
+                    value={formProduct.price}
+                    onChange={(e) =>
+                      handleFormChange('price', e.target.value)
+                    }
+                    placeholder="예) 25000"
+                  />
+                </FormRow>
+
+                <FormRow>
+                  <FormLabel>재고</FormLabel>
+                  <TextInput
+                    type="number"
+                    min={0}
+                    value={formProduct.stockQty}
+                    onChange={(e) =>
+                      handleFormChange('stockQty', e.target.value)
+                    }
+                    placeholder="예) 100"
+                  />
+                </FormRow>
+
+                {/* 설명 키워드 선택 */}
+                <FormRow>
+                  <FormLabel>설명 키워드 선택</FormLabel>
+
+                  {KEYWORD_GROUPS.map((group) => (
+                    <div key={group.group} style={{ marginBottom: "10px" }}>
+                      
+                      {/* 그룹명 */}
+                      <div style={{
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        color: "#4a4a4a",
+                        marginBottom: "6px"
+                      }}>
+                        {group.group}
+                      </div>
+
+                      <ButtonGroup>
+                        {group.items.map((k) => (
+                          <OptionButton
+                            key={k.code}
+                            type="button"
+                            $active={selectedKeywords.includes(k.code)}
+                            onClick={() => {
+                              setSelectedKeywords(prev =>
+                                prev.includes(k.code)
+                                  ? prev.filter(c => c !== k.code)
+                                  : [...prev, k.code]
+                              );
+                            }}
+                          >
+                            {k.label}
+                          </OptionButton>
+                        ))}
+                      </ButtonGroup>
+                    </div>
+                  ))}
+
+                  <SecondaryButton
+                    type="button"
+                    style={{ marginTop: "6px" }}
+                    onClick={() => {
+                      const templates = {
+                        // 신선도·수확
+                        FRESH_TODAY:   "수확 당일 선별·포장해 신선함을 그대로 담았습니다.",
+                        SEASONAL:      "가장 맛이 오르는 제철에 수확해 풍부한 풍미를 느끼실 수 있어요.",
+
+                        // 재배 방식·안심
+                        DIRECT_FROM_FARM: "산지에서 바로 보내 유통 단계를 줄이고 신선함과 가성비를 모두 챙겼습니다.",
+                        NO_PESTICIDE:     "화학 농약 사용을 최소화한 재배 방식으로 안심하고 드실 수 있습니다.",
+                        ORGANIC:          "인증 기준에 맞춰 재배한 유기농 농산물로 건강한 한 끼를 준비해 보세요.",
+
+                        // 맛·식감
+                        SWEET_TASTE:  "높은 당도로 한입 베어 물면 달콤한 맛이 입안 가득 퍼집니다.",
+                        JUICY:        "속이 촉촉하고 과즙이 풍부해 한 입마다 상큼한 즐거움을 전해줍니다.",
+                        CRUNCHY:      "아삭한 식감이 살아 있어 샐러드나 생식용으로도 잘 어울립니다.",
+                        SOFT_TEXTURE: "부드러운 식감으로 아이들이나 어르신도 부담 없이 드실 수 있습니다.",
+
+                        // 용도
+                        FOR_SALAD:    "씻어서 바로 사용하기 좋아 샐러드·피클 등 간편 요리에 제격입니다.",
+                        FOR_SNACK:    "손에 집기 좋은 크기로 간식이나 도시락, 간단한 주전부리로 활용하기 좋습니다.",
+                        FOR_COOK:     "구이, 볶음, 찜 등 다양한 조리에 두루 잘 어울리는 만능 재료입니다.",
+
+                        // 보관·선물
+                        STORAGE_COOL: "구매 후 냉장 보관하시면 더 오래 신선하게 즐기실 수 있습니다.",
+                        STORAGE_ROOM: "서늘하고 직사광선을 피한 실온에 보관해 주세요.",
+                        GOOD_FOR_GIFT:"깔끔한 포장으로 선물용으로도 손색 없는 구성입니다.",
+                      };
+
+                      let result = selectedKeywords
+                        .map(code => templates[code])
+                        .filter(Boolean)
+                        .join("\n");
+
+                      if (!result) {
+                        result = "정성껏 재배한 신선한 농산물입니다.";
+                      }
+
+                      handleFormChange("detailDesc", result);
+                    }}
+                  >
+                    선택한 키워드로 자동 작성
+                  </SecondaryButton>
+                </FormRow>
+
+                {/* ✅ 여기 상세 설명 필드 다시 추가 */}
+                <FormRow>
+                  <FormLabel>상세 설명</FormLabel>
+                  <TextArea
+                    rows={5}
+                    value={formProduct.detailDesc}
+                    onChange={(e) =>
+                      handleFormChange('detailDesc', e.target.value)
+                    }
+                    placeholder="상품의 산지, 특징, 보관방법 등을 적어주세요."
+                  />
+                </FormRow>
+
+                {/* 원산지 */}
+                <FormRow>
+                  <FormLabel>원산지</FormLabel>
+                  <TextInput
+                    type="text"
+                    value={formProduct.origin}
+                    onChange={(e) => handleFormChange('origin', e.target.value)}
+                    placeholder="예) 경북 영주"
+                  />
+                </FormRow>
+
+                {/* 수확일 */}
+                <FormRow>
+                  <FormLabel>수확일</FormLabel>
+                  <TextInput
+                    type="date"
+                    value={formProduct.harvestDate}
+                    onChange={(e) => handleFormChange('harvestDate', e.target.value)}
+                  />
+                </FormRow>
+
+                {/* 유통기한 */}
+                <FormRow>
+                  <FormLabel>유통기한</FormLabel>
+                  <TextInput
+                    type="date"
+                    value={formProduct.expireDate}
+                    onChange={(e) => handleFormChange('expireDate', e.target.value)}
+                  />
+                </FormRow>
+
+                <ModalFooter>
+                  <SecondaryButton type="button" onClick={closeModal}>
+                    취소
+                  </SecondaryButton>
+                  <PrimaryButton type="submit">
+                    {modalMode === 'create' ? '등록' : '수정 저장'}
+                  </PrimaryButton>
+                </ModalFooter>
+              </form>
+            </ModalBody>
+          </ModalContent>
+        </ModalOverlay>
       )}
-    </div>
+    </PageWrapper>
   )
 }
+
+/* =========================
+ * styled-components
+ * ========================= */
+
+const PageWrapper = styled.div`
+  padding: 24px 20px;
+`
+
+const PageHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+
+  h2 {
+    font-size: 22px;
+    font-weight: 700;
+  }
+`
+
+const HeaderRight = styled.div`
+  display: flex;
+  gap: 8px;
+`
+
+const SectionCard = styled.section`
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+  padding: 18px 20px 20px;
+  margin-bottom: 16px;
+`
+
+const SectionTitle = styled.h3`
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+`
+
+const EmptyText = styled.p`
+  color: #888;
+  font-size: 14px;
+`
+
+const StyledTable = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+
+  thead tr {
+    background: #f5f7fa;
+  }
+
+  th,
+  td {
+    border-bottom: 1px solid #eceff4;
+    padding: 8px 10px;
+    text-align: left;
+    vertical-align: middle;
+  }
+
+  th {
+    font-weight: 600;
+    color: #555;
+  }
+
+  tbody tr:hover {
+    background: #fafbff;
+  }
+`
+
+const TableInput = styled.input`
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #d0d7e2;
+  font-size: 13px;
+  box-sizing: border-box;
+
+  &:focus {
+    outline: none;
+    border-color: #4caf50;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.12);
+  }
+`
+
+const StockInput = styled(TableInput)`
+  width: 70px;
+  text-align: center;
+`
+
+const StatusCircle = styled.div`
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: ${({ status }) =>
+    status === 'ON' || status === '판매중'
+      ? '#4caf50'
+      : status === 'OFF' || status === '판매중지'
+      ? '#9e9e9e'
+      : '#607d8b'};
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+`
+
+const StockList = styled.ul`
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 14px;
+
+  li {
+    display: flex;
+    gap: 4px;
+    padding: 6px 0;
+    border-bottom: 1px dashed #eee;
+  }
+
+  .name {
+    font-weight: 500;
+  }
+  .unit {
+    color: #777;
+  }
+  .qty {
+    margin-left: auto;
+    font-weight: 600;
+  }
+`
+
+const BaseButton = styled.button`
+  border-radius: 999px;
+  padding: 6px 14px;
+  border: none;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+`
+
+const PrimaryButton = styled(BaseButton)`
+  background: #4caf50;
+  color: #fff;
+  font-weight: 600;
+
+  &:hover:not(:disabled) {
+    background: #43a047;
+  }
+`
+
+const SecondaryButton = styled(BaseButton)`
+  background: #f1f3f7;
+  color: #333;
+  border: 1px solid #d0d7e2;
+
+  &:hover:not(:disabled) {
+    background: #e4e7f0;
+  }
+`
+
+const SaveCircleButton = styled(BaseButton)`
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  background: #4caf50;
+  color: #fff;
+  font-weight: 600;
+
+  &:hover:not(:disabled) {
+    background: #43a047;
+  }
+`
+
+// ★ 동그란 수정 버튼 (흰색 테두리)
+const EditCircleButton = styled(BaseButton)`
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 80%;
+  background: #ffffff;
+  border: 1px solid #d0d7e2;
+  color: #333;
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 1;
+
+  &:hover:not(:disabled) {
+    background: #f5f7fa;
+  }
+`
+
+// ★ 삭제 버튼
+const DeleteCircleButton = styled(BaseButton)`
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  background: #f44336;
+  color: #fff;
+  font-weight: 600;
+
+  &:hover:not(:disabled) {
+    background: #d32f2f;
+  }
+`
+
+/* ===== 모달 ===== */
+
+const ModalOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1200;
+`
+
+const ModalContent = styled.div`
+  width: 520px;
+  max-height: 80vh;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.18);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+`
+
+const ModalHeader = styled.div`
+  padding: 16px 20px 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eceff4;
+`
+
+const ModalTitle = styled.h3`
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+`
+
+const ModalCloseButton = styled.button`
+  border: none;
+  background: transparent;
+  font-size: 22px;
+  cursor: pointer;
+  color: #666;
+  line-height: 1;
+
+  &:hover {
+    color: #111;
+  }
+`
+
+const ModalBody = styled.div`
+  padding: 14px 20px 18px;
+  overflow-y: auto;
+`
+
+const FormRow = styled.div`
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+`
+
+const FormLabel = styled.label`
+  font-size: 13px;
+  font-weight: 600;
+  color: #555;
+`
+
+const TextInput = styled.input`
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #d0d7e2;
+  font-size: 13px;
+  box-sizing: border-box;
+
+  &:focus {
+    outline: none;
+    border-color: #4caf50;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.14);
+  }
+`
+
+const TextArea = styled.textarea`
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #d0d7e2;
+  font-size: 13px;
+  resize: vertical;
+  min-height: 120px;
+
+  &:focus {
+    outline: none;
+    border-color: #4caf50;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.14);
+  }
+`
+
+const ButtonGroup = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+`
+
+const OptionButton = styled.button`
+  padding: 6px 10px;
+  font-size: 12px;
+  border-radius: 999px;
+  border: 1px solid ${({ $active }) => ($active ? '#4caf50' : '#d0d7e2')};
+  background: ${({ $active }) => ($active ? '#e9f7ec' : '#f8f9fc')};
+  color: ${({ $active }) => ($active ? '#2e7d32' : '#333')};
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: ${({ $active }) => ($active ? '#dff3e5' : '#eef1fa')};
+  }
+`
+
+const ImagePreviewWrapper = styled.div`
+  margin-top: 8px;
+
+  img {
+    width: 160px;
+    border-radius: 10px;
+    border: 1px solid #e0e6f0;
+    object-fit: cover;
+  }
+`
+
+const HelperText = styled.p`
+  font-size: 12px;
+  color: #888;
+  margin-top: 4px;
+`
+
+const ModalFooter = styled.div`
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+`

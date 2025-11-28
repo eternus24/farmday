@@ -465,24 +465,25 @@
     <!-- ======================= -->
     <!-- 상품관리 - 내 상품 목록 -->
     <!-- ======================= -->
-    <select id="findProductItemsByProducerId"
+        <select id="findProductItemsByProducerId"
         parameterType="map"
         resultType="com.farmday.producer.dto.ProducerProductItemDto">
         SELECT
-            p.product_id     AS productId,
-            pd.detail_id     AS detailId,
-            p.name           AS productName,
-            pd.unit_name     AS unitName,
-            pd.price         AS price,
-            pd.stock_qty     AS stockQty,
-            p.status         AS status,
-            pd.updated_date  AS updatedDate
+            p.product_id        AS productId,
+            pd.detail_id        AS detailId,
+            p.name              AS productName,
+            p.base_category_id  AS baseCategoryId,  <!-- ★ 추가 -->
+            pd.unit_name        AS unitName,
+            pd.price            AS price,
+            pd.stock_qty        AS stockQty,
+            p.status            AS status,
+            pd.updated_date     AS updatedDate
         FROM PRODUCT p
         JOIN PRODUCT_DETAIL pd
-        ON p.product_id = pd.product_id
+          ON p.product_id = pd.product_id
         WHERE p.producer_id = #{producerId}
         <if test="status != null and status != ''">
-        AND p.status = #{status}
+          AND p.status = #{status}
         </if>
         ORDER BY
             p.created_date DESC,
@@ -490,7 +491,7 @@
             pd.detail_id ASC
     </select>
 
-        <!-- ======================= -->
+    <!-- ======================= -->
     <!-- 상품관리 - 옵션 수정    -->
     <!-- ======================= -->
     <update id="updateProductDetailByProducer"
@@ -595,5 +596,266 @@
       ORDER BY o.order_date DESC, o.order_id DESC
       ]]>
   </select>
+
+      <!-- ======================= -->
+    <!-- 상품관리 - 시퀀스       -->
+    <!-- ======================= -->
+    <select id="getNextProductId" resultType="long">
+        SELECT PRODUCT_SEQ.NEXTVAL FROM DUAL
+    </select>
+
+    <select id="getNextProductDetailId" resultType="long">
+        SELECT PRODUCT_DETAIL_SEQ.NEXTVAL FROM DUAL
+    </select>
+
+    <select id="getNextProductImageId" resultType="long">
+        SELECT PRODUCT_IMAGE_SEQ.NEXTVAL FROM DUAL
+    </select>
+
+    <!-- ======================= -->
+    <!-- 상품관리 - 상품 등록    -->
+    <!-- ======================= -->
+    <insert id="insertProductForProducer" parameterType="map">
+        <![CDATA[
+        INSERT INTO PRODUCT (
+            product_id,
+            producer_id,
+            name,
+            base_category_id,
+            main_image,
+            summary,
+            status,
+            created_date,
+            updated_date
+        ) VALUES (
+            #{productId},
+            #{producerId},
+            #{productName},
+            #{baseCategoryId},
+            #{mainImage},
+            #{summary},                 -- ★ 기존 NULL → 파라미터로 저장
+            NVL(#{status}, '판매중'),
+            SYSDATE,
+            SYSDATE
+        )
+        ]]>
+    </insert>
+
+    <insert id="insertProductDetail" parameterType="map">
+      <![CDATA[
+      INSERT INTO PRODUCT_DETAIL (
+          detail_id,
+          product_id,
+          grade,
+          unit_name,
+          price,
+          stock_qty,
+          origin_region,
+          harvest_date,
+          expire_date,
+          detail_desc,
+          created_date,
+          updated_date
+      ) VALUES (
+          #{detailId},
+          #{productId},
+          #{grade},
+          #{unitName},
+          #{price},
+          #{stockQty},
+          #{origin},                                                   -- ★ 원산지
+          CASE 
+              WHEN #{harvestDate} IS NOT NULL THEN 
+                  TO_DATE(#{harvestDate}, 'YYYY-MM-DD')
+              ELSE NULL
+          END,
+          CASE 
+              WHEN #{expireDate} IS NOT NULL THEN 
+                  TO_DATE(#{expireDate}, 'YYYY-MM-DD')
+              ELSE NULL
+          END,
+          #{detailDesc},
+          SYSDATE,
+          SYSDATE
+      )
+      ]]>
+  </insert>
+
+  <insert id="insertProductImage" parameterType="map">
+      <![CDATA[
+      INSERT INTO PRODUCT_IMAGE (
+          image_id,
+          product_id,
+          image_url,
+          is_main,
+          sort_order,
+          created_date
+      ) VALUES (
+          #{imageId},
+          #{productId},
+          #{imageUrl},
+          #{isMain},
+          #{sortOrder},
+          SYSDATE
+      )
+      ]]>
+  </insert>
+
+  <!-- 등록/수정 후 한 건 조회 -->
+  <select id="findProductItemByProductIdForProducer"
+          parameterType="map"
+          resultType="com.farmday.producer.dto.ProducerProductItemDto">
+      <![CDATA[
+      SELECT
+          p.product_id        AS productId,
+          pd.detail_id        AS detailId,
+          p.name              AS productName,
+          p.base_category_id  AS baseCategoryId,  -- ★ 추가
+          pd.unit_name        AS unitName,
+          pd.price            AS price,
+          pd.stock_qty        AS stockQty,
+          p.status            AS status,
+          pd.updated_date     AS updatedDate
+      FROM PRODUCT p
+      JOIN PRODUCT_DETAIL pd
+        ON p.product_id = pd.product_id
+      WHERE p.producer_id = #{producerId}
+        AND p.product_id  = #{productId}
+      ORDER BY pd.detail_id ASC
+      ]]>
+  </select>
+
+  <!-- ======================= -->
+  <!-- 상품관리 - 상품 수정    -->
+  <!-- ======================= -->
+  <update id="updateProductByProducer" parameterType="map">
+      <![CDATA[
+      UPDATE PRODUCT p
+      SET
+          p.name             = #{productName},
+          p.base_category_id = #{baseCategoryId},
+          p.status           = NVL(#{status}, p.status),
+          p.main_image       = NVL(#{mainImage}, p.main_image),
+          p.summary          = NVL(#{summary}, p.summary),
+          p.updated_date     = SYSDATE
+      WHERE p.product_id   = #{productId}
+        AND p.producer_id  = #{producerId}
+      ]]>
+  </update>
+
+  <update id="updateMainProductDetailByProducer" parameterType="map">
+    <![CDATA[
+    UPDATE PRODUCT_DETAIL pd
+    SET
+        pd.grade        = #{grade},
+        pd.unit_name    = #{unitName},
+        pd.price        = #{price},
+        pd.stock_qty    = #{stockQty},
+        pd.origin_region = NVL(#{origin}, pd.origin_region),
+        pd.harvest_date = CASE
+                              WHEN #{harvestDate} IS NOT NULL THEN
+                                  TO_DATE(#{harvestDate}, 'YYYY-MM-DD')
+                              ELSE
+                                  pd.harvest_date
+                          END,
+        pd.expire_date  = CASE
+                              WHEN #{expireDate} IS NOT NULL THEN
+                                  TO_DATE(#{expireDate}, 'YYYY-MM-DD')
+                              ELSE
+                                  pd.expire_date
+                          END,
+        pd.detail_desc  = NVL(#{detailDesc}, pd.detail_desc),
+        pd.updated_date = SYSDATE
+    WHERE pd.product_id = #{productId}
+      AND EXISTS (
+          SELECT 1
+          FROM PRODUCT p
+          WHERE p.product_id = pd.product_id
+            AND p.producer_id = #{producerId}
+      )
+    ]]>
+  </update>
+
+  <!-- 상품 이미지 삭제 -->
+  <delete id="deleteProductImagesByProductId" parameterType="map">
+    <![CDATA[
+    DELETE FROM PRODUCT_IMAGE pi
+    WHERE pi.product_id = #{productId}
+      AND EXISTS (
+          SELECT 1
+          FROM PRODUCT p
+          WHERE p.product_id = pi.product_id
+            AND p.producer_id = #{producerId}
+      )
+    ]]>
+  </delete>
+
+  <!-- 상품 상세 삭제 -->
+  <delete id="deleteProductDetailsByProductId" parameterType="map">
+    <![CDATA[
+    DELETE FROM PRODUCT_DETAIL pd
+    WHERE pd.product_id = #{productId}
+      AND EXISTS (
+          SELECT 1
+          FROM PRODUCT p
+          WHERE p.product_id = pd.product_id
+            AND p.producer_id = #{producerId}
+      )
+    ]]>
+  </delete>
+
+  <!-- PRODUCT 삭제 -->
+  <delete id="deleteProductByProducer" parameterType="map">
+    <![CDATA[
+    DELETE FROM PRODUCT p
+    WHERE p.product_id = #{productId}
+      AND p.producer_id = #{producerId}
+    ]]>
+  </delete>
+
+  <!-- (선택) 주문 이력 개수 -->
+  <select id="countOrderItemsByProductId"
+          parameterType="long"
+          resultType="int">
+    <![CDATA[
+    SELECT COUNT(*)
+    FROM ORDERS_ITEM
+    WHERE product_id = #{productId}
+    ]]>
+  </select>
+
+  <!-- 생산자 프로필(USERS + PRODUCER) 한 번에 수정 -->
+  <update id="updateProducerFullProfile" parameterType="map">
+      <![CDATA[
+      BEGIN
+        -- 1) USERS 기본 정보 수정
+        UPDATE USERS u
+        SET
+            u.name         = #{name},
+            u.phone        = #{phone},
+            u.addr         = #{addr},
+            u.email        = #{email},
+            u.photo        = #{photo},
+            u.updated_date = SYSDATE
+        WHERE u.user_no = (
+            SELECT p.user_no
+            FROM PRODUCER p
+            WHERE p.producer_id = #{producerId}
+        );
+
+        -- 2) PRODUCER 사업장/정산 정보 수정
+        UPDATE PRODUCER p
+        SET
+            p.biz_name        = #{bizName},
+            p.biz_addr        = #{bizAddr},
+            p.biz_phone       = #{bizPhone},
+            p.bank_name       = #{bankName},
+            p.bank_account_no = #{bankAccountNo},
+            p.account_holder  = #{accountHolder},
+            p.updated_date    = SYSDATE
+        WHERE p.producer_id = #{producerId};
+      END;
+      ]]>
+  </update>
 
 </mapper>

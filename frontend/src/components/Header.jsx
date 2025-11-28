@@ -8,8 +8,9 @@ export default function Header() {
   const navigate = useNavigate();
   const { auth, setAuth } = useContext(AuthContext);
   const defaultAvatar = defaultAvatarImg; // 프로젝트 맞게 수정
-  const profileSrc = auth.photo || defaultAvatar;
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
+  const profileSrc = auth?.photo ? (auth.photo.startsWith('http') ? auth.photo : `${API_BASE}${auth.photo}`) : defaultAvatar;
 
   // ✅ 로그아웃 처리
   const handleLogout = async () => {

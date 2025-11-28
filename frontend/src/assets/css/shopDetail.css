@@ -7,6 +7,11 @@
   font-family: "Pretendard", sans-serif;
 }
 
+.detail-desc-text p {
+  white-space: pre-line;
+  line-height: 1.6;
+}
+
 /* ================== 상단 ================== */
 .detail-top {
     display: flex;

@@ -7,6 +7,8 @@ import com.farmday.producer.dto.ProducerDashboardSummaryDto;
 import com.farmday.producer.dto.ProducerOrderItemDto;
 import com.farmday.producer.dto.ProducerOrderSummaryDto;
 import com.farmday.producer.dto.ProducerProductItemDto;
+import com.farmday.producer.dto.ProducerProductSaveRequest;
+import com.farmday.producer.dto.ProducerProfileUpdateRequest;
 import com.farmday.producer.dto.SalesItemDto;
 import com.farmday.producer.dto.TopProductDto;
 import com.farmday.producer.mapper.ProducerMapper;
@@ -14,11 +16,16 @@ import com.farmday.user.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +33,10 @@ public class ProducerServiceImpl implements ProducerService {
 
     private final ProducerMapper producerMapper;
     private final UserMapper userMapper;
+
+    // ★ 서버 파일 저장 경로 & 외부에서 접근하는 베이스 URL
+    private static final String UPLOAD_DIR = "D:/farmday/uploads";
+    private static final String SERVER_BASE_URL = "http://192.168.0.20:8080";
 
     @Override
     public void createProducerForSignup(Long userNo, Producer producer) {
@@ -231,6 +242,218 @@ public class ProducerServiceImpl implements ProducerService {
 
         // 2) 이미 잘 쓰던 toOrderSummary 재사용
         return toOrderSummary(items);
+    }
+
+    private String saveImageFile(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            return null;
+        }
+
+        try {
+            String originalName = file.getOriginalFilename();
+            String ext = "";
+            if (originalName != null && originalName.lastIndexOf(".") != -1) {
+                ext = originalName.substring(originalName.lastIndexOf("."));
+            }
+
+            String storedFileName = UUID.randomUUID().toString() + ext;
+
+            // 로컬 디스크에 저장
+            Path savePath = Paths.get(UPLOAD_DIR, storedFileName);
+            Files.createDirectories(savePath.getParent());
+            file.transferTo(savePath.toFile());
+
+            // ★ DB에 저장할 값 = 프론트에서 그대로 <img src=...> 로 쓸 풀 URL
+            return SERVER_BASE_URL + "/uploads/" + storedFileName;
+        } catch (Exception e) {
+            throw new RuntimeException("상품 이미지 저장 중 오류가 발생했습니다.", e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public ProducerProductItemDto createProduct(Long producerId, ProducerProductSaveRequest request, MultipartFile mainImageFile, List<MultipartFile> descriptionImageFiles) {
+
+        Long productId = producerMapper.getNextProductId();
+        Long detailId  = producerMapper.getNextProductDetailId();
+
+        // 1) 대표 이미지 저장
+        String mainImagePath = saveImageFile(mainImageFile);
+
+        // 2) PRODUCT INSERT (summary 포함)
+        producerMapper.insertProductForProducer(
+            producerId,
+            productId,
+            request.getProductName(),
+            request.getBaseCategoryId(),
+            request.getStatus(),
+            mainImagePath,
+            request.getSummary()          // ★ 여기까지만
+        );
+
+        // 3) PRODUCT_DETAIL INSERT (상세 설명 포함)
+        producerMapper.insertProductDetail(
+            productId,
+            detailId,
+            request.getGrade(),
+            request.getUnitName(),
+            request.getPrice(),
+            request.getStockQty(),
+            request.getOrigin(),          // ★ 여기서 저장
+            request.getHarvestDate(),
+            request.getExpireDate(),
+            request.getDetailDesc()
+        );
+
+        // 4) PRODUCT_IMAGE INSERT (대표 + 상세 이미지들)
+        int sortOrder = 1;
+
+        // 4-1) 대표 이미지
+        if (mainImagePath != null) {
+            Long imageId = producerMapper.getNextProductImageId();
+            producerMapper.insertProductImage(
+                    productId,
+                    imageId,
+                    mainImagePath,
+                    "Y",        // 대표
+                    sortOrder   // 1번
+            );
+            sortOrder++;
+        }
+
+        // 4-2) 상세 이미지들 (최대 5장까지)
+        if (descriptionImageFiles != null) {
+            for (MultipartFile file : descriptionImageFiles) {
+                if (file == null || file.isEmpty()) continue;
+                if (sortOrder > 5) break;  // ★ 최대 5까지
+
+                String descImagePath = saveImageFile(file);
+                Long imageId = producerMapper.getNextProductImageId();
+
+                producerMapper.insertProductImage(
+                        productId,
+                        imageId,
+                        descImagePath,
+                        "N",            // 대표 아님
+                        sortOrder
+                );
+                sortOrder++;
+            }
+        }
+
+        // 5) 등록된 상품 한 건 다시 조회해서 반환
+        return producerMapper.findProductItemByProductIdForProducer(producerId, productId);
+    }
+
+    @Override
+    @Transactional
+    public ProducerProductItemDto updateProduct(Long producerId, Long productId, ProducerProductSaveRequest request, MultipartFile mainImageFile, List<MultipartFile> descriptionImageFiles) {
+
+        // 1) 새 대표 이미지가 올라온 경우에만 저장
+        String mainImagePath = null;
+        if (mainImageFile != null && !mainImageFile.isEmpty()) {
+            mainImagePath = saveImageFile(mainImageFile);
+        }
+
+        // 2) PRODUCT UPDATE (summary 포함)
+        producerMapper.updateProductByProducer(
+            producerId,
+            productId,
+            request.getProductName(),
+            request.getBaseCategoryId(),
+            request.getStatus(),
+            mainImagePath,          // null 이면 NVL로 기존 유지
+            request.getSummary()
+        );
+
+        // 3) PRODUCT_DETAIL UPDATE (상세 설명 포함)
+        producerMapper.updateMainProductDetailByProducer(
+            producerId,
+            productId,
+            request.getGrade(),
+            request.getUnitName(),
+            request.getPrice(),
+            request.getStockQty(),
+            request.getOrigin(),
+            request.getHarvestDate(),
+            request.getExpireDate(),
+            request.getDetailDesc()
+        );
+
+        if (descriptionImageFiles != null) {
+            int sortOrderBase = 2; // 대표가 1번이라는 가정 (정교하게 하려면 SELECT 로 max(sort_order)+1 조회)
+
+            for (MultipartFile file : descriptionImageFiles) {
+                if (file == null || file.isEmpty()) continue;
+
+                String descImagePath = saveImageFile(file);
+                Long imageId = producerMapper.getNextProductImageId();
+
+                producerMapper.insertProductImage(
+                        productId,
+                        imageId,
+                        descImagePath,
+                        "N",
+                        sortOrderBase++
+                );
+            }
+        }
+
+        // 4) 수정된 상품 다시 조회
+        return producerMapper.findProductItemByProductIdForProducer(producerId, productId);
+    }
+
+    @Override
+    @Transactional
+    public void deleteProduct(Long producerId, Long productId) {
+
+        // 주문 이력 있으면 하드 삭제 막는 게 안전함
+        int orderCount = producerMapper.countOrderItemsByProductId(productId);
+        if (orderCount > 0) {
+            throw new IllegalStateException("주문 이력이 있는 상품은 삭제할 수 없습니다. 판매중지로 변경해 주세요.");
+        }
+
+        // FK 순서 고려해서 삭제: IMAGE → DETAIL → PRODUCT
+        producerMapper.deleteProductImagesByProductId(producerId, productId);
+        producerMapper.deleteProductDetailsByProductId(producerId, productId);
+        producerMapper.deleteProductByProducer(producerId, productId);
+    }
+
+    // =========================
+    // 생산자 프로필 수정
+    // =========================
+    @Override
+    @Transactional
+    public void updateProducerProfile(Long producerId, ProducerProfileUpdateRequest req) {
+
+        if (producerId == null) {
+            throw new IllegalArgumentException("producerId는 필수입니다.");
+        }
+
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put("producerId", producerId);
+
+        // USERS 쪽
+        params.put("name",  req.getName());
+        params.put("email", req.getEmail());
+        params.put("phone", req.getPhone());
+        params.put("addr",  req.getAddr());
+        params.put("photo", req.getPhoto());
+
+        // PRODUCER 쪽
+        params.put("bizName",        req.getBizName());
+        params.put("bizAddr",        req.getBizAddr());
+        params.put("bizPhone",       req.getBizPhone());
+        params.put("bankName",       req.getBankName());
+        params.put("bankAccountNo",  req.getBankAccountNo());
+        params.put("accountHolder",  req.getAccountHolder());
+
+        int updated = producerMapper.updateProducerFullProfile(params);
+        if (updated == 0) {
+            // producerId가 잘못됐거나, USERS/PRODUCER 매칭이 안 되는 경우
+            throw new IllegalStateException("프로필을 수정할 수 없습니다.");
+        }
+
     }
 
 }
