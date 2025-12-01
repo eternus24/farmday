@@ -1,16 +1,25 @@
 // src/components/Header.jsx
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { useContext } from 'react';
+import { useContext, useEffect } from 'react';
 import { AuthContext } from '../contexts/AuthContext';
 import defaultAvatarImg from "../assets/img/user-default1.png";
+import { CartContext } from '../contexts/CartContext';
 
 export default function Header() {
   const navigate = useNavigate();
   const { auth, setAuth } = useContext(AuthContext);
   const defaultAvatar = defaultAvatarImg; // 프로젝트 맞게 수정
+  const profileSrc = auth.photo || defaultAvatar;
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
-  const profileSrc = auth?.photo ? (auth.photo.startsWith('http') ? auth.photo : `${API_BASE}${auth.photo}`) : defaultAvatar;
+
+
+  const { cartAmount, setCartAmount, findCartAmount } = useContext(CartContext);
+
+  useEffect(() => {
+    findCartAmount();
+  },[])
+
 
   // ✅ 로그아웃 처리
   const handleLogout = async () => {
@@ -112,36 +121,40 @@ export default function Header() {
                   <i className="fas fa-search text-primary"></i>
                 </button>
                 <a href="#" className="position-relative me-4 my-auto">
-                  <i className="fa fa-shopping-bag fa-2x"></i>
-                  <span
-                    className="position-absolute bg-secondary rounded-circle d-flex align-items-center justify-content-center text-dark px-1"
-                    style={{ top: -5, left: 15, height: 20, minWidth: 20 }}
-                  >
-                    3
-                  </span>
+                  <NavLink to="/cart">
+                    <i className="fa fa-shopping-bag fa-2x"></i>
+                    <span
+                      className="position-absolute bg-secondary rounded-circle d-flex align-items-center justify-content-center text-dark px-1"
+                      style={{ top: -5, left: 15, height: 20, minWidth: 20 }}
+                    >
+                      {cartAmount}
+                    </span>
+                  </NavLink>
                 </a>
 
                 {/* ✅ 로그인 / 로그아웃 영역 */}
                 <div className="d-flex align-items-center my-auto">
-                  {/* 프로필 이미지 */}
-                  <img
-                    src={profileSrc}
-                    alt="프로필"
-                    style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: "50%",
-                      objectFit: "cover",
-                      marginRight: 8,
-                    }}
-                  />
+                  <NavLink to="/mypage">
+                    {/* 프로필 이미지 */}
+                    <img
+                      src={profileSrc}
+                      alt="프로필"
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: "50%",
+                        objectFit: "cover",
+                        marginRight: 8,
+                      }}
+                    />
 
-                  {/* 이름 + '님' */}
-                  <span
-                    style={{ fontSize: "14px", fontWeight: 600 }}
-                  >
-                    {auth.name}님
-                  </span>
+                    {/* 이름 + '님' */}
+                    <span
+                      style={{ fontSize: "14px", fontWeight: 600 }}
+                    >
+                      {auth.name}님
+                    </span>
+                  </NavLink>
 
                   {auth.loggedIn ? (
                     <button

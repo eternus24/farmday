@@ -8,3 +8,19 @@
   -moz-appearance: textfield; /* 왜: Firefox 스피너 제거 */
   appearance: textfield;      /* 왜: 표준화된 외형 제거 시도(보강) */
 }
+
+.to-shop-btn {
+  border: 1px solid #ffb524;
+  border-radius: 5px;
+  padding: 7px 14px 7px 14px;
+  background-color: white;
+  font-weight: 600;
+  transition: 0.2s;
+  color: #75af09;
+}
+
+.to-shop-btn:hover {
+  background-color: #9be90b;
+  color: white;
+  border-color: #9be90b;
+}

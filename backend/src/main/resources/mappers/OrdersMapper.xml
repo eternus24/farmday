@@ -5,12 +5,32 @@
 <mapper namespace="com.farmday.orders.OrdersMapper">
 
   <select id="findUserInfoForOrder" parameterType="String" resultType="com.farmday.orders.UsersDTO">
-    select * from users where userid=#{user_id}
+    select 
+      u.user_no,u.role,u.userid,u.addr,u.name,u.phone,u.phone_verified,u.email,u.email_verified,u.birth,u.gender,u.photo,u.created_date,u.updated_date,u.is_blocked,u.points,
+      m.grade_code,m.grade_name user_grade
+    from users u, user_membership m
+    where u.userid=#{user_id} and u.user_no=m.user_no
   </select>
 
+  <select id="findUserPoints" parameterType="String" resultType="int">
+    select points from users where userid=#{user_id}
+  </select>
+  
   <select id="findOrdersByTossOrderId" parameterType="String" resultType="com.farmday.orders.OrdersDTO">
     select * from orders where toss_orderid=#{toss_orderid}
   </select>
+
+  <select id="findOrdersItemById" parameterType="int" resultType="com.farmday.orders.OrdersItemDTO">
+    select 
+      oi.*, p.main_image, o.user_id
+    from 
+      orders_item oi, product p, orders o
+    where 
+      oi.order_item_id=#{order_item_id} 
+      and oi.product_id=p.product_id
+      and oi.order_id=o.order_id
+  </select>
+
 
 
   <insert id="insertOrders" parameterType="com.farmday.orders.OrdersDTO">
@@ -27,6 +47,17 @@
       (ORDERS_ITEM_SEQ.NEXTVAL,#{order_id},#{product_id},#{product_name},#{discount_amount},#{price_at_order},#{quantity},#{line_total_amount})
   </insert>
 
+  <insert id="insertOrdersItemIntoDelivery" parameterType="com.farmday.orders.OrdersItemDTO">
+    insert into delivery
+      (order_item_id,delivery_status)
+    values
+      (#{order_item_id},#{delivery_status})
+  </insert>
+
+
+
+
+
 
 
   <select id="findAllOrdersByUserId" parameterType="String" resultType="com.farmday.orders.OrdersDTO">
@@ -34,8 +65,43 @@
   </select>
 
   <select id="findOrdersItemByOrderId" parameterType="int" resultType="com.farmday.orders.OrdersItemDTO">
-    select * from orders_item where order_id=#{order_id} order by order_id desc
+    select 
+      o.*, 
+      p.main_image, 
+      pd.grade,pd.unit_name,pd.origin_region,
+      d.delivery_status,
+      s.store_name
+    from 
+      orders_item o, product p, product_detail pd, delivery d, store s
+    where 
+      o.order_id = #{order_id}
+      and o.product_id = p.product_id
+      and o.product_id = pd.product_id
+      and p.producer_id = s.producer_id
+      and o.order_item_id = d.order_item_id(+)
+    order by o.line_total_amount desc
   </select>
+
+
+
+  <insert id="insertOrdersItemIntoCancel" parameterType="com.farmday.orders.OrdersCanceledDTO">
+    insert into orders_canceled
+      (orders_canceled_id,user_id,order_item_id,product_id,cancel_reason,refund_amount)
+    values
+      (ORDERS_CANCELED_SEQ.NEXTVAL,#{user_id},#{order_item_id},#{product_id},#{cancel_reason},#{refund_amount})
+  </insert>
+
+  <update id="changeOrdersItemStatus" parameterType="java.util.Map">
+    update orders_item set
+      order_status=#{order_status}
+    where order_item_id=#{order_item_id}
+  </update>
+
+  <update id="changeDeliveryStatus" parameterType="java.util.Map">
+    update delivery set
+      delivery_status=#{delivery_status}
+    where order_item_id=#{order_item_id}
+  </update>
 
 
 

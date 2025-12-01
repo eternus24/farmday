@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.farmday.review.mapper.ReviewMapper">
+
+    <!-- 리뷰 등록 -->
+    <insert id="insertReview" parameterType="com.farmday.review.dto.ReviewDTO">
+    INSERT INTO product_review (
+        review_id, product_id, store_id, order_item_id, writer_user_id, rating, title, content, image_url, product_tags
+    )
+    VALUES (
+        PRODUCT_REVIEW_SEQ.NEXTVAL,
+        #{productId},
+        #{storeId},
+        #{orderItemId},
+        #{writerUserId},
+        #{rating},
+        #{title},
+        #{content},
+        #{imageUrl},
+        #{productTags}
+    )
+    </insert>
+
+<!-- 리뷰삭제 -->
+    <delete id="deleteReview" parameterType="long">
+    DELETE FROM product_review WHERE review_id = #{reviewId}
+    </delete>
+
+    <select id="selectReviews" parameterType="map"
+        resultType="com.farmday.review.dto.ReviewDTO">
+    SELECT
+        review_id AS reviewId,
+        product_id AS productId,
+        store_id AS storeId,
+        order_item_id AS orderItemId,
+        writer_user_id AS writerUserId,
+        rating,
+        title,
+        content,
+        image_url AS imageUrl,
+        like_count AS likeCount,
+        is_visible AS isVisible,
+        created_date AS createdDate,
+        updated_date AS updatedDate,
+        reply,
+        product_tags AS productTags
+    FROM product_review
+    WHERE product_id = #{productId}
+    AND is_visible = 'Y'
+
+    <if test="keyword != null and keyword != ''">
+        AND (title LIKE '%' || #{keyword} || '%' 
+            OR content LIKE '%' || #{keyword} || '%')
+    </if>
+
+    ORDER BY 
+    <choose>
+        <when test="sort == 'latest'"> created_date DESC </when>
+        <when test="sort == 'rating'"> rating DESC </when>
+        <otherwise> review_id DESC </otherwise>
+    </choose>
+</select>
+
+<!-- 답글 수정 -->
+    <update id="updateReply" parameterType="com.farmday.review.dto.ReviewDTO">
+    UPDATE product_review
+    SET reply = #{reply},
+        updated_date = SYSDATE
+    WHERE review_id = #{reviewId}
+    </update>
+
+
+
+
+
+
+    <select id="findStoreIdByProductId" parameterType="long" resultType="long">
+        select 
+            s.store_id
+        from 
+            product p, store s
+        where
+            product_id=#{product_id} and p.producer_id=s.producer_id
+    </select>
+
+
+
+
+</mapper>

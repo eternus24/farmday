@@ -1,10 +1,11 @@
 // ==============================================
 // frontend/src/pages/cart/cart.jsx
 // ==============================================
-import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useMemo, useState, useContext } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
 import "../../assets/css/cart.css";
 import Swal from "sweetalert2";
+import { CartContext } from "../../contexts/CartContext";
 
 function money(n) {
   const num = Number(n);
@@ -24,8 +25,9 @@ export default function Cart() {
 
   const { protocol, hostname } = window.location;
   const API_BASE = `${protocol}//${hostname}:8080`;
-  const user_id = "yoonho";
-
+  const user_id = JSON.parse(window.localStorage.getItem('loginUser')).userId;
+  const { findCartAmount } = useContext(CartContext);
+  
   // 왜: 초기 조회와 삭제 후 재조회 로직을 한 군데로
   async function reloadCart(signal) {
     setStatus("loading");
@@ -147,6 +149,7 @@ export default function Cart() {
       });
     } finally {
       setSaving(false);
+      await findCartAmount();
     }
   }
 
@@ -258,7 +261,21 @@ export default function Cart() {
                   {items.length === 0 && (
                     <tr>
                       <td colSpan={6} className="text-center py-5">
-                        {status === "error" ? "Failed to load cart." : "Your cart is empty."}
+                        {status === "error" ? "장바구니를 불러오는 데 실패했습니다." : (
+                          <div>
+                            <div>
+                              <span>장바구니가 비었습니다.</span>
+                            </div>
+                            <br/>
+                            <NavLink to="/shop">
+                              <button className="to-shop-btn" type="button">
+                                쇼핑하러 가기
+                              </button>
+                                
+                            </NavLink>
+                            
+                          </div>
+                        )}
                       </td>
                     </tr>
                   )}

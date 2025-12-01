@@ -162,6 +162,10 @@ export function SuccessPage() {
         console.error("orders insert error:", e);
       }
     })();
+
+    
+
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [payment]);
 
@@ -402,7 +406,7 @@ export function SuccessPage() {
         {/* 하단 버튼 */}
         <button
           type="button"
-          onClick={() => navigate("/orders")}
+          onClick={() => navigate("/mypage")}
           style={{
             width: "100%",
             marginTop: 8,

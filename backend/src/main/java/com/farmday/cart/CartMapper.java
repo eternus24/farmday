@@ -10,6 +10,9 @@ public interface CartMapper {
 
     List<CartDTO> findCartByUserId(String user_id) throws Exception;
 
+    int findCartAmountByUserId(String user_id) throws Exception;
+
+
     int insertCart(
         @Param("user_id")String user_id,
         @Param("product_id")int product_id,

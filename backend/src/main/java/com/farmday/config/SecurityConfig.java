@@ -57,6 +57,9 @@ public class SecurityConfig {
                 .antMatchers("/api/admin/**").hasRole("ADMIN")
                 .antMatchers("/api/producer/**").hasRole
                 ("PRODUCER")
+                .antMatchers("/api/mypage/**").authenticated()
+                .antMatchers("/api/cart/**").authenticated()
+                .antMatchers("/api/order/**").authenticated()
                 .antMatchers("/api/products/**").permitAll()
                 // 나머지는 인증 필요
                 .anyRequest().permitAll()

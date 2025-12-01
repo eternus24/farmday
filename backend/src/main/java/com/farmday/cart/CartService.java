@@ -15,6 +15,10 @@ public class CartService {
         return cartMapper.findCartByUserId(user_id);
     }
 
+    public int findCartAmountByUserId(String user_id) throws Exception {
+        return cartMapper.findCartAmountByUserId(user_id);
+    }
+
     public int insertCart(String user_id, int product_id, int quantity) throws Exception {
         return cartMapper.insertCart(user_id, product_id, quantity);
     }

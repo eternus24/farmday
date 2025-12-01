@@ -2,8 +2,16 @@
 // frontend/src/pages/mypage/mypage.jsx
 // ==============================================
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import "../../assets/css/cart.css";
+import { Link, NavLink, useNavigate } from "react-router-dom";
+import "../../assets/css/mypage.css";
+import MypageLeftSideBar from "./MypageLeftSideBar";
+import MypageOrderList from "./MypageOrderList";
+import Swal from "sweetalert2";
+import MypageMyReview from "./MypageMyReview";
+import MypageCanceledOrder from "./MypageCanceledOrder";
+import delivery1 from "../../assets/img/delivery1.png";
+import delivery2 from "../../assets/img/delivery2.jpg";
+import delivery3 from "../../assets/img/delivery3.png";
 
 function moneyKRW(n) {
   const v = Math.max(0, Math.round(Number(n) || 0));
@@ -20,6 +28,36 @@ function phoneToString(phone) {
   return `${p1}-${p2}-${p3}`;
 }
 
+function formatKoreanDateTime(str) {
+  if (!str) return "";
+
+  // "2025-11-24 16:51:02" → ["2025-11-24", "16:51:02"]
+  const [datePart, timePart] = str.split(" ");
+  if (!datePart || !timePart) return "";
+
+  const [year, month, day] = datePart.split("-").map(Number);
+  const [hour, minute, second] = timePart.split(":").map(Number);
+
+  const date = new Date(year, month - 1, day, hour, minute, second);
+
+  const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
+  const weekday = weekdays[date.getDay()];
+
+  let h24 = date.getHours();
+  const m = date.getMinutes();
+  const period = h24 < 12 ? "오전" : "오후";
+
+  // 24시간제 → 12시간제
+  let h12 = h24 % 12;
+  if (h12 === 0) h12 = 12;
+
+  const mm = date.getMonth() + 1;
+  const dd = date.getDate();
+
+  // 예: "11/24(월) 오후 4시 51분"
+  return `${mm}/${dd}(${weekday}) ${period} ${h12}시 ${m}분`;
+}
+
 export default function MyPage() {
   const [status, setStatus] = useState("loading"); // loading | ready | error
   const [overview, setOverview] = useState({
@@ -32,400 +70,632 @@ export default function MyPage() {
   const [months, setMonths] = useState(3);
   const [query, setQuery] = useState("");
   const [searchInput, setSearchInput] = useState("");
-  const typingTimer = useRef(null);
 
   const { protocol, hostname } = window.location;
   const API_BASE = `${protocol}//${hostname}:8080`;
-  const user_id = "yoonho";
+  const userInfoFromLocal = JSON.parse(window.localStorage.getItem("loginUser"));
+  const user_Id = userInfoFromLocal.userId;
+  const user_name = userInfoFromLocal.name;
 
   const navigate = useNavigate();
+  const [userInfo, setUserInfo] = useState([]);
+  const [userOrders, setUserOrders] = useState([]);
+  const [ordersItem, setOrdersItem] = useState([]);
+  const [myReview, setMyReview] = useState([]);
+  const [canceledOrder, setCanceledOrder] = useState([]);
 
-  async function fetchOverview(signal) {
+  // ⭐ 어떤 주문의 상세가 열려 있는지 저장
+  const [openOrderId, setOpenOrderId] = useState(null);
+
+  // ===== 주문 취소 모달 상태 (추가) =====
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [targetOrderItemId, setTargetOrderItemId] = useState(null);
+  const [isSubmittingCancel, setIsSubmittingCancel] = useState(false);
+
+  const [showContent,setShowContent] = useState('orderList');
+  const [customCancelReason, setCustomCancelReason] = useState("");
+
+  const [showDeliveryModal, setShowDeliveryModal] = useState(false);
+  const [deliveryInfo, setDeliveryInfo] = useState(null);
+
+  const MAX_CANCEL_REASON_LEN = 60;
+
+  // 취소 사유 목록 (요청 5종 + 기타)
+  const cancelReasons = [
+    "단순 변심",
+    "상품 옵션 변경",
+    "추가 주문",
+    "결제 수단 변경",
+    "배송 정보 변경",
+    "기타 (직접 입력)",
+  ];
+
+  async function getUserInfo() {
     try {
       const res = await fetch(
-        `${API_BASE}/mypage/overview?user_id=${encodeURIComponent(user_id)}`,
-        { credentials: "include", signal, cache: "no-store" }
+        `${API_BASE}/orders/findUserInfoForOrder?user_id=${user_Id}`,
+        { credentials: "include", cache: "no-store" }
       );
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      setOverview({
-        name: data?.name ?? "",
-        grade: data?.user_grade ?? data?.grade ?? "",
-        points: Math.max(0, Math.round(Number(data?.points ?? 0))),
-        couponCount: Math.max(0, Number(data?.coupon_count ?? data?.couponCount ?? 0)),
-      });
+      setUserInfo(data);
     } catch (e) {
-      if (e.name !== "AbortError") {
-        // why: 백엔드 미구현 시도 대비 — 빈상태 유지
-        setOverview((o) => ({ ...o, name: o.name || "회원" }));
-      }
+      if (e.name === "AbortError") return;
+      console.error("load User failed:", e);
+      setUserInfo([]);
     }
   }
 
-  async function fetchOrders(signal, m = months, q = query) {
+  async function getUserOrders() {
     setStatus("loading");
     try {
-      const url = new URL(`${API_BASE}/orders/list`);
-      url.searchParams.set("user_id", user_id);
-      url.searchParams.set("months", String(m));
-      if (q) url.searchParams.set("q", q);
-
-      const res = await fetch(url.toString(), {
-        credentials: "include",
-        signal,
-        cache: "no-store",
-      });
+      const res = await fetch(
+        `${API_BASE}/orders/findAllOrdersByUserId?user_id=${user_Id}`,
+        { credentials: "include", cache: "no-store" }
+      );
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-
-      const mapped = (Array.isArray(data) ? data : []).map((row, idx) => {
-        const id = row?.order_id ?? row?.id ?? `order-${idx}`;
-        const items = Array.isArray(row?.items) ? row.items : [];
-        const sum = Number(row?.total_amount ?? row?.total ?? 0);
-        const dt = row?.order_date ?? row?.date ?? "";
-        const status = row?.status ?? "주문완료";
-        return {
-          id: String(id),
-          date: String(dt),
-          status: String(status),
-          total: Math.max(0, Math.round(sum)),
-          items: items.slice(0, 3).map((it, i2) => ({
-            id: String(it?.product_id ?? it?.id ?? `${id}-p${i2}`),
-            name: it?.name ?? it?.product_name ?? "상품",
-            qty: Math.max(1, Number(it?.qty ?? it?.quantity ?? 1)),
-            img: it?.image ?? it?.img ?? "",
-          })),
-          moreCount: Math.max(0, (items?.length || 0) - 3),
-        };
-      });
-
-      setOrders(mapped);
+      setUserOrders(data);
       setStatus("ready");
     } catch (e) {
       if (e.name === "AbortError") return;
-      console.error("load mypage orders failed:", e);
-      setOrders([]);
+      console.error("load orders failed:", e);
+      setUserOrders([]);
       setStatus("error");
     }
   }
 
-  useEffect(() => {
-    const ac = new AbortController();
-    fetchOverview(ac.signal);
-    fetchOrders(ac.signal);
-    return () => ac.abort();
-  }, [API_BASE, user_id]); // why: 호스트/사용자 변경 대응
+  async function getOrdersItem(order_id) {
+    try {
+      const res = await fetch(
+        `${API_BASE}/orders/findOrdersItemByOrderId?order_id=${order_id}`,
+        { credentials: "include", cache: "no-store" }
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setOrdersItem(data);
+    } catch (e) {
+      if (e.name === "AbortError") return;
+      console.error("load ordersItem failed:", e);
+      setOrdersItem([]);
+    }
+  }
+
+  async function getMyReview() {
+    try {
+      const res = await fetch(
+        `${API_BASE}/mypage/findReviewByUserId?user_id=${user_Id}`,
+        { credentials: "include", cache: "no-store" }
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setMyReview(data);
+    } catch (e) {
+      if (e.name === "AbortError") return;
+      console.error("load myReview failed:", e);
+      setMyReview([]);
+    }
+  }
+
+  async function getDeliveryInfo(order_item_id) {
+    try {
+      const res = await fetch(
+        `${API_BASE}/mypage/findDeliveryInfo?order_item_id=${order_item_id}`,
+        { credentials: "include", cache: "no-store" }
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+
+      setDeliveryInfo({
+        productName: data.name,
+        status: data.delivery_status,
+        carrier: "CJ대한통운",
+        trackingNo: "1234-5678-9012",
+        receiver: data.user_name,
+        address: data.receiver_addr,
+        stepList: [
+          { time: "2025-11-27 09:12", text: "택배사 집화 완료" },
+          { time: "2025-11-27 14:35", text: "물류센터 이동 중" },
+          { time: "2025-11-28 08:10", text: "배달 지역 배송터미널 도착" },
+        ],
+      });
+
+    } catch (e) {
+      if (e.name === "AbortError") return;
+      console.error("load deliveryInfo failed:", e);
+      setDeliveryInfo([]);
+    }
+  }
+
+
+  async function getCanceledOrder() {
+    try {
+      const res = await fetch(
+        `${API_BASE}/mypage/findCanceledOrderByUserId?user_id=${user_Id}`,
+        { credentials: "include", cache: "no-store" }
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setCanceledOrder(data);
+    } catch (e) {
+      if (e.name === "AbortError") return;
+      console.error("load canceledOrder failed:", e);
+      setCanceledOrder([]);
+    }
+  }
+
+
+
+
+  // ⭐ 주문 상세 토글 핸들러 (주문 상세 버튼 클릭 시 호출)
+  async function handleToggleOrderDetails(order_id) {
+    // 이미 열려있는 주문을 다시 누르면 닫기
+    if (openOrderId === order_id) {
+      setOpenOrderId(null);
+      setOrdersItem([]);
+      return;
+    }
+    // 새 주문 상세 열기: 기존 항목 초기화 후 로딩
+    setOpenOrderId(order_id);
+    setOrdersItem([]);
+    await getOrdersItem(order_id);
+  }
+
+  // ===== 모달 열기/닫기 (추가) =====
+  const handleOpenCancelModal = (orderItemId) => {
+    setTargetOrderItemId(orderItemId);
+    setCancelReason("");
+    setShowCancelModal(true);
+  };
+  const handleCloseCancelModal = () => {
+    setShowCancelModal(false);
+    setCancelReason("");
+    setTargetOrderItemId(null);
+  };
+
+
+  // 🚚 배송 현황 모달 열기 (하드코딩 예시)
+  const handleOpenDeliveryModal = (order_item_id) => {
+
+    // TODO: 실제 연동 시 orderItem으로 상품명/상태 등 주입
+    getDeliveryInfo(order_item_id);
+    setShowDeliveryModal(true);
+  };
+
+  // 🚚 배송 현황 모달 닫기
+  const handleCloseDeliveryModal = () => {
+    setShowDeliveryModal(false);
+    setDeliveryInfo(null);
+  };
+
+
+
+  // ===== 컨트롤러 연동: 주문 취소 (추가) =====
+  async function cancelOrderBeforeDelivery() {
+    if (!targetOrderItemId) {
+      alert("취소할 주문을 찾을 수 없습니다.");
+      return;
+    }
+
+    const finalReason =
+      cancelReason === "기타 (직접 입력)" ? customCancelReason.trim() : cancelReason;
+
+    if (!finalReason) {
+      alert("취소 사유를 선택(또는 입력)해주세요.");
+      return;
+    }
+
+    try {
+      setIsSubmittingCancel(true);
+      const url = `${API_BASE}/orders/cancelOrderBeforeDelivery/${user_Id}?order_item_id=${encodeURIComponent(
+        targetOrderItemId
+      )}&cancel_reason=${encodeURIComponent(finalReason)}`;
+
+      const res = await fetch(url, {
+        method: "POST",
+        credentials: "include",
+        cache: "no-store",
+      });
+
+      if (!res.ok) {
+        const msg = await res.text();
+        // why: 서버에서 상태 부적합 등 세부 메시지를 내려줄 수 있어 사용자에게 그대로 안내
+        alert(`취소 실패: ${msg || res.status}`);
+        return;
+      }
+
+      alert("주문이 정상적으로 취소되었습니다.");
+      handleCloseCancelModal();
+      if (openOrderId) {
+        // why: 상태 변경 즉시 반영
+        await getOrdersItem(openOrderId);
+      }
+    } catch (e) {
+      console.error("cancelOrderBeforeDelivery error:", e);
+      alert("주문 취소 중 오류가 발생했습니다.");
+    } finally {
+      setIsSubmittingCancel(false);
+    }
+  }
 
   useEffect(() => {
-    // 검색 인풋 디바운스
-    if (typingTimer.current) clearTimeout(typingTimer.current);
-    typingTimer.current = setTimeout(() => {
-      setQuery(searchInput.trim());
-    }, 300);
-    return () => typingTimer.current && clearTimeout(typingTimer.current);
-  }, [searchInput]);
+    getUserInfo();
+    getUserOrders();
+    getMyReview();
+    getCanceledOrder();
+  }, []);
 
-  useEffect(() => {
-    const ac = new AbortController();
-    fetchOrders(ac.signal, months, query);
-    return () => ac.abort();
-  }, [months, query]);
+  function openContent(content) {
+    if (content === 'orderList') getUserOrders();
+    if (content === 'myReview') getMyReview();
+    if (content === 'canceledOrder') getCanceledOrder();
+    // if (content === 'wishlist') getCanceledOrder();
 
-  const emptyText = useMemo(() => `${months}개월간의 주문 내역이 없습니다.`, [months]);
+    setShowContent(content);
+  }
+
+  const emptyText = useMemo(
+    () => `${months}개월간의 주문 내역이 없습니다.`,
+    [months]
+  );
+
+
+  async function confirmOrder(order_item_id,order_id) {
+
+    const result = await Swal.fire({
+      html: `
+        <br/>
+        <img src="https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdna%2FVJeVm%2FdJMcac2z6rq%2FAAAAAAAAAAAAAAAAAAAAABaVghGKOGjppn8tBrHbTDYjmeu3vF7fHhu6sJybVq4l%2Fimg.png%3Fcredential%3DyqXZFxpELC7KVnFOS48ylbz2pIh7yKj8%26expires%3D1764514799%26allow_ip%3D%26allow_referer%3D%26signature%3DO3hjGw2TFVTw2gy2EEnkBBm4nQE%253D" width="200px"/>
+        <br/><br/>
+        구매를 확정하시겠습니까?<br/>
+        구매 확정 후에는 환불이 불가능합니다.
+      `,
+      title: "",
+      text: "123",
+      // icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "확인",
+      cancelButtonText: "취소",
+      reverseButtons: true,
+      focusCancel: true,
+    });
+    if (!result.isConfirmed) return;
+
+    try {
+      const delRes = await fetch(`${API_BASE}/orders/confirmOrder/${user_Id}?order_item_id=${order_item_id}`, {
+        method: "post",
+        credentials: "include",
+      });
+      if (!delRes.ok) throw new Error(`DELETE HTTP ${delRes.status}`);
+
+      await Swal.fire({
+        title: "",
+        text: "구매가 확정되었습니다.",
+        icon: "success",
+        confirmButtonText: "확인",
+      });
+    } catch (e) {
+      console.error("delete failed:", e);
+      await Swal.fire({
+        title: "오류가 발생했습니다",
+        text: e?.message ?? "잠시 후 다시 시도해 주세요.",
+        icon: "error",
+        confirmButtonText: "확인",
+      });
+    } finally {
+      await getOrdersItem(order_id);
+    }
+  }
+
+
+  async function refundRequest(order_item_id,order_id) {
+
+    const result = await Swal.fire({
+      html: `
+        <br/>
+        <img src="https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdna%2FVJeVm%2FdJMcac2z6rq%2FAAAAAAAAAAAAAAAAAAAAABaVghGKOGjppn8tBrHbTDYjmeu3vF7fHhu6sJybVq4l%2Fimg.png%3Fcredential%3DyqXZFxpELC7KVnFOS48ylbz2pIh7yKj8%26expires%3D1764514799%26allow_ip%3D%26allow_referer%3D%26signature%3DO3hjGw2TFVTw2gy2EEnkBBm4nQE%253D" width="200px"/>
+        <br/><br/>
+        환불 신청하시겠습니까?<br/>
+        신청 후 1:1 문의를 통해서 문의해주세요.
+      `,
+      title: "",
+      text: "123",
+      // icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "확인",
+      cancelButtonText: "취소",
+      reverseButtons: true,
+      focusCancel: true,
+    });
+    if (!result.isConfirmed) return;
+
+    try {
+      const delRes = await fetch(`${API_BASE}/orders/refundRequest/${user_Id}?order_item_id=${order_item_id}`, {
+        method: "post",
+        credentials: "include",
+      });
+      if (!delRes.ok) throw new Error(`DELETE HTTP ${delRes.status}`);
+
+      await Swal.fire({
+        title: "",
+        text: "환불 신청되었습니다.",
+        icon: "success",
+        confirmButtonText: "확인",
+      });
+    } catch (e) {
+      console.error("delete failed:", e);
+      await Swal.fire({
+        title: "오류가 발생했습니다",
+        text: e?.message ?? "잠시 후 다시 시도해 주세요.",
+        icon: "error",
+        confirmButtonText: "확인",
+      });
+    } finally {
+      await getOrdersItem(order_id);
+    }
+
+  }
+
+
+
 
   return (
-    <div
-      style={{
-        fontFamily:
-          "'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',Pretendard,ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif",
-      }}
-    >
-      <div className="container-fluid" style={{ marginTop: 80, backgroundColor: "#f7f8fa" }}>
-        <div className="container py-4">
+    <div className="mypage">
+      <div className="container-fluid" style={{ backgroundColor: "#f7f8fa" }}>
+        <div className="container py-4" style={{ width: "85%" }}>
           <div className="row g-4">
-            {/* 좌측 사이드바 */}
-            <aside className="col-lg-3">
-              {/* 프로필/요약 카드 */}
-              <div className="border rounded-3 bg-white p-3 mb-3">
-                <div className="d-flex justify-content-between align-items-center">
-                  <div className="fw-semibold">
-                    반가워요!! <span className="text-primary">{overview.name || "회원"}</span>님
-                  </div>
-                  <span className="badge text-bg-light">{overview.grade || "LV.1"}</span>
-                </div>
-                <div className="small text-muted mt-2">
-                  보유 적립금 <b className="text-dark">{moneyKRW(overview.points)}</b>
-                </div>
-                <div className="small text-muted">
-                  보유 쿠폰 <b className="text-dark">{overview.couponCount}</b>장
-                </div>
-                <div className="mt-2">
-                  <Link className="btn btn-sm btn-outline-secondary rounded-pill" to="/mypage/coupons">
-                    쿠폰함 보기
-                  </Link>
-                </div>
-              </div>
 
-              {/* 메뉴 */}
-              <nav className="border rounded-3 bg-white p-3">
-                <div className="mb-3">
-                  <div className="fw-semibold mb-2">주문내역</div>
-                  <ul className="list-unstyled ms-1 small">
-                    <li className="mb-2">
-                      <Link className="link-dark text-decoration-none fw-semibold" to="/mypage/orders">
-                        주문 내역
-                      </Link>
-                    </li>
-                    <li className="mb-2">
-                      <Link className="link-secondary text-decoration-none" to="/mypage/coupons">
-                        쿠폰
-                      </Link>
-                    </li>
-                    <li className="mb-2">
-                      <Link className="link-secondary text-decoration-none" to="/mypage/wishlist">
-                        찜한 상품
-                      </Link>
-                    </li>
-                    <li className="mb-2">
-                      <Link className="link-secondary text-decoration-none" to="/mypage/frequent">
-                        자주 산 상품
-                      </Link>
-                    </li>
-                  </ul>
-                </div>
+            <MypageLeftSideBar
+              user_name={user_name} overview={overview} moneyKRW={moneyKRW} userInfo={userInfo} showContent={showContent} setShowContent={setShowContent} myReview={myReview} setMyReview={setMyReview} getMyReview={getMyReview} openContent={openContent}
+            />
 
-                <div className="mb-3">
-                  <div className="fw-semibold mb-2">쇼핑</div>
-                  <ul className="list-unstyled ms-1 small">
-                    <li className="mb-2">
-                      <Link className="link-secondary text-decoration-none" to="/mypage/payments">
-                        결제수단 · 페이
-                      </Link>
-                    </li>
-                    <li className="mb-2">
-                      <Link className="link-secondary text-decoration-none" to="/mypage/returns">
-                        취소 · 반품 내역
-                      </Link>
-                    </li>
-                    <li className="mb-2">
-                      <Link className="link-secondary text-decoration-none" to="/mypage/reviews">
-                        상품 후기
-                      </Link>
-                    </li>
-                    <li className="mb-2">
-                      <Link className="link-secondary text-decoration-none" to="/mypage/gifts">
-                        선물 내역
-                      </Link>
-                    </li>
-                    <li className="mb-2">
-                      <Link className="link-secondary text-decoration-none" to="/mypage/support">
-                        상담 문의
-                      </Link>
-                    </li>
-                  </ul>
-                </div>
+            {showContent === 'orderList' && (
+              <MypageOrderList
+                months={months} setMonths={setMonths} searchInput={searchInput} setSearchInput={setSearchInput} setQuery={setQuery} status={status} userOrders={userOrders} getUserOrders={getUserOrders} emptyText={emptyText} formatKoreanDateTime={formatKoreanDateTime} handleToggleOrderDetails={handleToggleOrderDetails} openOrderId={openOrderId} moneyKRW={moneyKRW} handleOpenCancelModal={handleOpenCancelModal} ordersItem={ordersItem} confirmOrder={confirmOrder} refundRequest={refundRequest} handleOpenDeliveryModal={handleOpenDeliveryModal}
+              />
+            )}
 
-                <div className="mb-3">
-                  <div className="fw-semibold mb-2">혜택</div>
-                  <ul className="list-unstyled ms-1 small">
-                    <li className="mb-2">
-                      <Link className="link-secondary text-decoration-none" to="/mypage/membership">
-                        멤버십
-                      </Link>
-                    </li>
-                  </ul>
-                </div>
+            {showContent === 'myReview' && (
+              <MypageMyReview 
+                myReview={myReview} setMyReview={setMyReview} getMyReview={getMyReview} formatKoreanDateTime={formatKoreanDateTime}
+              />
+            )}
 
-                <div className="mb-3">
-                  <div className="fw-semibold mb-2">내 정보관리</div>
-                  <ul className="list-unstyled ms-1 small">
-                    <li className="mb-2">
-                      <Link className="link-secondary text-decoration-none" to="/mypage/addresses">
-                        배송지 관리
-                      </Link>
-                    </li>
-                    <li className="mb-2">
-                      <Link className="link-secondary text-decoration-none" to="/mypage/profile">
-                        회원 정보 관리
-                      </Link>
-                    </li>
-                    <li className="mb-2">
-                      <Link className="link-secondary text-decoration-none" to="/mypage/vip">
-                        VIP 예상 등급
-                      </Link>
-                    </li>
-                  </ul>
-                </div>
-
-                <div>
-                  <div className="fw-semibold mb-2">서비스 안내</div>
-                  <ul className="list-unstyled ms-1 small">
-                    <li className="mb-2">
-                      <Link className="link-secondary text-decoration-none" to="/help/purplebox">
-                        퍼플박스
-                      </Link>
-                    </li>
-                    <li className="mb-2">
-                      <Link className="link-secondary text-decoration-none" to="/help/vip">
-                        VIP 안내
-                      </Link>
-                    </li>
-                  </ul>
-                </div>
-              </nav>
-            </aside>
-
-            {/* 우측 콘텐츠 */}
-            <section className="col-lg-9">
-              <div className="border rounded-3 bg-white p-4">
-                {/* 타이틀 + 필터 */}
-                <div className="d-flex flex-column flex-md-row gap-2 justify-content-between align-items-md-center">
-                  <h5 className="mb-0">주문 내역</h5>
-                  <div className="d-flex gap-2">
-                    <select
-                      className="form-select form-select-sm"
-                      aria-label="기간 선택"
-                      style={{ width: 120 }}
-                      value={months}
-                      onChange={(e) => setMonths(Number(e.target.value))}
-                    >
-                      <option value={3}>3개월</option>
-                      <option value={6}>6개월</option>
-                      <option value={12}>1년</option>
-                    </select>
-                    <div className="input-group input-group-sm" style={{ width: 260 }}>
-                      <input
-                        className="form-control"
-                        placeholder="상품명으로 검색해보세요"
-                        value={searchInput}
-                        onChange={(e) => setSearchInput(e.target.value)}
-                        aria-label="주문 검색"
-                      />
-                      <button
-                        className="btn btn-outline-secondary"
-                        onClick={() => setQuery(searchInput.trim())}
-                        aria-label="검색"
-                      >
-                        <i className="fa fa-search" aria-hidden="true" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 컨텐츠 */}
-                <div className="mt-4">
-                  {status === "loading" && (
-                    <div className="py-5 text-center text-muted">주문 내역을 불러오는 중…</div>
-                  )}
-
-                  {status === "error" && orders.length === 0 && (
-                    <div className="py-5 text-center">
-                      <div className="mb-2">주문 내역을 불러오지 못했습니다.</div>
-                      <button
-                        className="btn btn-outline-secondary rounded-pill"
-                        onClick={() => {
-                          const ac = new AbortController();
-                          fetchOrders(ac.signal);
-                        }}
-                      >
-                        다시 시도
-                      </button>
-                    </div>
-                  )}
-
-                  {status !== "loading" && orders.length === 0 && (
-                    <div className="text-center py-5">
-                      <div
-                        className="mx-auto mb-3"
-                        style={{
-                          width: 64,
-                          height: 64,
-                          borderRadius: 12,
-                          background: "#f2f3f6",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: 28,
-                        }}
-                        aria-hidden="true"
-                      >
-                        🧾
-                      </div>
-                      <div className="mb-2">{emptyText}</div>
-                      <Link to="/best" className="btn btn-outline-secondary rounded-pill">
-                        베스트 상품 보기
-                      </Link>
-                    </div>
-                  )}
-
-                  {orders.length > 0 && (
-                    <div className="vstack gap-3">
-                      {orders.map((od) => (
-                        <div key={od.id} className="border rounded-3 p-3">
-                          <div className="d-flex justify-content-between align-items-center">
-                            <div className="small text-muted">
-                              <span className="me-2">주문번호 {od.id}</span>
-                              <span>{od.date}</span>
-                            </div>
-                            <span className="badge text-bg-light">{od.status}</span>
-                          </div>
-
-                          <div className="mt-3 d-flex flex-wrap gap-3 align-items-center">
-                            {od.items.map((it) =>
-                              it.img ? (
-                                <img
-                                  key={it.id}
-                                  src={it.img}
-                                  alt={it.name}
-                                  style={{
-                                    width: 72,
-                                    height: 72,
-                                    borderRadius: 8,
-                                    objectFit: "cover",
-                                  }}
-                                />
-                              ) : (
-                                <div
-                                  key={it.id}
-                                  className="bg-light border"
-                                  style={{ width: 72, height: 72, borderRadius: 8 }}
-                                  aria-label={`${it.name} 이미지 없음`}
-                                />
-                              )
-                            )}
-                            {od.moreCount > 0 && (
-                              <div className="small text-muted">외 {od.moreCount}개</div>
-                            )}
-                          </div>
-
-                          <div className="d-flex justify-content-between align-items-center mt-3">
-                            <div className="fw-semibold">결제금액 {moneyKRW(od.total)}</div>
-                            <div className="d-flex gap-2">
-                              <Link
-                                to={`/orders/detail/${od.id}`}
-                                className="btn btn-sm btn-outline-secondary rounded-pill"
-                              >
-                                주문 상세
-                              </Link>
-                              <Link
-                                to={`/orders/reorder/${od.id}`}
-                                className="btn btn-sm btn-dark rounded-pill"
-                                style={{ backgroundColor: "#82c408ff", borderColor: "#81c408" }}
-                              >
-                                다시 구매
-                              </Link>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </section>
+            {showContent === 'canceledOrder' && (
+              <MypageCanceledOrder
+                canceledOrder={canceledOrder} setCanceledOrder={setCanceledOrder} formatKoreanDateTime={formatKoreanDateTime} moneyKRW={moneyKRW}
+              />
+            )}
           </div>
         </div>
       </div>
+
+      {/* ===== 취소 사유 모달 (추가) ===== */}
+      {showCancelModal && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.35)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1050,
+          }}
+          aria-modal="true"
+          role="dialog"
+        >
+          <div
+            className="bg-white rounded-3 p-3"
+            style={{ width: "min(420px, 92%)", boxShadow: "0 8px 24px rgba(0,0,0,0.15)" }}
+          >
+            <h6 className="mb-3">취소/환불 사유 선택</h6>
+            <div className="mb-3">
+              <div className="d-flex flex-column gap-2">
+                {cancelReasons.map((r) => (
+                  // ✏️ 수정: label과 '기타' 입력창을 분리해서 세로 배치
+                  <React.Fragment key={r}>
+                    <label
+                      className="form-check-label d-flex align-items-center"
+                      style={{ cursor: "pointer" }}
+                    >
+                      <input
+                        type="radio"
+                        className="form-check-input me-2"
+                        name="cancelReason"
+                        value={r}
+                        checked={cancelReason === r}
+                        onChange={(e) => setCancelReason(e.target.value)}
+                      />
+                      <span>{r}</span>
+                    </label>
+
+                    {r === "기타 (직접 입력)" && cancelReason === "기타 (직접 입력)" && (
+                      <div
+                        style={{marginTop: "0.25rem" }}
+                      >
+                        <textarea
+                          style={{resize : "none",height:'100px'}}
+                          className="form-control"
+                          placeholder="취소/환불 사유를 입력하세요"
+                          value={customCancelReason}
+                          onChange={(e) => {
+                            const next = e.target.value;                  
+                            if (next.length > MAX_CANCEL_REASON_LEN) {    
+                              alert(`취소/환불 사유는 최대 ${MAX_CANCEL_REASON_LEN}자까지 입력 가능합니다.`);
+                              return;
+                            }
+                            setCustomCancelReason(next)
+                          }}
+                        >
+                        </textarea>
+                        <div className="text-end mt-1 small text-muted">
+                          {customCancelReason.length} / {MAX_CANCEL_REASON_LEN}자
+                        </div>
+                      </div>
+                    )}
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
+
+            <div className="d-flex justify-content-end gap-2">
+              <button
+                type="button"
+                className="btn btn-outline-secondary"
+                onClick={handleCloseCancelModal}
+                disabled={isSubmittingCancel}
+              >
+                닫기
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={cancelOrderBeforeDelivery}
+                disabled={
+                  isSubmittingCancel ||
+                  !cancelReason ||
+                  (cancelReason === "기타 (직접 입력)" && !customCancelReason.trim())
+                }
+              >
+                {isSubmittingCancel ? "처리 중…" : "확인"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+      {/* 🚚 배송 현황 모달 (하드코딩 틀) */}
+      {showDeliveryModal && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.35)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1050,
+          }}
+          aria-modal="true"
+          role="dialog"
+        >
+          <div
+            className="bg-white rounded-3 p-3"
+            style={{ width: "min(600px, 92%)", boxShadow: "0 8px 24px rgba(0,0,0,0.15)" }}
+          >
+            <h6 className="mb-3">배송 현황</h6>
+
+            <div className="mb-2">
+              <div className="fw-semibold mb-1">
+                {deliveryInfo?.productName ?? "상품명(예시)"}
+              </div>
+              <div className="small text-muted">
+                {(deliveryInfo?.carrier ?? "CJ대한통운") +
+                  " · " +
+                  (deliveryInfo?.trackingNo ?? "1234-5678-9012")}
+              </div>
+            </div>
+            
+            <div style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                width: "85%",
+                margin: "0 auto"
+              }}>
+
+              
+
+              <div className="delivery-img-container">
+                <img src={delivery1} className="delivery-img"/>
+                <br/>
+                <div className={`delivery-img-name`}>
+                  주문 확인
+                </div>
+              </div>
+              <div>
+                &gt;
+              </div>
+              <div className="delivery-img-container">
+                <img src={delivery2} className="delivery-img"/>
+                <br/>
+                <div className={`
+                  delivery-img-name
+                  ${deliveryInfo?.status === '배송준비' ? 'btn-disabled' : ''}
+                `}>
+                  배송중
+                </div>
+              </div>
+              <div>
+                &gt;
+              </div>
+              <div className="delivery-img-container">
+                <img src={delivery3} className="delivery-img"/>
+                <br/>
+                <div className={`
+                  delivery-img-name
+                  ${(deliveryInfo?.status === '배송준비' || deliveryInfo?.status === '배송중') ? 'btn-disabled' : ''}
+                `}>
+                  배송 완료
+                </div>
+              </div>
+              
+              
+              
+              
+            </div>
+            
+
+
+
+
+            <div className="mb-3">
+              <span className="badge bg-success">
+                {deliveryInfo?.status ?? "배송중"}
+              </span>
+            </div>
+
+            <div
+              className="border rounded-3 p-2 mb-3"
+              style={{ maxHeight: 180, overflowY: "auto" }}
+            >
+              {(deliveryInfo?.stepList ?? []).map((step, idx) => (
+                <div key={idx} className="small mb-1">
+                  <div className="text-muted">{step.time}</div>
+                  <div>{step.text}</div>
+                </div>
+              ))}
+
+              {!deliveryInfo?.stepList && (
+                <div className="small text-muted">
+                  예시 데이터입니다. 실제 배송 이력과 연동해 주세요.
+                </div>
+              )}
+            </div>
+
+            <div className="small text-muted mb-3">
+              받는 분: {deliveryInfo?.receiver ?? "name error"}
+              <br />
+              주소: {deliveryInfo?.address ?? "addr error"}
+            </div>
+
+            <div className="d-flex justify-content-end">
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleCloseDeliveryModal}
+              >
+                닫기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
     </div>
   );
 }

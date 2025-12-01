@@ -21,6 +21,7 @@ import Signup from "./pages/signup/Signup";
 import PreSignupEmail from "./pages/signup/PreSignupEmail";
 
 import { AuthContext } from "./contexts/AuthContext";
+import { CartContext } from "./contexts/CartContext";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUserList from "./pages/admin/AdminUserList";
 import AdminLogin from "./pages/admin/AdminLogin";
@@ -48,6 +49,7 @@ import MyPage from './pages/mypage/mypage'
 import ScrollToTop from "./components/common/ScrollToTop";
 import Membership from "./pages/mypage/Membership";
 import OrderDelivery from "./pages/mypage/OrderDelivery";
+import ReviewWrite from "./components/review/ReviewWrite";
 
 // JWT 파싱 헬퍼
 function parseJwt(token) {
@@ -122,79 +124,96 @@ function getInitialAuth() {
 
 function App() {
   const [auth, setAuth] = useState(() => getInitialAuth());
+  const [cartAmount, setCartAmount] = useState(0);
+  const API_BASE = import.meta.env.VITE_API_BASE_URL;
+  
+  async function findCartAmount() {
+    if (!auth.loggedIn) return;
+    const user_id = JSON.parse(window.localStorage.getItem('loginUser')).userId;
+    const res = await fetch(
+      `${API_BASE}/cart/findCartAmountByUserId?user_id=${user_id}`
+    );
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const amount = await res.json();
+    setCartAmount(Number(amount));
+  }
 
   return (
     <AuthContext.Provider value={{ auth, setAuth }}>
-      <BrowserRouter>
-      <ScrollToTop/>
-        <Routes>
-          <Route path="/pre-signup" element={<PreSignupEmail />} />
-          <Route element={<Layout />}>
-            <Route path="/" element={<Index />} />
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/contact" element={<Contact />} />
+      <CartContext.Provider value={{ cartAmount, setCartAmount, findCartAmount }}>
+        <BrowserRouter>
+        <ScrollToTop/>
+          <Routes>
+            <Route path="/pre-signup" element={<PreSignupEmail />} />
+            <Route element={<Layout />}>
+              <Route path="/" element={<Index />} />
+              <Route path="/cart" element={<Cart />} />
+              <Route path="/contact" element={<Contact />} />
 
-            <Route path="/orders" element={<Orders />} />
-            <Route path="/orders/success" element={<SuccessPage/>} />
-            <Route path="/orders/fail" element={<FailPage/>} />
+              <Route path="/orders" element={<Orders />} />
+              <Route path="/orders/success" element={<SuccessPage/>} />
+              <Route path="/orders/fail" element={<FailPage/>} />
 
-            <Route path="/mypage" element={<MyPage/>}/>
-            <Route path="/mypage/membership" element={<Membership/>} />
-            <Route path="/mypage/orders/${order.orderId}/delivery" element={<OrderDelivery/>} />
+              <Route path="/mypage" element={<MyPage/>}/>
+              <Route path="/mypage/membership" element={<Membership/>} />
+              <Route path="/mypage/orders/${order.orderId}/delivery" element={<OrderDelivery/>} />
 
-            {/*  사용자 SHOP */}
-            <Route path="/shop" element={<ShopMain />} />
-            <Route path="/shop/qa" element={<ShopQA />} />
+              {/*  사용자 SHOP */}
+              <Route path="/shop" element={<ShopMain />} />
+              <Route path="/shop/qa" element={<ShopQA />} />
 
-            <Route path="/shop/detail/:id" element={<ShopDetail />} />
+              <Route path="/shop/detail/:id" element={<ShopDetail />} />
 
-            {/* 생산자 페이지 */}
-            <Route path='store/:prodcuerId' element={<StoreMyPage/>}/>
+              {/* 생산자 페이지 */}
+              <Route path='store/:prodcuerId' element={<StoreMyPage/>}/>
 
-            {/* ⭐ 공동구매 페이지 추가 */}
-            <Route path="/groupdeal" element={<GroupDealListPage />} />
-            <Route path="/groupdeal/:id" element={<GroupDealDetailPage />} />
+              <Route path="/review/write/:order_item_id" element={<ReviewWrite/>}/>
 
-            {/* 생산자 마이페이지 */}
-            <Route path="/producer" element={<ProducerLayout />}>
-              <Route index element={<ProducerDashboard />} />
-              <Route path="orders" element={<ProducerOrdersPage />} />
-              <Route path="orders/:orderId" element={<ProducerOrderDetailPage />} />
-              <Route path="products" element={<ProducerProductsPage />} />
-              <Route path="profile" element={<ProducerProfilePage />} />
+              {/* ⭐ 공동구매 페이지 추가 */}
+              <Route path="/groupdeal" element={<GroupDealListPage />} />
+              <Route path="/groupdeal/:id" element={<GroupDealDetailPage />} />
+
+              {/* 생산자 마이페이지 */}
+              <Route path="/producer" element={<ProducerLayout />}>
+                <Route index element={<ProducerDashboard />} />
+                <Route path="orders" element={<ProducerOrdersPage />} />
+                <Route path="orders/:orderId" element={<ProducerOrderDetailPage />} />
+                <Route path="products" element={<ProducerProductsPage />} />
+                <Route path="profile" element={<ProducerProfilePage />} />
+              </Route>
+
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="*" element={<NotFound404 />} />
             </Route>
 
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="*" element={<NotFound404 />} />
-          </Route>
+            <Route path="/tables" element={<Tables />} />
+            <Route path="/checkout" element={<CheckoutPage/>} />
 
-          <Route path="/tables" element={<Tables />} />
-          <Route path="/checkout" element={<CheckoutPage/>} />
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route path="login" element={<AdminLogin />} />
+              <Route path="signup" element={<AdminSignup />} />
 
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route path="login" element={<AdminLogin />} />
-            <Route path="signup" element={<AdminSignup />} />
-
-            <Route
-              index
-              element={
-                <RequireAdmin>
-                  <AdminDashboard />
-                </RequireAdmin>
-              }
-            />
-            <Route
-              path="users"
-              element={
-                <RequireAdmin>
-                  <AdminUserList />
-                </RequireAdmin>
-              }
-            />
-          </Route>
-        </Routes>
-      </BrowserRouter>
+              <Route
+                index
+                element={
+                  <RequireAdmin>
+                    <AdminDashboard />
+                  </RequireAdmin>
+                }
+              />
+              <Route
+                path="users"
+                element={
+                  <RequireAdmin>
+                    <AdminUserList />
+                  </RequireAdmin>
+                }
+              />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </CartContext.Provider>
     </AuthContext.Provider>
   );
 }

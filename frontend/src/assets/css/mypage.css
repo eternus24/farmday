@@ -1,0 +1,258 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css");
+
+.mypage {
+    font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+}
+
+
+.greeting-box-1 {
+    color: #222;
+    margin-top: 5px;
+    margin-bottom: 15px;
+    margin-left: 3px;
+}
+
+.greeting-badge, .greeting-badge-2 {
+    color: #565e67;
+}
+
+.greeting-box-2 {
+    border: 1px solid lightgray;
+    border-radius: 10px;
+    padding: 5px 10px 5px 10px;
+    color: #565e67;
+    font-size: 10pt;
+    font-weight: 600;
+    
+}
+
+.greeting-box-2-1, .greeting-box-2-2 {
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+.greeting-box-2-1 {
+    padding-top: 10px;
+}
+
+.greeting-box-2-2 {
+    padding-bottom: 10px;
+}
+
+.greeting-badge-2 {
+    color: #222;
+    font-weight: bold;
+    letter-spacing: 1px;
+    font-size: 11pt;
+}
+
+.link-main {
+    color: #222;
+    padding-left: 10px;
+    padding-top: 7px;
+    padding-bottom: 7px;
+    font-size: 12pt;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.link-main:hover {
+    background-color: #eeeeee;
+    font-weight: 600;
+}
+
+
+.link-secondary {
+    color: #222;
+    cursor: pointer;
+}
+
+.menu-img {
+    width: 25px;
+    margin-right: 10px;
+}
+
+
+
+.order-box {
+    margin-top: 10px;
+    padding-top: 20px;
+    margin-bottom: 60px;
+    border-top: 1px solid lightgray;
+}
+
+.order-canceled-box {
+    margin-top: 10px;
+    padding-top: 10px;
+    margin-bottom: 20px;
+    border-top: 1px solid lightgray;
+}
+
+.order-date-span {
+    color: #222;
+}
+
+.orders-thumbnail-img {
+    width: 130px;
+    height: 130px;
+    object-fit: cover;
+    border-radius: 10px;
+    box-shadow: 3px 3px 5px #222;
+}
+
+.orders-canceled-img {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 5px;
+    filter: brightness(0.6);
+}
+
+.orders-thumbnail-detail {
+    margin-left: 15px;
+    color: #222;
+    font-weight: 400;
+}
+
+
+.toggle-btn {
+    margin-top: 30px;
+    width: 100%;
+    height: 20px;
+    border: 1px solid #cccccc;
+    border-radius: 3px;
+    background-color: #cccccc;
+    text-align: center;
+    color: white;
+    font-size: 10pt;
+}
+
+
+.orders-item-container {
+    padding-top: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #cccccc;
+    display: flex !important;
+    align-items: center !important;
+}
+
+
+.orders-item-img {
+    width: 95px;
+    height: 95px;
+    object-fit: cover;
+    border-radius: 10px;
+    box-shadow: 5px 5px 10px #222;
+    transition: 0.3s;
+}
+
+.orders-item-img:hover {
+    transform: translateY(-5px);
+}
+
+
+
+
+
+
+
+.orders-item-detail {
+    margin-left: 17px;
+}
+
+.orders-item-btns-container {
+    margin-left: auto;
+}
+
+.order-item-btns {
+    align-self: flex-end;
+    margin-left: auto;
+}
+
+
+.order-cancel-btn {
+  border: 1px solid #ffb524;
+  border-radius: 5px;
+  padding: 7px 14px 7px 14px;
+  background-color: white;
+  font-weight: 600;
+  transition: 0.2s;
+  color: #75af09;
+}
+
+.order-cancel-finished {
+  border: 1px solid #aaaaaa;
+  border-radius: 5px;
+  padding: 7px 14px 7px 14px;
+  background-color: white;
+  font-weight: 600;
+  transition: 0.2s;
+}
+
+
+.order-cancel-btn:hover {
+  background-color: #9be90b;
+  color: white;
+  border-color: #9be90b;
+}
+
+.orders-item-detail-origin {
+    font-size: 10pt;
+    color: gray;
+}
+
+.orders-item-detail-name {
+    color: #222;
+    font-weight: 500;
+    margin-bottom: 5px;
+}
+
+.orders-item-detail-main {
+
+}
+
+.orders-item-detail-price {
+    color: black;
+    font-weight: 600;
+}
+
+.orders-item-detail-delivery {
+    text-align: end;
+    font-size: 11pt;
+    margin-bottom: 35px;
+}
+
+
+.is-canceled {
+    filter: brightness(0.5);
+}
+
+.delivery-img-container {
+    text-align: center;
+    width: 156px;
+}
+
+.delivery-img {
+    height: 100px;
+    margin-bottom: 5px;
+}
+
+.delivery-img-name {
+    width: 100px;
+    color: white;
+    font-weight: 600;
+    text-align: center;
+    border: 1px solid rgb(28, 189, 28);
+    background-color: rgb(28, 189, 28);
+    border-radius: 5px;
+    
+    margin: 0 auto;
+    margin-bottom: 25px;
+}
+
+.delivery-img-name.btn-disabled {
+    border: 1px solid #dddddd;
+    color: #aaaaaa;
+    background-color: white;
+    font-weight: 400;
+}

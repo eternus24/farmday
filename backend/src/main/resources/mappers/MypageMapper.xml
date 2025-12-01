@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.farmday.mypage.MypageMapper">
+
+  <select id="findProductMainImage" parameterType="int" resultType="String">
+    select 
+      main_image 
+    from 
+      product 
+    where 
+      product_id=#{product_id}
+  </select>
+
+  <select id="isWishlistExist" parameterType="java.util.Map" resultType="int">
+    select 
+      count(*) 
+    from 
+      wishlist
+    where 
+      user_id=#{user_id} and product_id=#{product_id}
+  </select>
+
+  <select id="findWishlistByUserId" parameterType="String" resultType="com.farmday.mypage.WishlistDTO">
+    select * from wishlist where user_id=#{user_id}
+  </select>
+
+  <select id="findCanceledOrderByUserId" parameterType="String" resultType="com.farmday.mypage.OrdersCanceledDTO">
+    select
+      c.*, 
+      o.toss_orderid,
+      i.price_at_order,i.quantity,i.order_status,i.created_date order_created_date,
+      p.name,p.main_image,
+      d.grade,d.unit_name,d.origin_region,
+      s.store_name
+    from
+      orders_canceled c, orders o, orders_item i, product p, product_detail d, store s
+    where
+      c.user_id=#{user_id}
+      and c.order_item_id=i.order_item_id
+      and i.order_id=o.order_id
+      and c.product_id=p.product_id
+      and c.product_id=d.product_id
+      and p.producer_id=s.producer_id
+    order by order_created_date desc
+  </select>
+
+
+
+
+  <insert id="insertWishlist" parameterType="com.farmday.mypage.WishlistDTO">
+    insert into wishlist
+      (wishlist_id,user_id,product_id)
+    values
+      (WISHLIST_SEQ.NEXTVAL,#{user_id},#{product_id})
+  </insert>
+
+  <delete id="deleteWishlist" parameterType="java.util.Map">
+    delete
+      wishlist
+    where
+      user_id=#{user_id} and product_id=#{product_id}
+  </delete>
+
+
+
+
+  <select id="findReviewByUserId" parameterType="String" resultType="com.farmday.mypage.MyReviewDTO">
+    select 
+      rv.*,
+      o.toss_orderid,
+      i.price_at_order,i.quantity,
+      p.name,p.main_image,
+      d.grade,d.unit_name,d.origin_region,d.detail_desc
+    from 
+      product_review rv, orders o, orders_item i, product p, product_detail d
+    where 
+      writer_user_id=#{user_id}
+      and rv.order_item_id=i.order_item_id
+      and i.order_id=o.order_id
+      and rv.product_id=p.product_id
+      and rv.product_id=d.product_id
+    order by rv.created_date desc
+  </select>
+
+
+  <select id="findDeliveryInfo" parameterType="int" resultType="com.farmday.orders.DeliveryDTO">
+    select 
+      d.*,
+      o.toss_orderid,o.receiver_name,o.receiver_phone,o.receiver_addr,o.delivery_message,
+      i.price_at_order,i.quantity,i.order_status,i.created_date order_created_date,
+      p.name,p.main_image,
+      pd.grade,pd.unit_name,pd.origin_region,pd.detail_desc,
+      u.userid user_id,u.name user_name
+    from 
+      delivery d,orders_item i,product p,product_detail pd,orders o,users u
+    where 
+      d.order_item_id=#{order_item_id}
+      and d.order_item_id=i.order_item_id
+      and i.product_id=p.product_id
+      and i.product_id=pd.product_id
+      and i.order_id=o.order_id
+      and o.user_id=u.userid
+  </select>
+
+
+
+
+</mapper>

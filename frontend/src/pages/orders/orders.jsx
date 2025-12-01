@@ -22,7 +22,7 @@ export default function Orders() {
 
   const { protocol, hostname } = window.location;
   const API_BASE = `${protocol}//${hostname}:8080`;
-  const user_id = "yoonho";
+   const user_id = JSON.parse(window.localStorage.getItem('loginUser')).userId;
 
   const location = useLocation();
   const { shipping } = location.state || {};

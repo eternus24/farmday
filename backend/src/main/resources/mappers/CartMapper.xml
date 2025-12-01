@@ -20,6 +20,14 @@
     order by created_date desc
   </select>
 
+  <select id="findCartAmountByUserId" parameterType="String" resultType="int">
+    select count(*) from cart where user_id=#{user_id}
+  </select>
+
+
+
+
+
   <insert id="insertCart" parameterType="java.util.Map">
     insert into cart 
       (cart_id,user_id,product_id,quantity) 

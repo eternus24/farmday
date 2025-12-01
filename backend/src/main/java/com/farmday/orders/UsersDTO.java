@@ -31,4 +31,5 @@ public class UsersDTO {
 
     private String user_grade;
     private int points;
+    private String grade_code;
 }

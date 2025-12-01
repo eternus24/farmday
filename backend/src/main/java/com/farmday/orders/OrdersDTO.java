@@ -28,4 +28,8 @@ public class OrdersDTO {
     private int used_points;
     private int subtotal;
 
+    private int order_amount;
+    private String thumbnail_name;
+    private String thumbnail_img;
+    private int thumbnail_id;
 }
