@@ -61,4 +61,21 @@ public class MypageController {
 
 
 
+
+
+    @PostMapping("/mypage/awstestInsert")
+    public void awstestInsert(
+        @RequestParam("product_id") int product_id,
+        @RequestParam("image_url") String image_url
+    ) throws Exception {
+        mypageService.awstestInsert(product_id, image_url);
+    }
+    
+    @GetMapping("/mypage/awstestSelect")
+    public String awstestSelect(
+        @RequestParam("product_id") int product_id
+    ) throws Exception {
+        return mypageService.awstestSelect(product_id);
+    }
+
 }

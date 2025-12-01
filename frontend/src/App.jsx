@@ -55,6 +55,8 @@ import Membership from "./pages/mypage/Membership";
 import OrderDelivery from "./pages/mypage/OrderDelivery";
 import ReviewWrite from "./components/review/ReviewWrite";
 
+import AwsTest from "./pages/mypage/AwsTest";
+
 // JWT 파싱 헬퍼
 function parseJwt(token) {
   if (!token) return null;
@@ -220,6 +222,7 @@ function App() {
                 }
               />
             </Route>
+            <Route path="/awstest" element={<AwsTest/>}/>
           </Routes>
         </BrowserRouter>
       </CartContext.Provider>

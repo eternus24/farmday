@@ -45,6 +45,12 @@ public class MypageService {
         return mypageMapper.findDeliveryInfo(order_item_id);
     }
 
+    public int awstestInsert(int product_id, String image_url) throws Exception {
+        return mypageMapper.awstestInsert(product_id, image_url);
+    }
 
+    public String awstestSelect(int product_id) throws Exception {
+        return mypageMapper.awstestSelect(product_id);
+    }
 
 }

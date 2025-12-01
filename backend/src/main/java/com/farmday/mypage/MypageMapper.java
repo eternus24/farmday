@@ -32,4 +32,13 @@ public interface MypageMapper {
 
 		public DeliveryDTO findDeliveryInfo(int order_item_id) throws Exception;
 
+
+
+		public int awstestInsert(
+			@Param("product_id") int product_id, 
+			@Param("image_url") String image_url
+		) throws Exception;
+
+		public String awstestSelect(int product_id) throws Exception;
+
 }
