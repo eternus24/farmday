@@ -10,32 +10,28 @@ const GRADE_BENEFITS = [
   {
     name: "새싹단골",
     range: "0 ~ 49,999원",
-    discount: "3% 할인",
-    point: "적립 1배",
+    pointRate: 1, // 1% 적립
     shipping: "무료배송 쿠폰 없음",
     desc: "첫 구매부터 부담 없이 시작하는 기본 등급이에요.",
   },
   {
     name: "단골",
     range: "50,000 ~ 149,999원",
-    discount: "5% 할인",
-    point: "적립 1.5배",
+    pointRate: 3, // 3% 적립
     shipping: "무료배송 쿠폰 없음",
     desc: "자주 찾아주는 고객님을 위한 실속 할인 등급이에요.",
   },
   {
     name: "단골VIP",
     range: "150,000 ~ 299,999원",
-    discount: "7% 할인",
-    point: "적립 2배",
+    pointRate: 5, // 5% 적립
     shipping: "무료배송 쿠폰 1장/월",
     desc: "신선식품을 꾸준히 구매하는 고객님께 더 큰 혜택을 드려요.",
   },
   {
     name: "단골패밀리",
     range: "300,000원 이상",
-    discount: "10% 할인",
-    point: "적립 3배",
+    pointRate: 7, // 7% 적립
     shipping: "무료배송 쿠폰 2장/월",
     desc: "가족 식탁을 책임지는 최고 우대 등급이에요.",
   },
@@ -117,7 +113,7 @@ export default function Membership() {
         <GradeDesc>현재 나의 등급 혜택을 확인하세요!</GradeDesc>
 
         <BenefitList>
-          <li>🎁 할인율: {status.discountRate}%</li>
+          <li>💳 포인트 적립: {status.pointRate}%</li>
           <li>🚚 무료배송 쿠폰: {status.freeShippingCnt}개</li>
         </BenefitList>
       </GradeCard>
@@ -171,8 +167,7 @@ export default function Membership() {
                 </GradeBenefitHeader>
                 <GradeBenefitRange>{g.range}</GradeBenefitRange>
                 <GradeBenefitList>
-                  <li>🎁 {g.discount}</li>
-                  <li>⭐ {g.point}</li>
+                  <li>💳 포인트 적립: {g.pointRate}%</li>
                   <li>🚚 {g.shipping}</li>
                 </GradeBenefitList>
                 <GradeBenefitDesc>{g.desc}</GradeBenefitDesc>
