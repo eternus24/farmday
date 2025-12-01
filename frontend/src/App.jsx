@@ -34,11 +34,15 @@ import GroupDealDetailPage from "./pages/groupdeal/GroupDealDetailPage";
 
 // 사용자 SHOP 관련
 import ShopMain from './pages/shop/ShopMain';
-import ShopQA from './pages/shop/ShopQA';
 import ShopDetail from "./pages/shop/ShopDetail";
 
 //생산자 페이지
 import StoreMyPage from './pages/mystore/StoreMyPage';
+import StoreDashboard from './pages/mystore/StoreDashboard';
+import StoreCreate from './pages/mystore/StoreCreate';
+import StoreList from './pages/mystore/StoreList';
+import StoreStatus from './pages/mystore/StoreStatus';
+import StoreQuestion from './pages/mystore/StoreQuestion';
 
 import Tables from './pages/tables/tables'
 import Orders from './pages/orders/orders'
@@ -160,12 +164,17 @@ function App() {
 
               {/*  사용자 SHOP */}
               <Route path="/shop" element={<ShopMain />} />
-              <Route path="/shop/qa" element={<ShopQA />} />
-
               <Route path="/shop/detail/:id" element={<ShopDetail />} />
 
               {/* 생산자 페이지 */}
-              <Route path='store/:prodcuerId' element={<StoreMyPage/>}/>
+              <Route path="store/:producerId" element={<StoreMyPage />}>
+                <Route index element={<StoreDashboard />} />
+                <Route path="mainpro" element={<StoreDashboard />} />
+                <Route path="list" element={<StoreList />} />
+                <Route path="status" element={<StoreStatus />} />
+                <Route path="question" element={<StoreQuestion />} />
+                <Route path="upload" element={<StoreCreate />} />
+              </Route>
 
               <Route path="/review/write/:order_item_id" element={<ReviewWrite/>}/>
 

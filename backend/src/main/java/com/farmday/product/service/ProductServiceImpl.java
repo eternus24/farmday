@@ -5,13 +5,13 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
+import com.farmday.mystore.dto.MystoreDTO;
 import com.farmday.product.dto.ProductDTO;
 import com.farmday.product.dto.ProductImageDTO;
-import com.farmday.product.dto.StoreDTO;
 import com.farmday.product.mapper.ProductMapper;
-import com.farmday.product.util.FileUploadUtil;
+import com.farmday.review.dto.ReviewDTO;
+import com.farmday.review.mapper.ReviewMapper;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,9 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ProductServiceImpl implements ProductService {
 
     private final ProductMapper productMapper;
-    private final FileUploadUtil fileUploadUtil;
-
-    private final String uploadDir = "E:/upload/product"; 
+    private final ReviewMapper reviewMapper;
 
     @Override
     public List<ProductDTO> getProductList(String keyword, List<Integer> categories, Integer price, String sort) {
@@ -38,10 +36,24 @@ public class ProductServiceImpl implements ProductService {
 }
 
     @Override
-    public ProductDTO getProductDetail(long id) {
-        return productMapper.getProductDetail(id);
+    public ProductDTO getProductDetail(long productId) {
+    ProductDTO product = productMapper.getProductDetail(productId);
+
+    if(product != null){
+
+        // 리뷰 Map 조회로 변경
+        Map<String, Object> params = new HashMap<>();
+        params.put("productId", productId);
+        params.put("sort", "latest");
+        params.put("keyword", "");
+
+        List<ReviewDTO> reviews = reviewMapper.selectReviews(params);
+        product.setReviews(reviews);
     }
 
+    return product;
+}
+    
     //상세 이미지
     @Override
     public List<ProductImageDTO> getProductImages(long productId) {
@@ -50,51 +62,25 @@ public class ProductServiceImpl implements ProductService {
 
     // 상점 조회
     @Override
-    public StoreDTO getStoreByProducer(long producerId) {
+    public MystoreDTO getStoreByProducer(long producerId) {
         return productMapper.getStoreByProducer(producerId);
     }
 
     @Override
-    public void insertData(ProductDTO dto, MultipartFile upload) {
-        try {
-            if (upload != null && !upload.isEmpty()) {
-                String fileName = fileUploadUtil.saveFile(uploadDir, upload);
-                dto.setMainImage(fileName);
-            }
-
-            productMapper.insertData(dto);
-
-        } catch (Exception e) {
-            log.error("상품 등록 오류", e);
-            throw new RuntimeException(e);
-        }
+    public List<ProductDTO> getProducerProducts(long producerId) {
+        return productMapper.getProducerProducts(producerId);
     }
 
+    //top 인기 상품
     @Override
-    public void updateProduct(ProductDTO dto, MultipartFile upload) {
-        try {
-            // 기존 이미지 삭제하고 새 이미지 저장
-            if (upload != null && !upload.isEmpty()) {
-                // 기존 이미지 삭제
-                if (dto.getMainImage() != null) {
-                    fileUploadUtil.deleteFile(uploadDir, dto.getMainImage());
-                }
-
-                // 새 이미지 저장
-                String newFile = fileUploadUtil.saveFile(uploadDir, upload);
-                dto.setMainImage(newFile);
-            }
-
-            productMapper.updateProduct(dto);
-
-        } catch (Exception e) {
-            log.error("상품 수정 오류", e);
-            throw new RuntimeException(e);
-        }
+    public List<ProductDTO> getTopProducts(long producerId) {
+        return productMapper.getTopProducts(producerId);
     }
 
+    //recent 최근 등록/판매 상품
     @Override
-    public void deleteProduct(long productId) {
-        productMapper.deleteProduct(productId);
+    public List<ProductDTO> getRecentProducts(long producerId) {
+        return productMapper.getRecentProducts(producerId);
     }
+
 }

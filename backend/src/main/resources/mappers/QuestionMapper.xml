@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.farmday.question.mapper.QuestionMapper">
+
+<!-- 질문 등록 -->
+<insert id="insertQuestion" parameterType="com.farmday.question.dto.QuestionDTO">
+    INSERT INTO PRODUCT_QNA(
+        qna_id,
+        product_id,
+        store_id,
+        writer_user_id,
+        title,
+        content,
+        qna_category,
+        is_private,
+        status,
+        created_date,
+        updated_date
+    ) VALUES (
+        SEQ_QNA.NEXTVAL,
+        #{productId},
+        #{storeId},
+        #{writerUserId},
+        #{title},
+        #{content},
+        #{qnaCategory},
+        #{isPrivate},
+        #{status},
+        SYSDATE,
+        SYSDATE
+    )
+</insert>
+
+<!-- 상품별 QnA 조회 -->
+<select id="getQuestionByProduct" resultType="com.farmday.question.dto.QuestionDTO">
+    SELECT
+        qna_id AS qnaId,
+        product_id AS productId,
+        store_id AS storeId,
+        writer_user_id AS writerUserId,
+        title,
+        content,
+        qna_category AS qnaCategory,
+        is_private AS isPrivate,
+        status,
+        answer_user_id AS answerUserId,
+        answer_content AS answerContent,
+        answered_at AS answeredAt,
+        created_date AS createdDate,
+        updated_date AS updatedDate
+    FROM PRODUCT_QNA
+    WHERE product_id = #{productId}
+    <if test="qnaCategory != null and qnaCategory != ''">
+        AND qna_category = #{qnaCategory}
+    </if>
+    ORDER BY created_date DESC
+</select>
+
+<!-- 질문 수정 -->
+<update id="updateQuestion">
+    UPDATE PRODUCT_QNA
+    SET title = #{title},
+        content = #{content},
+        qna_category = #{qnaCategory},
+        is_private = #{isPrivate},
+        updated_date = SYSDATE
+    WHERE qna_id = #{qnaId}
+</update>
+
+<!-- 질문 삭제 -->
+<delete id="deleteQuestion">
+    DELETE FROM PRODUCT_QNA WHERE qna_id = #{qnaId}
+</delete>
+
+<!-- 생산자 답변 등록 -->
+<update id="insertAnswer">
+    UPDATE PRODUCT_QNA SET 
+        answer_user_id = #{answerUserId},
+        answer_content = #{answerContent},
+        answered_at = SYSDATE,
+        status = 'ANSWERED'
+    WHERE qna_id = #{qnaId}
+</update>
+
+<!-- 해당 QnA 의 store_id 조회 -->
+<select id="getStoreOwnerIdByQnaId" resultType="long">
+    SELECT store_id
+    FROM PRODUCT_QNA
+    WHERE qna_id = #{qnaId}
+</select>
+
+<!-- 답변 수정 -->
+<update id="updateAnswer">
+    UPDATE PRODUCT_QNA SET
+        answer_content = #{answerContent},
+        updated_date = SYSDATE
+    WHERE qna_id = #{qnaId}
+</update>
+
+<!-- 답변 삭제 -->
+<update id="deleteAnswer">
+    UPDATE PRODUCT_QNA SET
+        answer_user_id = NULL,
+        answer_content = NULL,
+        answered_at = NULL,
+        status = 'WAITING'
+    WHERE qna_id = #{value}
+</update>
+
+<!-- 생산자용 스토어 전체 QnA 조회 (페이징 제거 완전버전) -->
+<select id="getStoreQnaList" parameterType="map"
+        resultType="com.farmday.question.dto.QuestionDTO">
+    SELECT 
+        qna_id AS qnaId,
+        product_id AS productId,
+        store_id AS storeId,
+        writer_user_id AS writerUserId,
+        title,
+        content,
+        qna_category AS qnaCategory,
+        is_private AS isPrivate,
+        status,
+        answer_user_id AS answerUserId,
+        answer_content AS answerContent,
+        answered_at AS answeredAt,
+        created_date AS createdDate,
+        updated_date AS updatedDate
+    FROM PRODUCT_QNA
+    WHERE 1=1
+    <if test="storeId != null"> AND store_id = #{storeId} </if>
+    <if test="qnaCategory != null and qnaCategory != ''"> 
+        AND qna_category = #{qnaCategory}
+    </if>
+    <if test="status != null and status != ''">
+        AND status = #{status}
+    </if>
+    <if test="keyword != null and keyword != ''">
+        AND (title LIKE '%' || #{keyword} || '%'
+        OR content LIKE '%' || #{keyword} || '%')
+    </if>
+    ORDER BY created_date DESC
+</select>
+
+<!-- 전체 개수 -->
+<select id="getStoreQnaTotalCount" parameterType="map" resultType="int">
+    SELECT COUNT(*)
+    FROM PRODUCT_QNA
+    WHERE 1=1
+    <if test="storeId != null"> AND store_id = #{storeId} </if>
+    <if test="qnaCategory != null and qnaCategory != ''"> 
+        AND qna_category = #{qnaCategory}
+    </if>
+    <if test="status != null and status != ''">
+        AND status = #{status}
+    </if>
+    <if test="keyword != null and keyword != ''">
+        AND (title LIKE '%' || #{keyword} || '%'
+        OR content LIKE '%' || #{keyword} || '%')
+    </if>
+</select>
+
+</mapper>

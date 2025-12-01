@@ -2,10 +2,9 @@ package com.farmday.product.service;
 
 import java.util.List;
 
-import org.springframework.web.multipart.MultipartFile;
+import com.farmday.mystore.dto.MystoreDTO;
 import com.farmday.product.dto.ProductDTO;
 import com.farmday.product.dto.ProductImageDTO;
-import com.farmday.product.dto.StoreDTO;
 
 public interface ProductService {
 
@@ -17,15 +16,10 @@ public interface ProductService {
     public List<ProductImageDTO> getProductImages(long productId);
 
     // 상점 조회
-    public StoreDTO getStoreByProducer(long producerId);
+    public MystoreDTO getStoreByProducer(long producerId);
 
-    //상품 등록
-    public void insertData(ProductDTO dto, MultipartFile upload);
-
-    //상품 수정
-    public void updateProduct(ProductDTO dto, MultipartFile upload);
-
-    //상품 삭제
-    public void deleteProduct(long productId);
+    public List<ProductDTO> getProducerProducts(long producerId);
+    public List<ProductDTO> getTopProducts(long producerId);
+    public List<ProductDTO> getRecentProducts(long producerId);
 
 }

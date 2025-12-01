@@ -4,7 +4,7 @@ import menu from '../../assets/icons/menu-outline.svg';
 import price from '../../assets/icons/credit-card-outline.svg';
 
 //목록 필터(카테고리/가격/재배방식/정렬)
-const ShopFilter = ({filters,setFilters, categoryCount,setCurrentPage,setSortOption}) => {
+const ShopFilter = ({filters,setFilters,setCurrentPage,setSortOption}) => {
     
     //선택한 카테고리
     const categoryList = [
@@ -76,14 +76,12 @@ const ShopFilter = ({filters,setFilters, categoryCount,setCurrentPage,setSortOpt
                 <ul className="filter-list">
                     {categoryList.map((cat) => {
                         const isSelected = filters.categories?.includes(cat.id);//목록 확인
-                        const count = categoryCount?.[cat.id] ?? 0;//상품 갯수
 
                         return (
                             <li key={cat.id} className={`filter-item ${isSelected ? "selected" : ""}`} onClick={() => toggleCategory(cat.id)}>
                                 <input type="checkbox" checked={isSelected} onChange={() => toggleCategory(cat.id)} onClick={(e) => e.stopPropagation()}/>
 
                                 <span>{cat.label}</span>
-                                <span className="count">{count}</span>
                             </li>
                         );
                     })}

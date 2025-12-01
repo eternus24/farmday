@@ -1,6 +1,10 @@
 package com.farmday.product.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
+
+import com.farmday.review.dto.ReviewDTO;
+
 import java.time.LocalDate;
 import lombok.Data;
 
@@ -30,4 +34,6 @@ public class ProductDTO {//상품 & 상품 정보
     private String detailDesc;//상세설명
     private LocalDateTime detailCreatedDate;//등록일
     private LocalDateTime detailUpdatedDate;//수정일
+
+    private List<ReviewDTO> reviews; //상품 리뷰 목록
 }

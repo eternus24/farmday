@@ -2,24 +2,19 @@ package com.farmday.product.controller;
 
 import com.farmday.product.dto.ProductDTO;
 import com.farmday.product.dto.ProductImageDTO;
-import com.farmday.product.dto.StoreDTO;
+import com.farmday.mystore.dto.MystoreDTO;
+import com.farmday.mystore.service.MystoreService;
 import com.farmday.product.service.ProductService;
 
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
-
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -30,21 +25,7 @@ import java.util.List;
 public class ProductController {
 
     private final ProductService productService;
-
-    //상품 등록 (생산자)
-    @PostMapping("/upload")
-    public ResponseEntity<?> productUpload(
-            @RequestPart("data") ProductDTO dto,
-            @RequestPart(value = "upload", required = false) MultipartFile upload
-    ) {
-        try {
-            productService.insertData(dto, upload);
-            return ResponseEntity.ok("success");
-        } catch (Exception e) {
-            return ResponseEntity.status(500)
-                    .body("상품 등록 오류: " + e.getMessage());
-        }
-    }
+    private final MystoreService mystoreService;   
 
     // 조건 기반 상품 조회(API) ShopMain.jsx → getProductList(params)
     @GetMapping("")
@@ -73,44 +54,32 @@ public class ProductController {
         return ResponseEntity.ok(list);
     }
 
-    // 상점 조회
-    @GetMapping("/producer/{producerId}")
-    public ResponseEntity<?> getProductsByProducer(@PathVariable long producerId) {
-        StoreDTO dto = productService.getStoreByProducer(producerId);
+    // 상점 정보
+    @GetMapping("/producer/{producerId}/store")
+    public ResponseEntity<?> getStoreInfo(@PathVariable long producerId) {
 
-        if(dto!= null){
+        MystoreDTO dto = mystoreService.selectStore(producerId);
+
+        if (dto != null) {
             return ResponseEntity.ok(dto);
-        }else{
+        } else {
             return ResponseEntity.status(404).body("상점 없음");
         }
     }
-
-    // 상품 수정
-    @PutMapping("/{id}")
-    public ResponseEntity<?> updateProduct(
-            @PathVariable long id,
-            @RequestPart("data") ProductDTO dto,
-            @RequestPart(value = "upload", required = false) MultipartFile upload
-    ) {
-        try {
-            dto.setProductId(id);
-            productService.updateProduct(dto, upload);
-            return ResponseEntity.ok("updated");
-        } catch (Exception e) {
-            return ResponseEntity.status(500)
-                    .body("수정 오류: " + e.getMessage());
-        }
+//전체 상품 목록
+    @GetMapping("/producer/{producerId}/products")
+    public ResponseEntity<?> getProducerProducts(@PathVariable long producerId) {
+        return ResponseEntity.ok(productService.getProducerProducts(producerId));
     }
 
-    //상품 삭제
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteProduct(@PathVariable long id) {
-        try {
-            productService.deleteProduct(id);
-            return ResponseEntity.ok("deleted");
-        } catch (Exception e) {
-            return ResponseEntity.status(500)
-                    .body("삭제 오류: " + e.getMessage());
-        }
+    @GetMapping("/producer/{producerId}/top")
+    public ResponseEntity<?> getTopProducts(@PathVariable long producerId) {
+        return ResponseEntity.ok(productService.getTopProducts(producerId));
     }
+
+    @GetMapping("/producer/{producerId}/recent")
+    public ResponseEntity<?> getRecentProducts(@PathVariable long producerId) {
+        return ResponseEntity.ok(productService.getRecentProducts(producerId));
+    }
+
 }

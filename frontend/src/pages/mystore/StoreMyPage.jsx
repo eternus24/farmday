@@ -1,62 +1,75 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import '../../assets/css/store.css';
+import { Link, Outlet, useLocation, useParams } from 'react-router-dom';
+import { getStoreInfo } from '../../assets/js/api/ShopApi';
+
 
 const StoreMyPage = () => {//상품 페이지
+
+  //상세 페이지 탭
+  const {pathname} = useLocation();
+  const{producerId} = useParams();
+  const [store,setStore] = useState(null);
+
+    useEffect(() => {
+  getStoreInfo(producerId)
+    .then(store => {
+      setStore(store); 
+    })
+    .catch(err => console.error("스토어 정보 오류:", err));
+}, [producerId]);
+
+
   return (
     <div className="store-page-container">
 
       {/* 왼쪽 사이드바 */}
       <aside className="store-sidebar">
         <div className="store-profile-box">
-          <div className="store-thumb"></div>
-          <div className="store-name">스토어 이름</div>
-          <div className="store-desc">설명란</div>
+          <div className="store-thumb">
+            {store?.thumbnailUrl && (
+              <img src={store.thumbnailUrl} alt="스토어 대표 이미지" />
+            )}
+          </div>
+
+          <div className="store-name">
+            {store?.storeName || "스토어 이름"}
+          </div>
+          <div className="store-desc">
+            {store?.description || "설명란"}
+          </div>
+          <div>
+            {store?.phone || "연락처"}
+          </div>
+          <div>
+            {store?.addr || "주소"}
+          </div>
+          <div>
+            {store?.createdDate || "설립일"}
+          </div>
+
         </div>
 
         <nav className="store-nav">
           <ul>
-            <li className="active">상품 등록</li>
-            <li>상품 리스트</li>
-            <li>상품 현황</li>
-            <li>문의 관리</li>
-            <li>사용자 후기</li>
+            <li className={pathname.includes("mainpro") ? "active" : ""}>
+              <Link to="mainpro">메인 상품</Link>
+            </li>
+            <li className={pathname.includes("list") ? "active" : ""}>
+              <Link to="list">상품 리스트</Link>
+            </li>
+            <li className={pathname.includes("question") ? "active" : ""}>
+              <Link to="question">문의 관리</Link>
+            </li>
           </ul>
         </nav>
+
+        <button className='store-upload-btn'>스토어 설정</button>
       </aside>
 
       {/* 메인 영역 */}
       <main className="store-main">
-        
-        {/* TOP5 */}
-        <section className="store-top-section">
-          <h2>인기 TOP 5</h2>
-          <div className="top-product-list">
-            {[1,2,3,4,5].map(i => (
-              <div className="top-product-card" key={i}>
-                <div className="thumb"></div>
-                <div>상품명 {i}</div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* 최근 상품 */}
-        <section className="store-recent-section">
-          <h2>최근 등록/판매 상품</h2>
-
-          <div className="recent-list">
-            {[1,2,3].map(i => (
-              <div className="recent-card" key={i}>
-                <div className="thumb"></div>
-                <div className="recent-info">
-                  <div className="recent-title">상품명 {i}</div>
-                  <div className="recent-desc">간단한 설명 표시</div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-        </section>
+        <Outlet/>
       </main>
 
     </div>

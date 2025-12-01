@@ -1,6 +1,6 @@
 import React from 'react';
 
-const ShopQA = () => {//QA 목록 / 작성페이지
+const ReviewFilter = () => {
     return (
         <div>
             
@@ -8,4 +8,4 @@ const ShopQA = () => {//QA 목록 / 작성페이지
     );
 };
 
-export default ShopQA;
+export default ReviewFilter;

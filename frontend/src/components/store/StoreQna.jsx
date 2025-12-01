@@ -1,6 +1,6 @@
 import React from 'react';
 
-const SotreQna = () => {//질문 게시판
+const StoreQna = () => {//질문 게시판
     return (
         <div>
             
@@ -8,4 +8,4 @@ const SotreQna = () => {//질문 게시판
     );
 };
 
-export default SotreQna;
+export default StoreQna;

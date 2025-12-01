@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import StoreInfoBox from '../../components/store/StoreInfoBox';
 import '../../assets/css/shopDetail.css';
-import StoreReview from '../../components/store/StoreReview';
-import StoreQna from '../../components/store/StoreQna';
 import StoreDesc from '../../components/store/StoreDesc';
 import ShopOption from './ShopOption';
 import StoreCard from '../../components/store/StoreCard';
+import StoreReviewPage from '../mystore/StoreReviewPage';
+import QuestionPage from '../../components/question/QuestionPage';
 
-const ShopDetailView = ({product,images,store}) => {//상품 페이지
+const ShopDetailView = ({product,images,store,productId,storeId}) => {//상품 페이지
 
     //상세 페이지 탭
     const [tab,setTab] = useState('desc')
@@ -69,7 +69,9 @@ const ShopDetailView = ({product,images,store}) => {//상품 페이지
                     onClick={() => setTab('desc')}>상품 설명</div>
 
                 <div className={`tab-item ${tab === 'review' ? 'active' : ''}`}
-                    onClick={() => setTab('review')}>후기 ({product.reviewCount})</div>
+                    onClick={() => setTab('review')}>
+                    후기 ({product.reviews?.length || 0})
+                </div>
 
                 <div className={`tab-item ${tab === 'qna' ? 'active' : ''}`}
                     onClick={() => setTab('qna')}>문의</div>
@@ -86,10 +88,10 @@ const ShopDetailView = ({product,images,store}) => {//상품 페이지
                     <StoreDesc product={product} images={images}/>
                 )}
                 {tab === 'review' && (
-                    <StoreReview product={product}/>
+                    <StoreReviewPage productId={productId} />
                 )}
                 {tab === 'qna' && (
-                    <StoreQna product={product}/>
+                    <QuestionPage productId={productId} product={product} store={store} storeId={store.storeId}/>
                 )}
                 {tab === 'delivery' && (//배송/교환/반품 안내
                     <StoreInfoBox/>

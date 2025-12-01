@@ -65,21 +65,24 @@
 }
 
 /* ================== 스토어 마이 페이지 ==================== */
-/* ✔ 전체 레이아웃 */
+/* ================== 스토어 마이 페이지 전체 레이아웃 ==================== */
+
 .store-page-container {
   display: flex;
   gap: 32px;
   padding: 32px 40px;
   background: #fafafa;
+  align-items: flex-start; /* 메인과 사이드바 높이 정렬 고정 */
 }
 
-/* ✔ 왼쪽 사이드바 */
+/* ================== 사이드바 ==================== */
 .store-sidebar {
   width: 260px;
   background: #fff;
   border-radius: 16px;
   padding: 24px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  flex-shrink: 0; /* 메인이 밀지 못하게 고정 */
 }
 
 /* 프로필 */
@@ -89,11 +92,18 @@
 }
 
 .store-thumb {
-  width: 90px;
-  height: 90px;
+  width: 110px;
+  height: 110px;
   background: #f0f0f0;
   border-radius: 50%;
   margin: 0 auto;
+  overflow: hidden; /* 이미지가 둥근 영역 안으로 잘리게 */
+}
+
+.store-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* 비율 깨지지 않게 꽉 채움 */
 }
 
 .store-name {
@@ -108,7 +118,7 @@
   color: #666;
 }
 
-/* 메뉴 */
+/* ================== 메뉴 ==================== */
 .store-nav ul {
   list-style: none;
   padding: 0;
@@ -128,20 +138,35 @@
   background: #f3f8ff;
 }
 
-.store-nav li.active {
-  background: #e8f2ff;
-  font-weight: 700;
-  color: #3a77d7;
+.store-nav ul li.active {
+  background: #546955;
+  color: white;
+  border-radius: 6px;
 }
 
-/* ✔ 오른쪽 메인페이지 */
+/* 상품 등록 버튼 */
+.store-upload-btn {
+  width: 100%;
+  margin-top: 160px;
+  padding: 12px 0;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 8px;
+  background: #76806e;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+/* ================== 메인 콘텐츠 ==================== */
 .store-main {
   flex: 1;
+  padding-top: 10px;
+  min-width: 0; /* grid나 이미지가 삐져나오지 않도록 */
 }
 
-/* ======================
-      인기 TOP 5
-======================== */
+/* ================== 인기 TOP 5 ==================== */
 .store-top-section {
   margin-bottom: 48px;
 }
@@ -177,11 +202,16 @@
   background: #f4f4f4;
   border-radius: 10px;
   margin-bottom: 10px;
+  overflow: hidden;
 }
 
-/* ======================
-    최근 등록/판매 상품
-======================== */
+.top-product-card .thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ================== 최근 등록 / 판매 상품 ==================== */
 .store-recent-section h2 {
   font-size: 22px;
   font-weight: 700;
@@ -213,6 +243,13 @@
   height: 100px;
   background: #f4f4f4;
   border-radius: 10px;
+  overflow: hidden;
+}
+
+.recent-card .thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .recent-info {
@@ -232,7 +269,7 @@
   font-size: 14px;
 }
 
-/* 반응형 기본 */
+/* ================== 반응형 ==================== */
 @media (max-width: 1024px) {
   .store-page-container {
     flex-direction: column;

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import ShopDetailView from './ShopDetailView';
 import api from '../../assets/js/api/ShopApi';
-import { getStoreByProducer } from '../../assets/js/api/ProducerStoreApi';
+import { getStoreInfo } from '../../assets/js/api/ShopApi';
 
 const ShopDetail = () => {
 
@@ -35,15 +35,15 @@ const ShopDetail = () => {
     };
 
     //상점
-    const loadStore = async()=>{
-        if(!product?.producerId) return
+    const loadStore = async () => {
+        if (!product?.producerId) return;
         try {
-            const storeData = await getStoreByProducer(product.producerId); 
-            setStore(storeData);
+            const info = await getStoreInfo(product.producerId);
+            setStore(info);
         } catch (err) {
             console.error("상점 조회 실패:", err);
         }
-    }
+        };
 
     useEffect(()=>{//데이터 불러오기
         loadDetail()
@@ -61,7 +61,8 @@ const ShopDetail = () => {
 
     return (
     <div>
-        {product && <ShopDetailView product={product} images={images} store={store}/>}
+        {product && <ShopDetailView product={product} images={images} store={store}
+    productId={product.productId} storeId={product.storeId}  />}
     </div>
     );
 };

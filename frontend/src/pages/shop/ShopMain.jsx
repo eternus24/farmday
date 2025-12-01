@@ -17,6 +17,15 @@ const ShopMain = () => {//페이지 역할
   const [currentPage,setCurrentPage] = useState(1)
   const [products,setProducts] = useState([])//db 상품 리스트 저장
 
+  const loadCategoryCount = async () => {
+    try {
+      const res = await getCategoryCount();
+      setCategoryCount(res.data);
+    }catch(err) {
+      console.error("카테고리별 상품 갯수 로딩 오류:", err);
+    }
+  }
+
   //상품 목록 함수
   const loadProducts = async () => {
   try {
@@ -54,15 +63,6 @@ const ShopMain = () => {//페이지 역할
     loadProducts();
   },[filters,sortOption]);
 
-  //카테고리별 갯수 - db도 함께 적용 필요!
-  const categoryCount = {
-    "과일/견과": 12,
-    "채소/버섯": 18,
-    "곡물/콩류": 24,
-    "수산물/해산물": 9,
-    "축산물/육류": 7
-  }
-
   return (
     <div className='container-fluid fruite py-5'>
         <div className="text-center mb-4">
@@ -75,7 +75,7 @@ const ShopMain = () => {//페이지 역할
           {/* left filter */}
         <div className='col-lg-3'>
           <div className='filter-container-wrap'>
-              <ShopFilter filters={filters} setFilters={setFilters} categoryCount={categoryCount} setCurrentPage={setCurrentPage} setSortOption={setSortOption}/>
+              <ShopFilter filters={filters} setFilters={setFilters} setCurrentPage={setCurrentPage} setSortOption={setSortOption}/>
               <ShopCategory/>
           </div>
         </div>

@@ -40,8 +40,8 @@
             </if>
 
             <!-- 가격 필터 -->
-            <if test="price != null">
-                AND d.price <![CDATA[ >= ]]> #{price}
+            <if test="price != null and price > 0">
+                AND d.price <![CDATA[ <= ]]> #{price}
             </if>
         </where>
 
@@ -86,7 +86,6 @@
             ON p.product_id = d.product_id
         WHERE p.product_id = #{value}
     </select>
-
 <!-- 2. 상품 상세 조회 -->
 <select id="getProductImages" parameterType="long" resultType="com.farmday.product.dto.ProductImageDTO">
         SELECT
@@ -104,7 +103,7 @@
     
 <!-- 상점 찾기 -->
     <select id="getStoreByProducer" parameterType="long"
-        resultType="com.farmday.product.dto.StoreDTO">
+        resultType="com.farmday.mystore.dto.MystoreDTO">
     SELECT
         store_id AS storeId,
         producer_id AS producerId,
@@ -125,48 +124,55 @@
     WHERE producer_id = #{producerId}
 </select>
 
+<!-- 생산자 기준 상품 리스트 -->
+<select id="getProducerProducts" resultType="com.farmday.product.dto.ProductDTO">
+    SELECT 
+        p.product_id        AS productId,
+        p.producer_id       AS producerId,
+        p.main_image        AS mainImage,
+        p.name              AS name,
+        d.price             AS price,
+        d.stock_qty         AS stockQty,
+        p.created_date      AS createdDate
+    FROM product p
+    LEFT JOIN product_detail d
+        ON p.product_id = d.product_id
+    WHERE p.producer_id = #{producerId}
+    ORDER BY p.created_date DESC
+</select>
 
-<!-- 상품 등록 -->
-<insert id="insertData" parameterType="com.farmday.product.dto.ProductDTO">
-        INSERT INTO product (
-            producer_id,
-            base_category_id,
-            name,
-            summary,
-            main_image,
-            status,
-            created_date,
-            updated_date
-        )
-        VALUES (
-            #{producerId},
-            #{baseCategoryId},
-            #{name},
-            #{summary},
-            #{mainImage},
-            #{status},
-            SYSDATE,
-            SYSDATE
-        )
-    </insert>
+<!-- 상품 판매량 상위 5개 조회 -->
+<select id="getTopProducts" resultType="com.farmday.product.dto.ProductDTO">
+    SELECT 
+        p.product_id        AS productId,
+        p.producer_id       AS producerId,
+        p.name              AS name,
+        d.price             AS price,
+        d.stock_qty         AS stockQty,
+        p.sales_count       AS salesCount
+    FROM product p
+    LEFT JOIN product_detail d
+        ON p.product_id = d.product_id
+    WHERE p.producer_id = #{producerId}
+    ORDER BY p.sales_count DESC
+    LIMIT 5
+</select>
 
-<!-- 상품 수정 -->
-<update id="updateProduct" parameterType="com.farmday.product.dto.ProductDTO">
-        UPDATE product
-        SET
-            name = #{name},
-            summary = #{summary},
-            main_image = #{mainImage},
-            base_category_id = #{baseCategoryId},
-            status = #{status},
-            updated_date = SYSDATE
-        WHERE product_id = #{productId}
-</update>
-
-<!-- 상품 삭제 -->
-<delete id="deleteProduct" parameterType="long">
-    DELETE FROM product WHERE product_id = #{value}
-</delete>
-
+<!-- 최근 등록/판매 상품 -->
+<select id="getRecentProducts" resultType="com.farmday.product.dto.ProductDTO">
+    SELECT 
+        p.product_id        AS productId,
+        p.producer_id       AS producerId,
+        p.name              AS name,
+        d.price             AS price,
+        d.stock_qty         AS stockQty,
+        p.created_date      AS createdDate
+    FROM product p
+    LEFT JOIN product_detail d
+        ON p.product_id = d.product_id
+    WHERE p.producer_id = #{producerId}
+    ORDER BY p.created_date DESC
+    LIMIT 10
+</select>
 
 </mapper>

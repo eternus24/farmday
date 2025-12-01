@@ -7,11 +7,6 @@
   font-family: "Pretendard", sans-serif;
 }
 
-.detail-desc-text p {
-  white-space: pre-line;
-  line-height: 1.6;
-}
-
 /* ================== 상단 ================== */
 .detail-top {
     display: flex;
@@ -146,6 +141,11 @@
 .detail-desc-text h3 {
     font-weight: 700;
     margin-bottom: 15px;
+}
+
+.detail-desc-text p {
+  white-space: pre-line;
+  line-height: 1.6;
 }
 
 /* 상품 설명 고정 내용 */
@@ -320,5 +320,3 @@
   font-size: 17px;
   border: none;
 }
-
-

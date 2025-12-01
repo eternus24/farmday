@@ -4,9 +4,10 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.ibatis.annotations.Mapper;
+
+import com.farmday.mystore.dto.MystoreDTO;
 import com.farmday.product.dto.ProductDTO;
 import com.farmday.product.dto.ProductImageDTO;
-import com.farmday.product.dto.StoreDTO;
 
 @Mapper
 public interface ProductMapper {
@@ -19,16 +20,10 @@ public interface ProductMapper {
     public List<ProductImageDTO> getProductImages(long productId);
 
     // 상점 조회
-    public StoreDTO getStoreByProducer(long producerId);
+    public MystoreDTO getStoreByProducer(long producerId);
 
-    //상품 등록
-    public int insertData(ProductDTO dto);
-
-    //상품 수정
-    public int updateProduct(ProductDTO dto);
-
-    //상품 삭제
-    public int deleteProduct(long productId);
-    
+    public List<ProductDTO> getProducerProducts(long producerId);
+    public List<ProductDTO> getTopProducts(long producerId);
+    public List<ProductDTO> getRecentProducts(long producerId);
     
 }

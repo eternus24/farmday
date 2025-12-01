@@ -1,6 +1,5 @@
 // src/pages/shop/shop.jsx
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom"
 
 export default function Shop() {
   // 왜: HTML의 oninput 로직을 React로 치환해 출력값 연동

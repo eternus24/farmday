@@ -12,7 +12,6 @@
   width: 100%;
   padding: 12px 14px;
   border: 1px solid #ddd;
-  border-radius: 8px;
   font-size: 15px;
   font-weight: 500;
   color: #000;
@@ -39,7 +38,6 @@
   background: #fff;
   padding: 40px;
   border: 1px solid #e5e5e5;
-  border-radius: 8px;
 }
 
 /* 왼쪽: 상품 정보 섹션 */
@@ -49,7 +47,6 @@
   gap: 20px;
   padding: 30px;
   background: #fafafa;
-  border-radius: 8px;
   border: 1px solid #e5e5e5;
 }
 
@@ -57,7 +54,6 @@
   width: 100%;
   height: 280px;
   object-fit: cover;
-  border-radius: 6px;
   border: 1px solid #e0e0e0;
 }
 
@@ -83,7 +79,6 @@
 .review-category-section {
   padding: 30px;
   background: #fafafa;
-  border-radius: 8px;
   border: 1px solid #e5e5e5;
 }
 
@@ -93,7 +88,7 @@
   color: #000;
   margin-bottom: 24px;
   padding-bottom: 16px;
-  border-bottom: 2px solid #000;
+  border-bottom: 1px solid #ddd;
 }
 
 .category-group {
@@ -117,7 +112,6 @@
   padding: 8px 16px;
   border: 1px solid #ddd;
   background: #fff;
-  border-radius: 20px;
   font-size: 13px;
   font-weight: 500;
   color: #666;
@@ -156,7 +150,6 @@
   padding: 28px;
   background: #fafafa;
   border: 1px solid #e5e5e5;
-  border-radius: 8px;
   text-align: center;
 }
 
@@ -193,45 +186,61 @@
 }
 
 .selected-tag {
-  padding: 6px 16px;
-  background: #829b86;
+  padding: 6px 14px;
+  background: #5f7161;
   color: #ffffff;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 300;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid #5f7161;
 }
 
 /* 후기 태그 모달 스타일: 화면 전체를 덮는 오버레이 */
 .modal-overlay {
   position: fixed;
-  inset: 0;                /* top: 0; right: 0; bottom: 0; left: 0; 과 같음 */
+  inset: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(182, 182, 182, 0.55);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1200;
+  animation: fadeIn 0.15s ease-out;
 }
 
 /* 모달창 크기 */
 .modal-content {
-  position: relative;      /* ✔ X 버튼 absolute 기준 */
+  position: relative;
   background: #fff;
-  padding: 50px 40px;      /* ✔ 좌우 여백 조금 줄임 */
-  max-width: 600px;        /* ✔ 최대 가로 크기 */
-  width: 80%;              /* 화면 줄어들면 같이 줄어들게 */
-  max-height: 80vh;        /* ✔ 너무 길어지면 내부 스크롤 */
-  overflow-y: auto;        /* ✔ 내용 많을 때 스크롤 */
-  border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  max-width: 600px;
+  width: 80%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  padding-left: 30px;
+  padding-right: 15px;
+  padding-bottom: 20px;
+  animation: modalSlide 0.2s ease-out;
+}
+
+@keyframes modalSlide {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* x 버튼 */
 .modal-close-x {
-  position: absolute;
+  position: sticky;
+  margin-left: auto;
+  background: #fff;
   top: 14px;
-  right: 18px;
+  right: 1px;
   font-size: 20px;
   font-weight: 600;
   color: #666;
@@ -261,14 +270,14 @@
   flex-wrap: wrap;
   gap: 8px;
 }
+
 /* 태그 특징 */
 .tag-btn {
   padding: 8px 13px;
   font-size: 13px;
-  border-radius: 6px; /* 사각형 형태 */
   background: #f7f7f7;
   border: 1px solid #ddd;
-  color: #201616;
+  color: #333;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -281,8 +290,8 @@
 
 /* 선택(active) 상태 */
 .tag-btn.active {
-  background: #8997cf;   /* 파란색 변환 */
-  border-color: #8997cf;
+  background: #5f7161;
+  border-color: #5f7161;
   color: #fff;
 }
 
@@ -296,11 +305,11 @@
 .btn-close,
 .btn-confirm {
   padding: 10px 18px;
-  border-radius: 6px;
   border: 1px solid #ddd;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
+  background: #fff;
 }
 
 .btn-confirm {
@@ -309,19 +318,12 @@
   border-color: #000;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-
 /* ⭐ 후기 선택 버튼 */
 .review-select-btn {
   width: 100%;
   padding: 14px;
   background: #fff;
-  border: 2px dashed #ddd;
-  border-radius: 8px;
+  border: 1px solid #ddd;
   font-size: 14px;
   font-weight: 600;
   color: #666;
@@ -339,8 +341,7 @@
 .auto-title-display {
   padding: 20px;
   background: #f0f8ff;
-  border: 1px solid #b3d9ff;
-  border-radius: 8px;
+  border: 1px solid #d4dce5;
 }
 
 .auto-title-text {
@@ -355,7 +356,6 @@
   padding: 24px;
   background: #fafafa;
   border: 1px solid #e5e5e5;
-  border-radius: 8px;
 }
 
 .keyword-section h6 {
@@ -376,7 +376,6 @@
   padding: 10px 16px;
   border: 1px solid #ddd;
   background: #fff;
-  border-radius: 6px;
   font-size: 13px;
   font-weight: 500;
   color: #666;
@@ -409,7 +408,6 @@
   margin-top: 12px;
   border: 1px solid #ddd;
   background: #fff;
-  border-radius: 6px;
   font-size: 13px;
   font-weight: 600;
   color: #666;
@@ -433,7 +431,6 @@
   min-height: 180px;
   padding: 16px;
   border: 1px solid #ddd;
-  border-radius: 8px;
   font-size: 14px;
   font-weight: 400;
   line-height: 1.6;
@@ -474,7 +471,6 @@
   padding: 12px 24px;
   border: 1px solid #ddd;
   background: #fff;
-  border-radius: 6px;
   font-size: 14px;
   font-weight: 600;
   color: #666;
@@ -506,23 +502,20 @@
   padding: 14px 40px;
   background: #000;
   border: none;
-  border-radius: 6px;
   font-size: 15px;
   font-weight: 700;
   color: #fff;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background 0.2s;
   letter-spacing: -0.3px;
 }
 
 .review-submit-btn:hover {
   background: #333;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
 .review-submit-btn:active {
-  transform: translateY(0);
+  background: #000;
 }
 
 /* 반응형 */
@@ -556,7 +549,7 @@
   align-items: center;
   margin-bottom: 30px;
   padding-bottom: 20px;
-  border-bottom: 2px solid #000;
+  border-bottom: 1px solid #e5e5e5;
 }
 
 .review-header h2 {
@@ -575,17 +568,16 @@
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background 0.2s;
   letter-spacing: -0.3px;
 }
 
 .review-write-btn:hover {
   background: #333;
-  transform: translateY(-1px);
 }
 
 .review-write-btn:active {
-  transform: translateY(0);
+  background: #000;
 }
 
 /* ==============================
@@ -727,22 +719,23 @@
 }
 
 .like-btn:hover {
-  background: #add8da !important;
+  background: #5f7161 !important;
   color: #fff;
-  border-color: #add8da !important;
+  border-color: #5f7161 !important;
 }
 
 /* 판매자 답글 */
 .seller-reply {
-  background: #e6e9eb;
+  background: #f7f9fc;
   font-size: 14px;
   color: #333;
   line-height: 1.6;
   margin-top: 20px;
   padding: 16px 20px !important;
+  border: 1px solid #e5e7eb;
 }
 
 .seller-reply strong {
-  color: #004883 !important;
+  color: #1e3a8a !important;
   font-weight: 600;
 }

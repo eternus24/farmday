@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.farmday.mystore.mapper.MystoreMapper">
+
+<!-- 상점 정보 조회 -->
+<select id="selectStore" resultType="com.farmday.mystore.dto.MystoreDTO">
+    SELECT 
+        s.store_id      AS storeId,
+        s.producer_id   AS producerId,
+        s.owner_user_id AS ownerUserId,
+        s.store_name    AS storeName,
+        s.phone         AS phone,
+        s.addr          AS addr,
+        s.addr_detail   AS addrDetail,
+        s.region_si     AS regionSi,
+        s.region_gun    AS regionGun,
+        s.description   AS description,
+        s.thumbnail_url AS thumbnailUrl,
+        s.status        AS status,
+        s.is_active     AS isActive,
+        s.created_date  AS createdDate,
+        s.updated_date  AS updatedDate
+    FROM store s
+    WHERE s.producer_id = #{producerId}
+</select>
+
+<!-- 대시보드 조회 -->
+<select id="selectStoreBoard" resultType="com.farmday.mystore.dto.MystoreDTO">
+    SELECT 
+        s.store_id      AS storeId,
+        s.producer_id   AS producerId,
+        s.owner_user_id AS ownerUserId,
+        s.store_name    AS storeName,
+        s.phone         AS phone,
+        s.addr          AS addr,
+        s.addr_detail   AS addrDetail,
+        s.region_si     AS regionSi,
+        s.region_gun    AS regionGun,
+        s.description   AS description,
+        s.thumbnail_url AS thumbnailUrl,
+        s.status        AS status,
+        s.is_active     AS isActive,
+        s.created_date  AS createdDate,
+        s.updated_date  AS updatedDate
+    FROM store s
+    WHERE s.producer_id = #{producerId}
+</select>
+
+</mapper>
