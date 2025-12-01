@@ -51,4 +51,10 @@ public interface UserMapper {
 
     void updateUserPhoto(@Param("userNo") Long userNo, @Param("photo") String photo);
 
+    // 이름 + 이메일로 userId 찾기
+    String findUserIdForRecovery(@Param("name") String name, @Param("email") String email);
+
+    // 비밀번호 변경용 (user_no 기준으로 하는 걸 추천)
+    int updatePasswordByUserNo(@Param("userNo") Long userNo, @Param("userPwd") String encodedPwd);
+
 }

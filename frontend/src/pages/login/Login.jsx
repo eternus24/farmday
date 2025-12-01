@@ -29,6 +29,15 @@ export default function Login() {
   const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
   const KAKAO_JS_KEY = import.meta.env.VITE_KAKAO_JS_KEY;
 
+  const goFindId = () => {
+    navigate("/find-id");
+  };
+
+  const goFindPassword = () => {
+    navigate("/password/reset-request");
+  };
+
+
   // 🔹 로그인 성공 시 공통 처리
   const handleLoginSuccess = (data) => {
     if (!data || !data.accessToken || !data.refreshToken || !data.user) {
@@ -281,10 +290,22 @@ export default function Login() {
           {message && <MessageText>{message}</MessageText>}
 
           <SubLinkArea>
-            아직 회원이 아니신가요?{" "}
-            <button type="button" onClick={openEmailVerifyPopup}>
-              회원가입
-            </button>
+            <div>
+              <button type="button" onClick={goFindId}>
+                아이디 찾기
+              </button>
+              <span className="divider">|</span>
+              <button type="button" onClick={goFindPassword}>
+                비밀번호 재설정
+              </button>
+            </div>
+
+            <div className="signup">
+              아직 회원이 아니신가요?{" "}
+              <button type="button" onClick={openEmailVerifyPopup}>
+                회원가입
+              </button>
+            </div>
           </SubLinkArea>
 
           <SocialLoginArea>
@@ -408,6 +429,15 @@ const SubLinkArea = styled.div`
   font-size: 0.85rem;
   text-align: center;
   color: #6c757d;
+
+  .divider {
+    margin: 0 6px;
+    color: #adb5bd;
+  }
+
+  .signup {
+    margin-top: 6px;
+  }
 
   button {
     border: none;

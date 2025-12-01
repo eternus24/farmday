@@ -112,7 +112,6 @@
             issued_at,
             expires_at,
             used_yn,
-            grade_code_issued_from,
             created_date,
             updated_date
         ) VALUES (
@@ -128,7 +127,6 @@
             #{issuedAt},
             #{expiresAt},
             'N',
-            #{gradeCodeIssuedFrom},
             SYSDATE,
             SYSDATE
         )

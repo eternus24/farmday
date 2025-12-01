@@ -60,6 +60,9 @@ import OrderDelivery from "./pages/mypage/OrderDelivery";
 import ReviewWrite from "./components/review/ReviewWrite";
 
 import AwsTest from "./pages/mypage/AwsTest";
+import FindId from "./pages/login/FindId";
+import PasswordResetRequest from "./pages/login/PasswordResetRequest";
+import PasswordResetForm from "./pages/login/PasswordResetForm";
 
 // JWT 파싱 헬퍼
 function parseJwt(token) {
@@ -81,12 +84,14 @@ function parseJwt(token) {
 }
 
 // 앱 시작 시 한 번만 localStorage 보고 초기 로그인 상태 계산
+// 앱 시작 시 한 번만 localStorage 보고 초기 로그인 상태 계산
 function getInitialAuth() {
   let token = localStorage.getItem("accessToken");
 
-  // 🔹 loginUser에서 userNo / photo 먼저 꺼내두기
+  // 🔹 loginUser에서 userNo / photo / name 꺼내두기
   let userNo = null;
   let photo = null;
+  let userName = null;
 
   const loginUserStr = localStorage.getItem("loginUser");
   if (loginUserStr) {
@@ -94,12 +99,12 @@ function getInitialAuth() {
       const user = JSON.parse(loginUserStr);
       userNo = user.userNo ?? null;
       photo = user.photo || null;
+      userName = user.name || user.username || user.userId || null;
     } catch (e) {
       console.error("[App] loginUser 파싱 실패:", e);
     }
   }
 
-  // 🔹 토큰이 아예 없으면 완전 비로그인 상태
   if (!token) {
     return { loggedIn: false, name: "손님", photo, userNo };
   }
@@ -116,19 +121,14 @@ function getInitialAuth() {
   const nameFromToken =
     payload.name || payload.username || payload.userId || payload.sub;
 
-  // 🔹 photo가 아직 없으면 이전에 저장해둔 loginAvatar 사용
-  if (!photo) {
-    const storedAvatar = localStorage.getItem("loginAvatar");
-    if (storedAvatar) {
-      photo = storedAvatar;
-    }
-  }
+  // 🔹 loginUser.name 이 있으면 그걸 우선, 없으면 토큰에서
+  const finalName = userName || nameFromToken || "손님";
 
   return {
     loggedIn: true,
-    name: nameFromToken || "손님",
+    name: finalName,
     photo,
-    userNo,          // ★ 여기 추가가 핵심
+    userNo,
   };
 }
 
@@ -210,6 +210,9 @@ function App() {
 
               <Route path="/signup" element={<Signup />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/find-id" element={<FindId />} />
+              <Route path="/password/reset-request" element={<PasswordResetRequest />} />
+              <Route path="/reset-password" element={<PasswordResetForm />} />
               <Route path="*" element={<NotFound404 />} />
             </Route>
 

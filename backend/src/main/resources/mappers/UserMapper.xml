@@ -351,4 +351,23 @@
         WHERE user_no   = #{userNo}
     </update>
 
+    <!-- 이름 + 이메일로 userId 찾기 -->
+    <select id="findUserIdForRecovery"
+            parameterType="map"
+            resultType="string">
+        SELECT userId
+        FROM USERS
+        WHERE name  = #{name}
+        AND email = #{email}
+        AND is_blocked = 'N'
+    </select>
+
+    <!-- 비밀번호 변경 (user_no 기준) -->
+    <update id="updatePasswordByUserNo">
+        UPDATE USERS
+        SET userPwd      = #{userPwd},
+            updated_date = SYSDATE
+        WHERE user_no    = #{userNo}
+    </update>
+
 </mapper>

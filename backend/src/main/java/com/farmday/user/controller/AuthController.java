@@ -19,6 +19,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Map;
 
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
@@ -448,9 +449,69 @@ public class AuthController {
         return req;
     }
 
+    // 1) 아이디 찾기
+    @PostMapping("/find-id")
+    public ResponseEntity<?> findId(@RequestBody FindIdRequest dto) {
+        String maskedId = userService.findUserIdForRecovery(dto.getName(), dto.getEmail());
+
+        if (maskedId == null) {
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body("일치하는 계정을 찾을 수 없습니다.");
+        }
+
+        // Java 8에서는 Map.of 대신 Collections.singletonMap 사용
+        return ResponseEntity.ok(
+                java.util.Collections.singletonMap("userId", maskedId)
+        );
+    }
+
+    // 2) 비밀번호 재설정 메일 요청
+    @PostMapping("/password/reset-request")
+    public ResponseEntity<?> resetRequest(@RequestBody ResetRequest dto) {
+        userService.requestPasswordReset(dto.getEmail());
+        // 계정 존재 여부와 상관없이 동일 응답 (보안상)
+        return ResponseEntity.ok("비밀번호 재설정 메일이 발송되었습니다(계정이 존재하는 경우).");
+    }
+
+    // 3) 토큰 유효성 검사 (프론트 /reset-password 들어갈 때)
+    @GetMapping("/password/validate")
+    public ResponseEntity<?> validate(@RequestParam String token) {
+        boolean valid = userService.validatePasswordResetToken(token);
+        if (!valid) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("토큰이 유효하지 않거나 만료되었습니다.");
+        }
+        return ResponseEntity.ok("OK");
+    }
+
+    // 4) 새 비밀번호 설정
+    @PostMapping("/password/reset")
+    public ResponseEntity<?> reset(@RequestBody ResetPasswordDto dto) {
+        userService.resetPassword(dto.getToken(), dto.getNewPassword());
+        return ResponseEntity.ok("비밀번호가 변경되었습니다.");
+    }
+
     // ==========================
     // 내부 DTO들
     // ==========================
+
+    @Data
+    static class FindIdRequest {
+        private String name;
+        private String email;
+    }
+
+    @Data
+    static class ResetRequest {
+        private String email;
+    }
+
+    @Data
+    static class ResetPasswordDto {
+        private String token;
+        private String newPassword;
+    }
 
     @Data
     static class EmailVerificationRequest {

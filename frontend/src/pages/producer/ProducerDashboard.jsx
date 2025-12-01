@@ -1,22 +1,50 @@
 // src/pages/producer/ProducerDashboard.jsx
-import { useEffect, useState, useContext } from "react";
-import { useOutletContext } from "react-router-dom";
+import { useEffect, useState, useContext, useMemo } from "react";
 import axios from "axios";
 import { AuthContext } from "../../contexts/AuthContext";
+
+// Chart.js 관련
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+} from "chart.js";
+import { Line, Bar, Doughnut } from "react-chartjs-2";
+
+ChartJS.register(
+  ArcElement,
+  Tooltip,
+  Legend,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement
+);
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 export default function ProducerDashboard() {
-  const { producer, storeExists } = useOutletContext();
   const { auth } = useContext(AuthContext);
 
   const [summary, setSummary] = useState(null);
+  const [lowStocks, setLowStocks] = useState([]);
+  const [dailySales, setDailySales] = useState([]);
+  const [topProducts, setTopProducts] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    // producer 정보나 로그인 정보 없으면 대시보드 호출 못함
-    if (!producer || !auth) {
+    if (!auth?.loggedIn) {
+      setLoading(false);
+      setError("로그인 후 이용해 주세요.");
       return;
     }
 
@@ -36,43 +64,185 @@ export default function ProducerDashboard() {
         : {}),
     };
 
-    const fetchDashboard = async () => {
+    const fetchAll = async () => {
       try {
         setLoading(true);
         setError("");
 
-        const res = await axios.get(
+        // 🔹 1) 상단 요약 + 재고 부족 상품
+        const dashboardPromise = axios.get(
           `${API_BASE}/api/producer/dashboard`,
-          { headers }
+          {
+            headers,
+            withCredentials: true,
+          }
         );
 
-        const data = res.data;
+        // 🔹 2) 이번달 매출(일자별 + TOP 상품)
+        const monthlyPromise = axios.get(
+          `${API_BASE}/api/producer/sales/monthly`,
+          {
+            headers,
+            withCredentials: true,
+          }
+        );
 
-        // 백엔드 응답 매핑
-        const mapped = {
-          todaySales: data.summary?.todaySalesAmount || 0,
-          monthSales: data.summary?.monthSalesAmount || 0,
-          newOrdersCount: data.summary?.newOrderCount || 0,
-          lowStockCount: Array.isArray(data.lowStockProducts)
-            ? data.lowStockProducts.length
+        const [dashRes, monthRes] = await Promise.all([
+          dashboardPromise,
+          monthlyPromise,
+        ]);
+
+        const dash = dashRes.data;
+        const month = monthRes.data;
+
+        // 상단 요약 카드용 데이터
+        const mappedSummary = {
+          todaySales: dash.summary?.todaySalesAmount || 0,
+          monthSales: dash.summary?.monthSalesAmount || 0,
+          newOrdersCount: dash.summary?.newOrderCount || 0,
+          lowStockCount: Array.isArray(dash.lowStockProducts)
+            ? dash.lowStockProducts.length
             : 0,
         };
 
-        setSummary(mapped);
+        setSummary(mappedSummary);
+        setLowStocks(dash.lowStockProducts || []);
+
+        setDailySales(month.dailySales || []);
+        setTopProducts(month.topProducts || []);
       } catch (err) {
-        console.error("대시보드 조회 오류:", err);
-        setError("대시보드 정보를 불러오는 중 오류가 발생했습니다.");
+        console.error("대시보드/매출 조회 오류:", err);
+        const status = err.response?.status;
+        if (status === 401) {
+          setError("로그인 정보가 만료되었어요. 다시 로그인 해주세요.");
+        } else if (status === 403) {
+          setError("생산자 권한이 없습니다.");
+        } else {
+          setError("대시보드 정보를 불러오는 중 오류가 발생했습니다.");
+        }
       } finally {
         setLoading(false);
       }
     };
 
-    fetchDashboard();
-  }, [producer, auth]);
+    fetchAll();
+  }, [auth?.loggedIn]);
 
-  if (!producer) {
-    return <div>생산자 정보를 불러오는 중입니다...</div>;
-  }
+  // =========================
+  // 차트용 데이터 변환
+  // =========================
+
+  // 1) 일자별 매출 라인 차트
+  const dailySalesChartData = useMemo(() => {
+    if (!dailySales.length) return null;
+
+    const labels = dailySales.map((d) => {
+      // salesDate가 문자열(ISO)이라고 가정
+      try {
+        const date = new Date(d.salesDate);
+        return `${date.getMonth() + 1}/${date.getDate()}`;
+      } catch {
+        return d.salesDate; // 파싱 실패 시 원본
+      }
+    });
+
+    const amountData = dailySales.map((d) => d.totalAmount || 0);
+    const orderCountData = dailySales.map((d) => d.orderCount || 0);
+
+    return {
+      labels,
+      datasets: [
+        {
+          label: "일 매출액",
+          data: amountData,
+          borderWidth: 2,
+          tension: 0.2,
+        },
+        {
+          label: "주문 건수",
+          data: orderCountData,
+          borderWidth: 2,
+          borderDash: [4, 4],
+        },
+      ],
+    };
+  }, [dailySales]);
+
+  const dailySalesChartOptions = {
+    responsive: true,
+    plugins: {
+      legend: { position: "top" },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+      },
+    },
+  };
+
+  // 2) 재고 현황 바 차트 (재고 부족 상품 기준)
+  const stockChartData = useMemo(() => {
+    if (!lowStocks.length) return null;
+
+    const labels = lowStocks.map((p) => p.productName);
+    const stockData = lowStocks.map((p) => p.stockQty || 0);
+    const safetyData = lowStocks.map((p) => p.safetyStockQty || 10);
+
+    return {
+      labels,
+      datasets: [
+        {
+          label: "현재 재고",
+          data: stockData,
+          borderWidth: 1,
+        },
+        {
+          label: "안전 재고",
+          data: safetyData,
+          borderWidth: 1,
+        },
+      ],
+    };
+  }, [lowStocks]);
+
+  const stockChartOptions = {
+    responsive: true,
+    plugins: {
+      legend: { position: "top" },
+    },
+    scales: {
+      y: { beginAtZero: true },
+    },
+  };
+
+  // 3) 상품별 판매 도넛 차트 (이번달 TOP 상품)
+  const topProductsChartData = useMemo(() => {
+    if (!topProducts.length) return null;
+
+    const labels = topProducts.map((p) => p.productName);
+    const quantityData = topProducts.map((p) => p.totalQuantity || 0);
+
+    return {
+      labels,
+      datasets: [
+        {
+          label: "판매 수량",
+          data: quantityData,
+        },
+      ],
+    };
+  }, [topProducts]);
+
+  const topProductsChartOptions = {
+    responsive: true,
+    plugins: {
+      legend: { position: "bottom" },
+    },
+  };
+
+  // =========================
+  // 렌더링
+  // =========================
 
   if (loading) {
     return <div>대시보드 요약 정보를 불러오는 중입니다...</div>;
@@ -86,11 +256,13 @@ export default function ProducerDashboard() {
     return <div>대시보드 정보가 없습니다.</div>;
   }
 
+  const displayName = auth?.name || "생산자";
+
   return (
     <div className="producer-dashboard">
       {/* 상단 인사 영역 */}
       <section className="dashboard-header">
-        <h2>{producer.name} 생산자님, 환영합니다 👋</h2>
+        <h2>{displayName} 님, 생산자 대시보드에 오신 걸 환영합니다 👋</h2>
       </section>
 
       {/* 상단 KPI 카드 */}
@@ -115,19 +287,43 @@ export default function ProducerDashboard() {
 
       {/* 하단 차트 3개 영역 */}
       <section className="dashboard-charts">
+        {/* 1. 일자별 매출 라인 차트 */}
         <div className="chart-card">
-          <h3>매출 현황 (라인/주식형 그래프 자리)</h3>
-          <div className="chart-placeholder">차트 영역</div>
+          <h3>이번 달 일자별 매출</h3>
+          {dailySalesChartData ? (
+            <Line data={dailySalesChartData} options={dailySalesChartOptions} />
+          ) : (
+            <div className="chart-placeholder">
+              이번 달 매출 데이터가 없습니다.
+            </div>
+          )}
         </div>
 
+        {/* 2. 재고 현황 바 차트 */}
         <div className="chart-card">
-          <h3>재고 현황 (버티컬 막대 차트 자리)</h3>
-          <div className="chart-placeholder">차트 영역</div>
+          <h3>재고 부족 상품 현황</h3>
+          {stockChartData ? (
+            <Bar data={stockChartData} options={stockChartOptions} />
+          ) : (
+            <div className="chart-placeholder">
+              재고 부족 상품이 없습니다.
+            </div>
+          )}
         </div>
 
+        {/* 3. 상품별 판매 도넛 차트 */}
         <div className="chart-card">
-          <h3>상품별 판매 통계 (도넛 차트 자리)</h3>
-          <div className="chart-placeholder">차트 영역</div>
+          <h3>이번 달 판매 TOP 상품</h3>
+          {topProductsChartData ? (
+            <Doughnut
+              data={topProductsChartData}
+              options={topProductsChartOptions}
+            />
+          ) : (
+            <div className="chart-placeholder">
+              아직 판매된 상품이 없습니다.
+            </div>
+          )}
         </div>
       </section>
     </div>

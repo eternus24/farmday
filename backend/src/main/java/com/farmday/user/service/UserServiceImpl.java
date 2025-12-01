@@ -264,4 +264,122 @@ public class UserServiceImpl implements UserService {
         userMapper.updateUserPhoto(userNo, photoUrl);
     }
 
+    @Override
+    public String findUserIdForRecovery(String name, String email) {
+        String userId = userMapper.findUserIdForRecovery(name, email);
+        if (userId == null) {
+            return null;
+        }
+
+        // 아이디 마스킹 (뒤 3글자 *** 처리)
+        if (userId.length() <= 3) {
+            return "***";
+        }
+        int visible = userId.length() - 3;
+        String prefix = userId.substring(0, visible);
+        return prefix + "***";
+    }
+
+    @Override
+    public void requestPasswordReset(String email) {
+        // 1) 해당 이메일 유저가 있는지 확인
+        User user = userMapper.findByEmail(email);
+        if (user == null) {
+            // 보안상 "없는 이메일입니다"라고 굳이 알려줄 필요 없음
+            // 그냥 조용히 리턴 -> 프론트에는 항상 "보냈다"라고 응답
+            return;
+        }
+
+        // 2) 토큰 생성 + 만료시간 설정 (30분)
+        String token = UUID.randomUUID().toString();
+        Date now = new Date();
+        Date expiredAt = new Date(now.getTime() + 1000L * 60 * 30); // 30분
+
+        // 3) EMAIL_VERIFICATION INSERT (purpose = RESET_PASSWORD)
+        Long emailId = emailVerificationMapper.getNextId();
+
+        EmailVerification ev = new EmailVerification();
+        ev.setEmailId(emailId);
+        ev.setEmail(email);
+        ev.setToken(token);
+        ev.setStatus("PENDING");
+        ev.setPurpose("RESET_PASSWORD");
+        ev.setRequestedAt(now);
+        ev.setExpiredAt(expiredAt);
+        ev.setCreatedDate(now);
+
+        emailVerificationMapper.insert(ev);
+
+        // 4) 비밀번호 재설정 링크 생성
+        //    프론트에서 /reset-password?token=... 페이지로 처리
+        String link = frontendUrl + "/reset-password?token=" + token;
+
+        // 5) 메일 발송
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(email);
+        message.setSubject("[FarmDay] 비밀번호 재설정 안내");
+        message.setText(
+                "안녕하세요, FarmDay 입니다.\n\n" +
+                "비밀번호를 재설정하시려면 아래 링크를 클릭해 주세요.\n\n" +
+                link + "\n\n" +
+                "해당 링크는 30분 동안만 유효합니다."
+        );
+
+        mailSender.send(message);
+    }
+
+    @Override
+    public boolean validatePasswordResetToken(String token) {
+        EmailVerification ev = emailVerificationMapper.findByToken(token);
+        if (ev == null) return false;
+
+        // 목적 다름 (회원가입용 SIGNUP 토큰과 구분)
+        if (!"RESET_PASSWORD".equals(ev.getPurpose())) return false;
+
+        // 상태값 확인
+        if (!"PENDING".equals(ev.getStatus())) return false;
+
+        // 만료시간 확인
+        Date now = new Date();
+        if (ev.getExpiredAt() == null || ev.getExpiredAt().before(now)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public void resetPassword(String token, String newPassword) {
+        EmailVerification ev = emailVerificationMapper.findByToken(token);
+        if (ev == null) {
+            throw new IllegalArgumentException("유효하지 않은 비밀번호 재설정 링크입니다.");
+        }
+
+        if (!"RESET_PASSWORD".equals(ev.getPurpose())) {
+            throw new IllegalStateException("비밀번호 재설정 용도가 아닌 토큰입니다.");
+        }
+
+        if (!"PENDING".equals(ev.getStatus())) {
+            throw new IllegalStateException("이미 사용되었거나 처리된 토큰입니다.");
+        }
+
+        Date now = new Date();
+        if (ev.getExpiredAt() == null || ev.getExpiredAt().before(now)) {
+            throw new IllegalStateException("비밀번호 재설정 링크가 만료되었습니다.");
+        }
+
+        // 1) 이메일로 유저 조회
+        User user = userMapper.findByEmail(ev.getEmail());
+        if (user == null) {
+            throw new IllegalStateException("해당 이메일의 유저가 존재하지 않습니다.");
+        }
+
+        // 2) 비밀번호 암호화 후 업데이트
+        String encodedPwd = passwordEncoder.encode(newPassword);
+        userMapper.updatePasswordByUserNo(user.getUserNo(), encodedPwd);
+
+        // 3) 토큰은 사용 처리
+        emailVerificationMapper.markUsed(ev.getEmailId());
+    }
+
 }

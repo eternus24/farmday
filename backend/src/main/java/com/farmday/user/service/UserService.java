@@ -39,4 +39,27 @@ public interface UserService {
 
     void updateUserPhoto(Long userNo, String photoUrl);
     
+    // =========================
+    // ✅ 아이디 / 비밀번호 찾기용 추가 메서드
+    // =========================
+    /**
+     * 이름 + 이메일로 userId 조회 (마스킹은 서비스에서 처리)
+     */
+    String findUserIdForRecovery(String name, String email);
+
+    /**
+     * 비밀번호 재설정용 이메일 발송
+     */
+    void requestPasswordReset(String email);
+
+    /**
+     * 비밀번호 재설정 토큰 유효성 확인
+     */
+    boolean validatePasswordResetToken(String token);
+
+    /**
+     * 비밀번호 실제 변경 (ResetPassword)
+     */
+    void resetPassword(String token, String newPassword);
+
 }

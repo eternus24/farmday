@@ -9,10 +9,13 @@ export default function Header() {
   const navigate = useNavigate();
   const { auth, setAuth } = useContext(AuthContext);
   const defaultAvatar = defaultAvatarImg; // 프로젝트 맞게 수정
-  const profileSrc = auth.photo || defaultAvatar;
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
-
+  const profileSrc = auth.photo
+  ? auth.photo.startsWith("http")
+    ? auth.photo                  // 카카오 같은 외부 URL이면 그대로
+    : `${API_BASE}${auth.photo}`  // /uploads/... 는 백엔드 도메인 붙여주기
+  : defaultAvatar;
 
   const { cartAmount, setCartAmount, findCartAmount } = useContext(CartContext);
 
