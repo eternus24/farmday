@@ -10,5 +10,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class FarmdayApplication {
     public static void main(String[] args) {
         SpringApplication.run(FarmdayApplication.class, args);
+
     }
+
 }

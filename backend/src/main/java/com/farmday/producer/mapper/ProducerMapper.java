@@ -170,6 +170,8 @@ public interface ProducerMapper {
 
     int updateProducerFullProfile(Map<String, Object> params);
 
+    void deleteProductImagesByProductIdExceptMain(Long productId);
+
     int updateRefundStatusByOrderItemId(@Param("producerId") Long producerId,
                                         @Param("orderItemId") Long orderItemId,
                                         @Param("refundStatus") String refundStatus);

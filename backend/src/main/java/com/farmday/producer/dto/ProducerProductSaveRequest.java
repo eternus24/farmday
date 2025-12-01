@@ -1,6 +1,8 @@
 // com.farmday.producer.dto.ProducerProductSaveRequest.java
 package com.farmday.producer.dto;
 
+import java.util.List;
+
 import lombok.Data;
 
 @Data
@@ -23,4 +25,8 @@ public class ProducerProductSaveRequest {
 
     private String summary;     // PRODUCT.summary (짧은 소개)
     private String detailDesc;  // PRODUCT_DETAIL.detail_desc (상세 설명)
+
+     // ⭐ URL 기반 이미지 관리
+    private String mainImageUrl;               // 대표 이미지 URL
+    private List<String> descriptionImageUrls; // 상세 이미지 URL들 (0~N장)
 }

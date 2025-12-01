@@ -449,13 +449,12 @@ public class ProducerController {
     // =========================
     // 상품관리 - 상품 등록 (모달)
     // =========================
-    @PostMapping(value = "/products")
+   @PostMapping("/products")
     public ResponseEntity<ProducerProductItemDto> createProduct(
             @AuthenticationPrincipal String loginUserId,
-            @ModelAttribute ProducerProductSaveRequest request,   // name, baseCategoryId, grade, unitName, price, stockQty, summary, detailDesc ...
-            @RequestPart(name = "mainImageFile", required = false) MultipartFile mainImageFile,
-            @RequestPart(name = "descriptionImageFiles", required = false) List<MultipartFile> descriptionImageFiles
+            @RequestBody ProducerProductSaveRequest request
     ) {
+
         // 1) 로그인 유저 검증
         User user = userService.findByUserId(loginUserId);
         if (user == null) {
@@ -470,23 +469,20 @@ public class ProducerController {
 
         Long producerId = producer.getProducerId();
 
-        // 3) 상품 생성 (대표 + 상세 이미지들까지 같이)
+        // ... 로그인/생산자 체크 동일
         ProducerProductItemDto dto =
-                producerService.createProduct(producerId, request, mainImageFile, descriptionImageFiles);
-
+                producerService.createProduct(producerId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
 
     // =========================
     // 상품관리 - 상품 정보 수정 (모달)
     // =========================
-    @PatchMapping(value = "/products/{productId}")
+    @PatchMapping("/products/{productId}")
     public ResponseEntity<ProducerProductItemDto> updateProduct(
             @AuthenticationPrincipal String loginUserId,
             @PathVariable Long productId,
-            @ModelAttribute ProducerProductSaveRequest request,
-            @RequestPart(name = "mainImageFile", required = false) MultipartFile mainImageFile,
-            @RequestPart(name = "descriptionImageFiles", required = false) List<MultipartFile> descriptionImageFiles
+            @RequestBody ProducerProductSaveRequest request
     ) {
         // 1) 로그인 유저 검증
         User user = userService.findByUserId(loginUserId);
@@ -502,16 +498,13 @@ public class ProducerController {
 
         Long producerId = producer.getProducerId();
 
-        // 3) 상품 수정
+        // 3) 서비스 호출
         ProducerProductItemDto dto =
-                producerService.updateProduct(producerId, productId, request, mainImageFile, descriptionImageFiles);
+                producerService.updateProduct(producerId, productId, request);
 
         return ResponseEntity.ok(dto);
     }
 
-    // =========================
-    // 상품관리 - 상품 삭제
-    // =========================
     @DeleteMapping("/products/{productId}")
     public ResponseEntity<Void> deleteProduct(
             @AuthenticationPrincipal String loginUserId,

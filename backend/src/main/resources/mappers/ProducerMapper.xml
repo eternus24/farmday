@@ -888,4 +888,17 @@
       ]]>
   </update>
 
+    <!-- 대표 이미지를 제외한 상품 이미지 삭제 (상세 이미지만 삭제) -->
+  <delete id="deleteProductImagesByProductIdExceptMain"
+          parameterType="long">
+    <![CDATA[
+    DELETE FROM PRODUCT_IMAGE pi
+    WHERE pi.product_id = #{productId}
+      AND (
+            pi.is_main = 'N'
+         OR pi.sort_order > 1
+      )
+    ]]>
+  </delete>
+
 </mapper>

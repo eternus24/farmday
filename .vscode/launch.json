@@ -2,6 +2,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "TestHash",
+            "request": "launch",
+            "mainClass": "com.farmday.TestHash",
+            "projectName": "backend"
+        },
+        {
+            "type": "java",
             "name": "Spring Boot-BackendApplication<backend>",
             "request": "launch",
             "cwd": "${workspaceFolder}",

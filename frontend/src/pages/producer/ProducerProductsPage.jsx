@@ -100,6 +100,29 @@ export default function ProducerProductsPage() {
   const [imagePreview, setImagePreview] = useState('')
   const [isUnitCustom, setIsUnitCustom] = useState(false)
 
+  const IMAGE_UPLOAD_BASE = "http://192.168.0.76:8080";
+
+  async function uploadImageFile(file) {
+    if (!file) return null;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await fetch(`${IMAGE_UPLOAD_BASE}/api/images/upload`, {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!res.ok) {
+      throw new Error(`이미지 업로드 실패: HTTP ${res.status}`);
+    }
+
+    // 업로드 서버 응답 형식에 맞게
+    // AwsTest에서 `{ url: "..." }` 였으니까 그대로 가정
+    const data = await res.json();
+    return data.url; // or data.path 등 실제 키 맞춰야 함
+  }
+
   // =========================
   // 상품 목록 조회
   // =========================
@@ -337,104 +360,116 @@ export default function ProducerProductsPage() {
     setDetailImages(files)
   }
 
-  // =========================
-  // 모달 저장 (등록 / 수정)
-  // =========================
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
 
     const token =
       auth?.accessToken ||
       auth?.token ||
-      localStorage.getItem('accessToken')
+      localStorage.getItem("accessToken");
 
     if (!token) {
-      alert('로그인이 필요합니다.')
-      return
+      alert("로그인이 필요합니다.");
+      return;
     }
 
+    // 필수값 체크는 그대로
     if (!formProduct.productName) {
-      alert('상품명을 입력해 주세요.')
-      return
+      alert("상품명을 입력해 주세요.");
+      return;
     }
     if (!formProduct.baseCategoryId) {
-      alert('카테고리를 선택해 주세요.')
-      return
+      alert("카테고리를 선택해 주세요.");
+      return;
     }
     if (!formProduct.unitName) {
-      alert('규격(단위)을 입력해 주세요.')
-      return
+      alert("규격(단위)을 입력해 주세요.");
+      return;
     }
     if (!formProduct.price) {
-      alert('가격을 입력해 주세요.')
-      return
+      alert("가격을 입력해 주세요.");
+      return;
     }
 
     try {
-      const formData = new FormData()
-      formData.append('productName', formProduct.productName)
-      formData.append('baseCategoryId', formProduct.baseCategoryId)
-      formData.append('grade', formProduct.grade || '')
-      formData.append('unitName', formProduct.unitName)
-      formData.append('price', formProduct.price)
-      formData.append('stockQty', formProduct.stockQty || 0)
-      formData.append('summary', formProduct.summary || '')
-      formData.append('detailDesc', formProduct.detailDesc || '')
-      formData.append('origin', formProduct.origin || '')
-      formData.append('harvestDate', formProduct.harvestDate || '')
-      formData.append('expireDate', formProduct.expireDate || '')
+      // 1) 대표 이미지 업로드 (있으면)
+      let mainImageUrl = editingTarget?.mainImage || null;
 
       if (imageFile) {
-        formData.append('mainImageFile', imageFile)
+        mainImageUrl = await uploadImageFile(imageFile); // 🔥 76번 서버 호출
       }
 
+      // 2) 상세 이미지 업로드 (여러장)
+      const descriptionImageUrls = [];
       if (detailImages && detailImages.length > 0) {
-        detailImages.forEach((file) => {
-          formData.append('descriptionImageFiles', file)
-        })
+        for (const file of detailImages) {
+          const url = await uploadImageFile(file); // 🔥 76번 서버 호출 반복
+          if (url) descriptionImageUrls.push(url);
+        }
       }
 
-      if (modalMode === 'create') {
+      // 3) 이제는 파일 대신 "URL + 나머지 데이터" 를 JSON으로 백엔드에 보냄
+      const payload = {
+        productName: formProduct.productName,
+        baseCategoryId: formProduct.baseCategoryId,
+        grade: formProduct.grade || "",
+        unitName: formProduct.unitName,
+        price: Number(formProduct.price),
+        stockQty: Number(formProduct.stockQty || 0),
+        summary: formProduct.summary || "",
+        detailDesc: formProduct.detailDesc || "",
+        origin: formProduct.origin || "",
+        harvestDate: formProduct.harvestDate || "",
+        expireDate: formProduct.expireDate || "",
+        mainImageUrl,              // 🔥 대표 이미지 URL
+        descriptionImageUrls,      // 🔥 상세 이미지 URL 배열
+      };
+
+      let res;
+
+      if (modalMode === "create") {
         // ====================
         // 신규 등록
         // ====================
-        const res = await axios.post(
+        res = await axios.post(
           `${API_BASE}/api/producer/products`,
-          formData,
+          payload,
           {
             headers: {
-              Authorization: token.startsWith('Bearer ')
+              "Content-Type": "application/json",
+              Authorization: token.startsWith("Bearer ")
                 ? token
                 : `Bearer ${token}`,
             },
-          },
-        )
+          }
+        );
 
-        alert('상품이 등록되었습니다.')
+        alert("상품이 등록되었습니다.");
 
         if (res.data) {
-          setProducts((prev) => [...prev, res.data])
+          setProducts((prev) => [...prev, res.data]);
         }
-      } else if (modalMode === 'edit' && editingTarget) {
+      } else if (modalMode === "edit" && editingTarget) {
         // ====================
-        // 정보 수정
+        // 수정
         // ====================
-        const res = await axios.patch(
+        res = await axios.patch(
           `${API_BASE}/api/producer/products/${editingTarget.productId}`,
-          formData,
+          payload,
           {
             headers: {
-              Authorization: token.startsWith('Bearer ')
+              "Content-Type": "application/json",
+              Authorization: token.startsWith("Bearer ")
                 ? token
                 : `Bearer ${token}`,
             },
-          },
-        )
+          }
+        );
 
-        alert('상품 정보가 수정되었습니다.')
+        alert("상품 정보가 수정되었습니다.");
 
         if (res.data) {
-          const updated = res.data
+          const updated = res.data;
           setProducts((prev) =>
             prev.map((p) =>
               p.productId === updated.productId
@@ -446,32 +481,18 @@ export default function ProducerProductsPage() {
                     stockQty: updated.stockQty,
                     status: updated.status ?? p.status,
                   }
-                : p,
-            ),
-          )
-        } else {
-          setProducts((prev) =>
-            prev.map((p) =>
-              p.productId === editingTarget.productId
-                ? {
-                    ...p,
-                    productName: formProduct.productName,
-                    unitName: formProduct.unitName,
-                    price: Number(formProduct.price),
-                    stockQty: Number(formProduct.stockQty || 0),
-                  }
-                : p,
-            ),
-          )
+                : p
+            )
+          );
         }
       }
 
-      closeModal()
+      closeModal();
     } catch (err) {
-      console.error('상품 등록/수정 에러:', err)
-      alert('상품을 저장하는 중 오류가 발생했습니다.')
+      console.error("상품 등록/수정 에러:", err);
+      alert(err.message || "상품을 저장하는 중 오류가 발생했습니다.");
     }
-  }
+  };
 
   // =========================
   // 렌더링
