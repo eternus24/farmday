@@ -1,0 +1,235 @@
+/* src/pages/producer/ProducerGroupDealCreatePage.css */
+
+.producer-groupdeal-page {
+  max-width: 1100px;
+  margin-top: 140px;
+  margin-bottom: 80px;
+}
+
+/* 상단 헤더 */
+.pg-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.pg-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+}
+
+.pg-subtitle {
+  font-size: 0.95rem;
+  color: #6b7280;
+  margin-bottom: 0;
+}
+
+.pg-required-mark {
+  font-weight: 700;
+  color: #dc2626;
+}
+
+/* 단계 표시 */
+.pg-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.pg-step {
+  font-size: 0.8rem;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background-color: #f3f4f6;
+  color: #4b5563;
+}
+
+/* 섹션 카드 공통 */
+.pg-section-card {
+  background-color: #ffffff;
+  border-radius: 18px;
+  padding: 20px 22px;
+  margin-bottom: 18px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+  border: 1px solid #e5e7eb;
+}
+
+.pg-section-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pg-section-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background-color: #bbf7d0;
+  color: #166534;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+}
+
+/* 파일 업로드 */
+.pg-file-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: 1px dashed #16a34a;
+  background-color: #ecfdf3;
+  color: #166534;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+}
+
+.pg-file-input {
+  display: none;
+}
+
+.pg-uploading-text {
+  font-size: 0.9rem;
+}
+
+/* 이미지 썸네일 */
+.pg-image-card {
+  border-radius: 12px;
+  overflow: hidden;
+  background-color: #f9fafb;
+}
+
+.pg-image-thumb {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  display: block;
+}
+
+.pg-image-main-badge {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  background-color: #15803d;
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+}
+
+.pg-image-remove-btn {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  padding: 2px 10px;
+}
+
+/* pill 버튼 (예시 제목 등) */
+.pg-pill-button {
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background-color: #f9fafb;
+  font-size: 0.8rem;
+  padding: 6px 12px;
+  color: #374151;
+}
+
+.pg-pill-button:hover {
+  background-color: #ecfdf3;
+  border-color: #16a34a;
+  color: #14532d;
+}
+
+/* 큰 텍스트 영역 */
+.pg-textarea {
+  resize: vertical;
+  max-height: 220px;
+}
+
+/* 빠른 선택 버튼 공통 */
+.pg-quick-button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pg-quick-button {
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background-color: #f9fafb;
+  font-size: 0.8rem;
+  padding: 6px 10px;
+  min-width: 90px;
+}
+
+.pg-quick-button:hover {
+  background-color: #ecfdf3;
+  border-color: #16a34a;
+  color: #14532d;
+}
+
+/* 가이드 박스 */
+.pg-guide-box {
+  border-radius: 12px;
+  padding: 10px 12px;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  font-size: 0.85rem;
+}
+
+/* 제출 영역 */
+.pg-footer {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 18px;
+  margin-top: 10px;
+}
+
+.pg-submit-button {
+  border-radius: 999px;
+  background-color: #14532d;
+  border: none;
+  padding: 10px 28px;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.pg-submit-button:disabled {
+  opacity: 0.7;
+}
+
+/* 반응형 */
+@media (min-width: 768px) {
+  .pg-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 576px) {
+  .producer-groupdeal-page {
+    margin-top: 100px;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .pg-section-card {
+    padding: 16px 14px;
+  }
+
+  .pg-title {
+    font-size: 1.4rem;
+  }
+}

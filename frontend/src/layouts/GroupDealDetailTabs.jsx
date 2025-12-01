@@ -1,6 +1,7 @@
-// 파일 위치 예시: src/components/GroupDealDetailTabs.jsx
+// src/layouts/GroupDealDetailTabs.jsx - 공동구매 상세 하단 탭 레이아웃
 
 import React, { useState } from "react";
+import "./GroupDealDetailTabs.css";
 
 const PRIMARY_DEEP_GREEN = "#166534"; // 메인 딥그린 색상
 const TABS_STICKY_OFFSET = 80;        // 상단 헤더 높이에 맞춰 필요하면 숫자 조정
@@ -8,7 +9,80 @@ const TABS_STICKY_OFFSET = 80;        // 상단 헤더 높이에 맞춰 필요�
 function GroupDealDetailTabs({ deal }) {
   const [active, setActive] = useState("detail");
 
-  // 상품문의에 보여줄 더미 데이터 (마켓컬리/쿠팡 Q&A 느낌)
+  // 상품상세 탭에서 사용할 상세 설명 텍스트 (DB: GROUP_DEAL.group_deal_detail)
+  // 여기서 리뷰는 없어도 될 것 같아. 관리자가 올리는 시스템이라.
+
+  const detailText =
+    (deal &&
+      (deal.description ||
+        deal.groupDealDetail ||
+        deal.group_deal_detail ||
+        deal.productDescription)) ||
+    "";
+
+  // 상품 정보 요약 박스용 데이터 (공동구매 메타 정보)
+  const specRows = deal
+    ? [
+        {
+          label: "공동구매 ID",
+          value: deal.groupDealId,
+        },
+        {
+          label: "진행 상태",
+          value: deal.status,
+        },
+        {
+          label: "성공 최소 인원",
+          value:
+            deal.minMemberCount != null ? `${deal.minMemberCount}명` : null,
+        },
+        {
+          label: "최대 인원",
+          value:
+            deal.maxMemberCount != null ? `${deal.maxMemberCount}명` : null,
+        },
+        {
+          label: "1인당 구매 제한",
+          value:
+            (deal.perUserLimitQty || deal.per_user_limit_qty) != null
+              ? `${deal.perUserLimitQty || deal.per_user_limit_qty}개`
+              : null,
+        },
+        {
+          label: "정상가",
+          value:
+            deal.originPrice != null
+              ? `${Number(deal.originPrice).toLocaleString()}원`
+              : null,
+        },
+        {
+          label: "공동구매가",
+          value:
+            deal.dealPrice != null
+              ? `${Number(deal.dealPrice).toLocaleString()}원`
+              : null,
+        },
+        {
+          label: "할인율",
+          value: deal.discountRate != null ? `${deal.discountRate}%` : null,
+        },
+        {
+          label: "시작일",
+          value: deal.startAt || deal.start_at || null,
+        },
+        {
+          label: "종료일",
+          value: deal.endAt || deal.end_at || null,
+        },
+      ].filter(
+        (row) =>
+          row.value !== null &&
+          row.value !== undefined &&
+          row.value !== ""
+      )
+    : [];
+
+  // 상품문의 더미 데이터 (UI용)
   const dummyQnaList = [
     {
       id: 1,
@@ -68,7 +142,7 @@ function GroupDealDetailTabs({ deal }) {
     },
     {
       id: 9,
-      title: "맛이 지난번보다 덜 달아요",
+      title: "맛이 지난번보다 덜 달라요",
       author: "윤*수",
       date: "2024.11.08",
       status: "답변완료",
@@ -82,9 +156,9 @@ function GroupDealDetailTabs({ deal }) {
     },
   ];
 
+  // 상품평 탭 제거 (detail / qna / shipping 만 사용)
   const tabs = [
     { key: "detail", label: "상품상세" },
-    { key: "review", label: `상품평 (${deal.reviewCount ?? 0})` },
     { key: "qna", label: "상품문의" },
     { key: "shipping", label: "배송/교환/반품 안내" },
   ];
@@ -93,8 +167,168 @@ function GroupDealDetailTabs({ deal }) {
     switch (active) {
       case "detail":
         return (
-          <div className="py-3">
-            <p className="small mb-3">{deal.description}</p>
+          <div className="py-3 deal-detail-container">
+            {/* 상단 헤더 */}
+            <div className="text-center mb-4">
+              {(deal.subTitle || deal.region) && (
+                <div
+                  className="mb-2"
+                  style={{
+                    fontSize: "0.9rem",
+                    color: "#9ca3af",
+                    letterSpacing: "0.14em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  {deal.subTitle || deal.region}
+                </div>
+              )}
+
+              <div
+                style={{
+                  fontSize: "1.6rem",
+                  fontWeight: 700,
+                  lineHeight: 1.4,
+                  letterSpacing: "-0.03em",
+                  whiteSpace: "pre-line",
+                }}
+              >
+                {deal.productName}
+              </div>
+
+              <div
+                className="mt-3"
+                style={{
+                  height: 1,
+                  maxWidth: 420,
+                  margin: "0.75rem auto 0",
+                  backgroundColor: "#e5e7eb",
+                }}
+              />
+            </div>
+
+            {/* 상세 설명 본문 (HTML) */}
+            {detailText && (
+              <div
+                className="mb-5 detail-text-box"
+                dangerouslySetInnerHTML={{ __html: detailText }}
+              />
+            )}
+
+            {/* 농산물 Check Point - 리디자인 */}
+            <section className="deal-section deal-section-checkpoint">
+              <div className="deal-section-header text-center mb-4">
+                <div className="deal-section-kicker">Check Point</div>
+                <h5 className="deal-section-title">이 상품, 이런 점이 좋아요</h5>
+                <p className="deal-section-desc">
+                  산지 선택부터 유통 과정, 식탁 위의 활용까지
+                  <br />
+                  한 번에 보기 쉽게 정리했어요.
+                </p>
+              </div>
+
+              <div className="check-grid">
+                {/* 산지 환경 */}
+                <div className="check-card">
+                  <div className="check-card-icon" aria-hidden="true">
+                    🌿
+                  </div>
+                  <div className="check-card-label">
+                    <span className="check-card-kicker">Origin</span>
+                    <div className="check-card-title">산지 환경</div>
+                  </div>
+                  <p className="check-card-body">
+                    제철 산지에서 수확한 국내 농·수산물만 선별해 담았어요.
+                  </p>
+                </div>
+
+                {/* 재료와 성분 */}
+                <div className="check-card">
+                  <div className="check-card-icon" aria-hidden="true">
+                    🥕
+                  </div>
+                  <div className="check-card-label">
+                    <span className="check-card-kicker">Ingredients</span>
+                    <div className="check-card-title">재료와 성분</div>
+                  </div>
+                  <p className="check-card-body">
+                    불필요한 첨가물은 줄이고, 원재료 본연의 맛과 향을 살렸어요.
+                  </p>
+                </div>
+
+                {/* 생산·유통 과정 */}
+                <div className="check-card">
+                  <div className="check-card-icon" aria-hidden="true">
+                    🚚
+                  </div>
+                  <div className="check-card-label">
+                    <span className="check-card-kicker">Process</span>
+                    <div className="check-card-title">생산·유통</div>
+                  </div>
+                  <p className="check-card-body">
+                    수확 직후 신속하게 포장·출고해 신선함이 오래가도록 관리해요.
+                  </p>
+                </div>
+
+                {/* 활용법 */}
+                <div className="check-card">
+                  <div className="check-card-icon" aria-hidden="true">
+                    🍽
+                  </div>
+                  <div className="check-card-label">
+                    <span className="check-card-kicker">Recommendation</span>
+                    <div className="check-card-title">건강</div>
+                  </div>
+                  <p className="check-card-body">
+                    믿을 수 있는 건강한 재료로 영양 가득한 식사를 즐겨보세요.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            {/* 상세 이미지 영역 */}
+            {deal.imagePaths && deal.imagePaths.length > 0 && (
+              <section className="deal-section deal-section-images">
+                <div className="deal-section-header mb-3">
+                  <div className="deal-section-kicker">Detail View</div>
+                  <h6 className="deal-section-subtitle">
+                    실제 상품과 가까운 이미지로 확인해 보세요
+                  </h6>
+                </div>
+
+                <div className="deal-images-wrap">
+                  {deal.imagePaths.map((img, idx) => (
+                    <div key={idx} className="deal-image-item">
+                      <img
+                        src={img}
+                        alt={`${deal.productName || "상품 이미지"}-${idx + 1}`}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* 상품 정보 요약 박스 (공동구매 메타) */}
+            {specRows.length > 0 && (
+              <section className="deal-section deal-section-spec">
+                <div className="deal-section-header mb-3">
+                  <div className="deal-section-kicker">Info</div>
+                  <h6 className="deal-section-subtitle">공동구매 기본 정보</h6>
+                </div>
+
+                <div className="deal-spec-grid">
+                  {specRows.map((row) => (
+                    <div key={row.label} className="deal-spec-row">
+                      <span className="deal-spec-label">{row.label}</span>
+                      <span className="deal-spec-value">{row.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* 추가 detailSections */}
             {deal.detailSections &&
               deal.detailSections.map((sec) => (
                 <div key={sec.title} className="mb-3">
@@ -104,16 +338,9 @@ function GroupDealDetailTabs({ deal }) {
               ))}
           </div>
         );
-      case "review":
-        return (
-          <div className="py-4 text-center text-muted small">
-            아직 상품평 기능은 준비 중입니다.
-          </div>
-        );
       case "qna":
         return (
           <div className="py-3 small">
-            {/* 상단 안내 영역 (기존 그대로 유지) */}
             <p className="mb-2 fw-semibold">상품 문의 안내</p>
             <p className="mb-2">
               배송 일정, 보관 방법, 환불 절차 등 상품 이용과 관련된 내용만
@@ -122,11 +349,12 @@ function GroupDealDetailTabs({ deal }) {
             </p>
             <ul className="mb-3 ps-3">
               <li className="mb-1">
-                제목과 내용에는 <strong>상품명이나 특정 농가명 등은 기재하지
-                마시고</strong>, 주문번호 또는 구매일을 중심으로 작성해 주세요.
+                제목과 내용에는{" "}
+                <strong>상품명이나 특정 농가명 등은 기재하지 마시고</strong>,
+                주문번호 또는 구매일을 중심으로 작성해 주세요.
               </li>
               <li className="mb-1">
-                예시 제목) “배송은 언제 도착하나요?”, “시일에 맞춰 배송이
+                예시 제목) “배송은 언제 도착하나요?”, “예약일에 맞춰 배송이
                 되는지 궁금합니다”, “환불 관련 문의드립니다”
               </li>
               <li className="mb-1">
@@ -135,13 +363,11 @@ function GroupDealDetailTabs({ deal }) {
               </li>
             </ul>
             <p className="text-muted mb-0">
-              개인정보(연락처, 계좌번호, 주소 등)는 문의글에 절대 남기지
-              말아 주세요. 필요한 경우 고객센터를 통해 개별 안내해 드립니다.
+              개인정보(연락처, 계좌번호, 주소 등)는 문의글에 절대 남기지 말아
+              주세요. 필요한 경우 고객센터를 통해 개별 안내해 드립니다.
             </p>
 
-            {/* 실제 마켓컬리/쿠팡처럼 보이는 Q&A 리스트 영역 (더미데이터) */}
             <div className="mt-4">
-              {/* 헤더: 문의 건수 + 문의하기 버튼 */}
               <div className="d-flex justify-content-between align-items-center mb-2">
                 <div className="fw-semibold">
                   상품 문의{" "}
@@ -157,7 +383,6 @@ function GroupDealDetailTabs({ deal }) {
                 </button>
               </div>
 
-              {/* 컬럼 헤더 영역 (번호 / 상태 / 제목 / 작성자 / 작성일 느낌) */}
               <div
                 className="d-none d-md-flex border-top border-bottom py-2 text-muted"
                 style={{ fontSize: "0.78rem" }}
@@ -173,14 +398,12 @@ function GroupDealDetailTabs({ deal }) {
                 </div>
               </div>
 
-              {/* 문의 리스트 */}
               <div className="border-top">
                 {dummyQnaList.map((item, index) => (
                   <div
                     key={item.id}
                     className="d-flex flex-column flex-md-row align-items-start align-items-md-center border-bottom py-3"
                   >
-                    {/* 번호 (PC에서만 중요) */}
                     <div
                       className="text-muted small d-none d-md-block"
                       style={{ width: 50 }}
@@ -188,7 +411,6 @@ function GroupDealDetailTabs({ deal }) {
                       {dummyQnaList.length - index}
                     </div>
 
-                    {/* 상태 + 제목 */}
                     <div className="flex-grow-1 w-100">
                       <div className="d-flex align-items-center mb-1">
                         <span
@@ -203,14 +425,11 @@ function GroupDealDetailTabs({ deal }) {
                         </span>
                         <span className="fw-semibold">{item.title}</span>
                       </div>
-
-                      {/* 모바일에서 작성자/날짜를 밑에 한 줄로 */}
                       <div className="d-block d-md-none text-muted small mt-1">
                         {item.author} · {item.date}
                       </div>
                     </div>
 
-                    {/* 작성자 / 작성일 (PC 뷰) */}
                     <div className="d-none d-md-flex flex-column align-items-center text-muted small ms-3">
                       <div style={{ width: 80 }} className="text-center">
                         {item.author}
@@ -223,7 +442,6 @@ function GroupDealDetailTabs({ deal }) {
                 ))}
               </div>
 
-              {/* 페이징 느낌만 내는 더미 영역 */}
               <div className="d-flex justify-content-center mt-3">
                 <nav>
                   <ul className="pagination pagination-sm mb-0">
@@ -268,8 +486,8 @@ function GroupDealDetailTabs({ deal }) {
                 박스로 나누어 도착할 수 있습니다.
               </li>
               <li className="mb-1">
-                특정 날짜 수령을 원하시는 경우, 주문 전 고객센터로
-                가능 여부를 문의해 주세요.
+                특정 날짜 수령을 원하시는 경우, 주문 전 고객센터로 가능 여부를
+                문의해 주세요.
               </li>
             </ul>
 
@@ -277,13 +495,14 @@ function GroupDealDetailTabs({ deal }) {
             <p className="mb-1 fw-semibold">01. 상품에 문제가 있는 경우</p>
             <ul className="mb-3 ps-3">
               <li className="mb-1">
-                수령하신 농산물에 <strong>심한 상처, 부패, 오배송, 누락</strong>
-                등이 있는 경우, 상품 수령 후 <strong>24시간 이내</strong>
-                고객센터로 문의해 주세요.
+                수령하신 농산물에{" "}
+                <strong>심한 상처, 부패, 오배송, 누락</strong> 등이 있는
+                경우, 상품 수령 후 <strong>24시간 이내</strong> 고객센터로
+                문의해 주세요.
               </li>
               <li className="mb-1">
-                신속한 처리를 위해 상품 전체 사진, 박스 외관, 운송장
-                사진 등 상태 확인이 가능한 이미지를 요청드릴 수 있습니다.
+                신속한 처리를 위해 상품 전체 사진, 박스 외관, 운송장 사진 등
+                상태 확인이 가능한 이미지를 요청드릴 수 있습니다.
               </li>
               <li className="mb-1">
                 판매자 책임으로 확인되는 경우 <strong>전액 환불</strong> 또는

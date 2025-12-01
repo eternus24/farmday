@@ -1,449 +1,459 @@
-// src/pages/groupdeal/GroupDealDetailPage.jsx
-import React, { useEffect, useState, useRef } from "react";
+// 경로: frontend/src/pages/groupdeal/GroupDealDetailPage.jsx
+import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import GroupDealTimer from "../../components/groupdeal/GroupDealTimer";
-import GroupDealDetailTabs from "../../layouts/GroupDealDetailTabs";
 import {
   getGroupDealDetail,
+  joinGroupDeal,
 } from "../../api/groupDealApi";
+import BarProgress from "./components/BarProgress";
 
-const PRIMARY_DEEP_GREEN = "#166534";
-const ACCENT_ORANGE = "#E65100";
+function formatPrice(value) {
+  if (value == null) return "-";
+  return new Intl.NumberFormat("ko-KR").format(value) + "원";
+}
 
-function GroupDealDetailPage() {
-  const { id } = useParams();
+function formatDateRange(start, end) {
+  if (!start && !end) return "일정 미정";
+  const fmt = (d) =>
+    d ? new Date(d).toLocaleDateString("ko-KR") : "?";
+  if (start && end) return `${fmt(start)} ~ ${fmt(end)}`;
+  if (start) return `${fmt(start)} 이후`;
+  return `${fmt(end)} 까지`;
+}
+
+function formatRemainingTime(endAt) {
+  if (!endAt) return "마감일 미정";
+
+  const end = new Date(endAt);
+  const now = new Date();
+  const diffMs = end.getTime() - now.getTime();
+
+  if (diffMs <= 0) return "마감";
+
+  const diffSec = Math.floor(diffMs / 1000);
+  const days = Math.floor(diffSec / (60 * 60 * 24));
+  const hours = Math.floor((diffSec % (60 * 60 * 24)) / (60 * 60));
+
+  if (days > 0) return `D-${days} · ${hours}시간 남음`;
+  if (hours > 0) return `오늘 마감 · ${hours}시간 남음`;
+  return "곧 마감";
+}
+
+const GroupDealDetailPage = () => {
+  const { groupDealId } = useParams();
   const navigate = useNavigate();
 
   const [deal, setDeal] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [joining, setJoining] = useState(false);
+  const [error, setError] = useState("");
+  const [quantity, setQuantity] = useState(1);
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  const priceSectionRef = useRef(null);
-  const [showStickyBar, setShowStickyBar] = useState(false);
-
-  const [isLiked, setIsLiked] = useState(false);
-  const [isImageHover, setIsImageHover] = useState(false);
-
-  // DTO -> 화면용 데이터로 변환
-  function mapDetailDtoToView(detail) {
-    if (!detail) return null;
-    
-    const originPrice =
-      detail.originPrice != null ? Number(detail.originPrice) : 0;
-    const dealPrice = detail.dealPrice != null ? Number(detail.dealPrice) : 0;
-    const discountRate =
-      detail.discountRate != null ? Number(detail.discountRate) : 0;
-
-    const legacyMainImage =
-      detail.mainImagePath || detail.imagePath || detail.imageUrl || null;
-
-    const imageUrls =
-      detail.imageUrls && detail.imageUrls.length > 0
-        ? detail.imageUrls
-        : legacyMainImage
-        ? [legacyMainImage]
-        : [];
-
-    return {
-      ...detail,
-      originPrice,
-      dealPrice,
-      discountRate,
-      mainImagePath: imageUrls.length > 0 ? imageUrls[0] : null,
-      imagePaths: imageUrls,
-      deliveryInfo: detail.deliveryText,
-      maxMemberCount:
-        detail.maxMemberCount != null
-          ? detail.maxMemberCount
-          : detail.minMemberCount,
-      endAt:
-        typeof detail.endAt === "string"
-          ? detail.endAt
-          : detail.endAt
-          ? String(detail.endAt)
-          : "",
-    };
-  }
-
-  // 상세 정보 + 팀 목록 조회
   useEffect(() => {
-    async function fetchData() {
+    const fetchDetail = async () => {
       setLoading(true);
-      setError(null);
-      try {
-        const [detailRes] = await Promise.all([
-          getGroupDealDetail(id),
-        ]);
+      setError("");
 
-        const mapped = mapDetailDtoToView(detailRes);
-        setDeal(mapped);
+      // ✅ groupDealId가 숫자가 아니면 바로 에러 처리 ("/group-deals/manage" 같은 경우 방지)
+      if (!groupDealId || !/^\d+$/.test(groupDealId)) {
+        setError("잘못된 접근입니다. 유효하지 않은 공동구매 ID입니다.");
+        setDeal(null);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const data = await getGroupDealDetail(groupDealId);
+        if (!data) {
+          setError("공동구매 정보를 찾을 수 없습니다.");
+        } else {
+          setDeal(data);
+        }
       } catch (e) {
         console.error(e);
-        setError(e.message || "공동구매 정보를 불러오는 중 오류가 발생했습니다.");
+        setError("공동구매 정보를 불러오지 못했습니다.");
       } finally {
         setLoading(false);
       }
-    }
-
-    if (id) {
-      fetchData();
-    }
-  }, [id]);
-
-  // 스크롤 시 하단 고정 바 노출 여부
-  useEffect(() => {
-    const handleScroll = () => {
-      if (!priceSectionRef.current) return;
-      const rect = priceSectionRef.current.getBoundingClientRect();
-      const headerOffset = 80;
-      setShowStickyBar(rect.top <= headerOffset);
     };
+    fetchDetail();
+  }, [groupDealId]);
 
-    window.addEventListener("scroll", handleScroll);
-    handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  const handleChangeQty = (next) => {
+    let n = Number(next);
+    if (!Number.isFinite(n)) n = 1;
+    if (n < 1) n = 1;
 
+    if (deal?.perUserLimitQty && deal.perUserLimitQty > 0) {
+      if (n > deal.perUserLimitQty) n = deal.perUserLimitQty;
+    }
+    setQuantity(n);
+  };
 
-  // 🔥 혼자 구매: 이미 들고 있는 deal(= GroupDealDetailDto 매핑 결과)을 주문 페이지로 넘김
-  const handleSoloBuy = () => {
+  const handleJoinAndGoCart = async () => {
     if (!deal) return;
+    if (joining) return;
+    if (quantity <= 0) {
+      window.alert("수량을 1개 이상 선택해주세요.");
+      return;
+    }
 
-    // 여기서 새로운 DTO, 새로운 API 전혀 필요 없음
-    // order 페이지에서 useLocation().state 로 deal을 받으면 됨
-    navigate("/order", { state: { groupDeal: deal } });
+    try {
+      setJoining(true);
+      await joinGroupDeal(deal.groupDealId, quantity);
+
+      window.alert("공동구매에 참여되었습니다. 장바구니/결제 페이지로 이동합니다.");
+
+      navigate("/cart", {
+        state: {
+          fromGroupDeal: true,
+          groupDealId: deal.groupDealId,
+          quantity,
+        },
+      });
+    } catch (e) {
+      console.error(e);
+      window.alert(e.message || "공동구매 참여 중 오류가 발생했습니다.");
+    } finally {
+      setJoining(false);
+    }
   };
 
   if (loading) {
     return (
-      <div className="container my-4">
-        <p>공동구매 정보를 불러오는 중입니다...</p>
+      <div className="container" style={{ marginTop: 140 }}>
+        <p className="text-muted text-center py-5">불러오는 중입니다...</p>
       </div>
     );
   }
 
-  if (error || !deal) {
+  if (error) {
     return (
-      <div className="container my-4">
-        <p>{error || "공동구매 정보를 찾을 수 없습니다."}</p>
+      <div className="container" style={{ marginTop: 140 }}>
+        <div className="alert alert-danger my-5 text-center">{error}</div>
+      </div>
+    );
+  }
+
+  if (!deal) {
+    return (
+      <div className="container" style={{ marginTop: 140 }}>
+        <p className="text-muted text-center py-5">
+          공동구매 정보를 찾을 수 없습니다.
+        </p>
       </div>
     );
   }
 
   const mainImage =
-    deal.mainImagePath ||
-    (deal.imagePaths && deal.imagePaths.length > 0
-      ? deal.imagePaths[0]
-      : null);
+    deal.images && deal.images.length > 0
+      ? deal.images[0].imageUrl
+      : null;
 
-  const soloPrice = deal.originPrice;
-  const groupPrice = deal.dealPrice;
-  const saveAmount =
-    typeof soloPrice === "number" &&
-    typeof groupPrice === "number" &&
-    soloPrice > groupPrice
-      ? soloPrice - groupPrice
-      : 0;
-  const savePercent =
-    saveAmount > 0
-      ? Math.round((saveAmount / soloPrice) * 100)
-      : deal.discountRate;
-
-  const safeCurrent = Number(deal.currentMemberCount) || 0;
-  const safeMax = Number(deal.maxMemberCount) || 0;
-
-  const progressPercent = safeMax > 0 ? (safeCurrent / safeMax) * 100 : 0;
-
-  const handleShare = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      alert("페이지 주소가 복사되었습니다!");
-    } catch (e) {
-      alert("복사에 실패했습니다. 브라우저 권한을 확인해 주세요.");
-    }
-  };
+  const remainingText = formatRemainingTime(deal.endAt);
 
   return (
-    <div className="container my-3">
-      {/* 상단: 뒤로가기 + 찜/공유 */}
-      <div className="mb-3 d-flex justify-content-between align-items-center">
-        <button
-          type="button"
-          className="btn btn-link p-0 me-2"
-          onClick={() => window.history.back()}
-        >
-          ← 뒤로가기
-        </button>
-
-        <div className="d-flex gap-2">
-          <button
-            type="button"
-            className="btn btn-sm rounded-pill px-3"
-            style={{
-              backgroundColor: isLiked ? "rgba(22,101,52,0.08)" : "#ffffff",
-              borderColor: isLiked ? PRIMARY_DEEP_GREEN : "#e5e7eb",
-              color: isLiked ? PRIMARY_DEEP_GREEN : "#6b7280",
-              fontWeight: 600,
-            }}
-            onClick={() => setIsLiked((prev) => !prev)}
-          >
-            {isLiked ? "♥ 찜" : "♡ 찜"}
-          </button>
-
-          <button
-            type="button"
-            className="btn btn-sm rounded-pill px-3"
-            style={{
-              backgroundColor: "#ffffff",
-              borderColor: "#e5e7eb",
-              color: "#4b5563",
-              fontWeight: 600,
-            }}
-            onClick={handleShare}
-          >
-            공유
-          </button>
-        </div>
-      </div>
-
-      <div className="row">
-        {/* 왼쪽 이미지 영역 */}
-        <div className="col-md-6 mb-3">
+    <div
+      className="container"
+      style={{
+        marginTop: 140,
+        marginBottom: 80,
+        maxWidth: 1100,
+      }}
+    >
+      <div className="row g-5">
+        {/* 이미지 영역 */}
+        <div className="col-12 col-lg-6">
           <div
-            className="overflow-hidden"
             style={{
-              borderRadius: "18px",
+              width: "100%",
+              paddingTop: "80%",
+              position: "relative",
+              borderRadius: 16,
+              overflow: "hidden",
               backgroundColor: "#f3f4f6",
-              boxShadow: isImageHover
-                ? "0 24px 40px rgba(15,23,42,0.25)"
-                : "0 16px 30px rgba(15,23,42,0.15)",
-              transform: isImageHover
-                ? "translateY(-6px) scale(1.02)"
-                : "translateY(0)",
-              transition: "transform 0.25s ease, box-shadow 0.25s ease",
             }}
-            onMouseEnter={() => setIsImageHover(true)}
-            onMouseLeave={() => setIsImageHover(false)}
           >
-            <div className="ratio ratio-4x3">
-              {mainImage && (
-                <img
-                  src={mainImage}
-                  alt={deal.productName}
-                  style={{ objectFit: "cover", width: "100%", height: "100%" }}
-                />
-              )}
-            </div>
+            {mainImage && (
+              <img
+                src={mainImage}
+                alt={deal.title}
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                }}
+              />
+            )}
+            {!mainImage && (
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#9ca3af",
+                  fontSize: "0.9rem",
+                }}
+              >
+                이미지 준비중
+              </div>
+            )}
           </div>
         </div>
 
-        {/* 오른쪽 정보 영역 */}
-        <div className="col-md-6 mb-3">
-          <div className="small text-muted mb-1">{deal.region}</div>
-          <h3 className="mb-1 fw-bold">{deal.productName}</h3>
-
-          <div className="small text-muted mb-2">
-            ⭐ {deal.rating} ({deal.reviewCount}) · {deal.soldCount}개 판매
-          </div>
-
-          <div className="mb-2">
-            <GroupDealTimer endAt={deal.endAt} />
-          </div>
-          <div
-            className="progress mb-1"
-            style={{
-              height: "8px",
-              backgroundColor: "#f1f1f1",
-              borderRadius: "10px",
-            }}
-          >
+        {/* 우측 정보 영역 */}
+        <div className="col-12 col-lg-6">
+          {/* 제목/부제 */}
+          <h2 style={{ fontWeight: 800, marginBottom: 8 }}>{deal.title}</h2>
+          {deal.subTitle && (
             <div
-              className="progress-bar"
-              role="progressbar"
               style={{
-                width: `${progressPercent}%`,
-                background:
-                  "linear-gradient(90deg, #166534 0%, #15803d 50%, #4ade80 100%)",
-                borderRadius: "10px",
-                transition: "width 0.4s ease",
-              }}
-            />
-          </div>
-          <div className="d-flex justify-content-between small text-muted mb-3">
-            <span>
-              {safeCurrent}/{safeMax}명 참여중
-            </span>
-            <span>
-              마감:{" "}
-              {deal.endAt && deal.endAt.includes("T")
-                ? deal.endAt.split("T")[0]
-                : deal.endAt}
-            </span>
-          </div>
-
-          <div className="mb-1 d-flex align-items-baseline">
-            <span
-              className="fw-bold"
-              style={{
-                color: ACCENT_ORANGE,
-                fontSize: "1.8rem",
-                fontWeight: 900,
-                letterSpacing: "-0.04em",
+                fontSize: "0.95rem",
+                color: "#6b7280",
+                marginBottom: 12,
               }}
             >
-              {savePercent}%
-            </span>
-            <span
-              className="fw-bold ms-2"
-              style={{ fontSize: "1.6rem", letterSpacing: "-0.03em" }}
-            >
-              {groupPrice.toLocaleString()}
-              <span className="small ms-1">원</span>
-            </span>
-            <span className="text-muted text-decoration-line-through small ms-2">
-              {soloPrice.toLocaleString()}원
-            </span>
-          </div>
-          {saveAmount > 0 && (
-            <div className="small text-muted mb-3">
-              함께 구매 시 {saveAmount.toLocaleString()}원 절약
+              {deal.subTitle}
             </div>
           )}
 
+          {/* 가격 영역 */}
           <div
-            className="mb-3"
-            style={{ borderTop: "1px solid #e5e7eb" }}
-          ></div>
-
-          <div className="mb-3 small">
-            이 상품은{" "}
-            <span className="fw-bold" style={{ color: "#E65100" }}>
-              내일 도착, 무료배송
-            </span>
-            <span className="text-muted ms-2">
-              {deal.deliveryInfo || ""}
-            </span>
-          </div>
-
-          <div className="mb-2">
-            <div className="fw-semibold">공동구매 인원</div>
-            <div className="small text-muted">
-              최소 {deal.minMemberCount}명 / 최대 {deal.maxMemberCount}명
-            </div>
-          </div>
-
-          {/* 혼자 구매 / 함께 구매 버튼 */}
-          <div className="mt-3 d-flex gap-2">
-            <button
-              className="btn flex-fill fw-semibold"
+            style={{
+              display: "flex",
+              alignItems: "baseline",
+              gap: 10,
+              marginBottom: 8,
+            }}
+          >
+            {deal.discountRate != null && (
+              <span
+                style={{
+                  fontSize: "1.8rem",
+                  fontWeight: 800,
+                  color: "#eb1c1cff",
+                }}
+              >
+                {Math.round(deal.discountRate)}%
+              </span>
+            )}
+            <span
               style={{
-                borderColor: PRIMARY_DEEP_GREEN,
-                color: PRIMARY_DEEP_GREEN,
-                backgroundColor: "#ffffff",
+                fontSize: "1.5rem",
+                fontWeight: 800,
+                color: "#166534",
               }}
-              onClick={handleSoloBuy}
             >
-              혼자 구매
-            </button>
-
+              {formatPrice(deal.dealPrice)}
+            </span>
+            {deal.originPrice != null && (
+              <span
+                style={{
+                  fontSize: "0.9rem",
+                  color: "#9ca3af",
+                  textDecoration: "line-through",
+                }}
+              >
+                {formatPrice(deal.originPrice)}
+              </span>
+            )}
           </div>
-        </div>
-      </div>
+          <div
+            style={{
+              fontSize: "0.85rem",
+              color: "#4b5563",
+              marginBottom: 20,
+            }}
+          >
+            생산자 최소 마진을 보장하면서, 소비자는 시세보다 합리적인 가격으로
+            구매할 수 있는 공동구매입니다.
+          </div>
 
-      {/* 아래 탭 섹션 시작 위치 */}
-      <div ref={priceSectionRef} className="mt-4">
-        <GroupDealDetailTabs deal={deal} />
-      </div>
+          {/* 진행률 바 */}
+          <BarProgress
+            currentQuantity={deal.currentQuantity || 0}
+            minMemberCount={deal.minMemberCount || 0}
+          />
 
-      {/* 하단 고정 바 */}
-      {showStickyBar && (
-        <div
-          className="position-fixed bottom-0 start-0 end-0 bg-white border-top py-2"
-          style={{ zIndex: 1000, boxShadow: "0 -2px 8px rgba(0,0,0,0.06)" }}
-        >
-          <div className="container d-flex flex-column flex-md-row align-items-md-center gap-3 justify-content-between">
-            <div className="small">
-              <div className="mb-1">
-                <GroupDealTimer endAt={deal.endAt} />
-              </div>
-              <div className="d-flex align-items-baseline">
-                <span
-                  className="fw-bold"
-                  style={{
-                    color: ACCENT_ORANGE,
-                    fontSize: "1rem",
-                    fontWeight: 900,
-                    letterSpacing: "-0.04em",
-                  }}
-                >
-                  {savePercent}%
-                </span>
-                <span
-                  className="fw-bold ms-2"
-                  style={{ fontSize: "1.2rem", letterSpacing: "-0.03em" }}
-                >
-                  {groupPrice.toLocaleString()}원
-                </span>
-                <span className="text-muted text-decoration-line-through small ms-2">
-                  {soloPrice.toLocaleString()}원
-                </span>
-              </div>
+          {/* 모집/발송 정보 */}
+          <div
+            className="border rounded-3 p-3 mb-3"
+            style={{ backgroundColor: "#e5eee8", borderColor: "#b7c8be" }}
+          >
+            <div className="d-flex justify-content-between mb-1">
+              <span className="small text-muted">모집 상태</span>
+              <span
+                className="small fw-bold"
+                style={{
+                  color:
+                    deal.status?.toUpperCase() === "OPEN"
+                      ? "#16a34a"
+                      : "#9ca3af",
+                }}
+              >
+                {deal.status === "OPEN" ? "모집중" : deal.status}
+              </span>
             </div>
+            <div className="d-flex justify-content-between mb-1">
+              <span className="small text-muted">모집 수량</span>
+              <span className="small">
+                현재{" "}
+                <strong>
+                  {deal.currentQuantity ?? 0} / {deal.minMemberCount ?? 0}
+                </strong>{" "}
+                개
+              </span>
+            </div>
+            {deal.maxMemberCount && (
+              <div className="d-flex justify-content-between mb-1">
+                <span className="small text-muted">최대 수량</span>
+                <span className="small">
+                  최대 <strong>{deal.maxMemberCount}</strong> 개
+                </span>
+              </div>
+            )}
+            {deal.perUserLimitQty && (
+              <div className="d-flex justify-content-between mb-1">
+                <span className="small text-muted">1인당 제한</span>
+                <span className="small">
+                  1인당 최대{" "}
+                  <strong>{deal.perUserLimitQty}</strong> 개까지 참여 가능
+                </span>
+              </div>
+            )}
+            <div className="d-flex justify-content-between">
+              <span className="small text-muted">마감까지</span>
+              <span
+                className="small fw-semibold"
+                style={{
+                  color:
+                    remainingText === "마감" ? "#9ca3af" : "#16a34a",
+                }}
+              >
+                {remainingText}
+              </span>
+            </div>
+          </div>
 
-            <div className="flex-grow-1 d-none d-md-block">
+          {/* 발송 정보 */}
+          <div
+            className="border rounded-3 p-3 mb-3"
+            style={{ backgroundColor: "#eff4ef", borderColor: "#b7c8be" }}
+          >
+            <div className="small text-muted mb-1">발송 예정일</div>
+            <div className="small fw-semibold mb-2">
+              {formatDateRange(
+                deal.shippingStartDate,
+                deal.shippingEndDate
+              )}
+            </div>
+            <div className="small text-muted">
+              수확 및 물류 사정에 따라 1~2일 정도 변동될 수 있습니다.
+            </div>
+          </div>
+
+          {/* 수량 + 버튼 */}
+          <div className="d-flex align-items-center gap-3 mb-3">
+            <div>
+              <div className="small text-muted mb-1">상품 수량</div>
               <div
-                className="progress"
                 style={{
-                  height: "8px",
-                  backgroundColor: "#f1f1f1",
-                  borderRadius: "10px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  borderRadius: "999px",
+                  border: "1px solid #cbd5ce",
+                  padding: "6px 14px",
+                  minWidth: 120,
+                  backgroundColor: "#f8faf8",
                 }}
               >
-                <div
-                  className="progress-bar"
-                  role="progressbar"
+                <button
+                  type="button"
                   style={{
-                    width: `${progressPercent}%`,
-                    background:
-                      "linear-gradient(90deg, #166534 0%, #15803d 50%, #4ade80 100%)",
-                    borderRadius: "10px",
-                    transition: "width 0.4s ease",
+                    border: "none",
+                    background: "transparent",
+                    fontSize: "1.1rem",
+                    lineHeight: 1,
+                    color: "#6b7c6f",
                   }}
-                />
-              </div>
-              <div className="d-flex justify-content-between small text-muted mt-1">
-                <span>
-                  {deal.currentMemberCount}/{deal.maxMemberCount}명 참여중
+                  onClick={() => handleChangeQty(quantity - 1)}
+                  disabled={joining}
+                >
+                  -
+                </button>
+                <span
+                  style={{
+                    fontSize: "1rem",
+                    color: "#1b2f25",
+                    minWidth: 24,
+                    textAlign: "center",
+                  }}
+                >
+                  {quantity}
                 </span>
-                <span>
-                  마감:{" "}
-                  {deal.endAt && deal.endAt.includes("T")
-                    ? deal.endAt.split("T")[0]
-                    : deal.endAt}
-                </span>
+                <button
+                  type="button"
+                  style={{
+                    border: "none",
+                    background: "transparent",
+                    fontSize: "1.1rem",
+                    lineHeight: 1,
+                    color: "#6b7c6f",
+                  }}
+                  onClick={() => handleChangeQty(quantity + 1)}
+                  disabled={joining}
+                >
+                  +
+                </button>
               </div>
             </div>
 
-            {/* 하단 버튼: 혼자 구매 / 함께 구매 */}
-            <div className="d-flex gap-2">
+            <div className="flex-grow-1 text-end">
               <button
-                className="btn fw-semibold"
+                type="button"
+                className="btn btn-lg"
                 style={{
-                  borderColor: PRIMARY_DEEP_GREEN,
-                  color: PRIMARY_DEEP_GREEN,
-                  backgroundColor: "#ffffff",
+                  borderRadius: "999px",
+                  background: "#3f6b57",
+                  border: "none",
+                  padding: "13px 30px",
+                  fontSize: "1.05rem",
+                  fontWeight: 700,
+                  color: "white",
+                  whiteSpace: "nowrap",
                 }}
-                onClick={handleSoloBuy}
+                onClick={handleJoinAndGoCart}
+                disabled={joining || deal.status?.toUpperCase() !== "OPEN"}
               >
-                혼자 구매
+                {joining ? "공동구매 참여 중..." : "바로구매"}
               </button>
             </div>
           </div>
+
+          {/* 상세 설명 */}
+          {deal.detail && (
+            <div className="mt-3">
+              <h5 className="fw-bold mb-2">상품 소개</h5>
+              <p
+                style={{
+                  whiteSpace: "pre-line",
+                  fontSize: "0.95rem",
+                  color: "#374151",
+                }}
+              >
+                {deal.detail}
+              </p>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
-}
+};
 
 export default GroupDealDetailPage;

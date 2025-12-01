@@ -29,8 +29,12 @@ import AdminSignup from "./pages/admin/AdminSignup";
 import AdminLayout from "./layouts/AdminLayout";
 
 import RequireAdmin from "./routes/RequireAdmin";
+
+// 공동구매(소비자 + 판매자)
 import GroupDealListPage from "./pages/groupdeal/GroupDealListPage";
 import GroupDealDetailPage from "./pages/groupdeal/GroupDealDetailPage";
+import GroupDealManagePage from "./pages/groupdeal/GroupDealManagePage";
+import ProducerGroupDealCreatePage from "./pages/groupdeal/ProducerGroupDealCreatePage";
 
 // 사용자 SHOP 관련
 import ShopMain from './pages/shop/ShopMain';
@@ -180,9 +184,20 @@ function App() {
 
               <Route path="/review/write/:order_item_id" element={<ReviewWrite/>}/>
 
-              {/* ⭐ 공동구매 페이지 추가 */}
-              <Route path="/groupdeal" element={<GroupDealListPage />} />
-              <Route path="/groupdeal/:id" element={<GroupDealDetailPage />} />
+              {/* 공동구매(소비자 + 판매자) */}
+              <Route path="/group-deals" element={<GroupDealListPage />} />
+              <Route
+                path="/group-deals/new"
+                element={<ProducerGroupDealCreatePage />}
+              />
+              <Route
+                path="/group-deals/:groupDealId"
+                element={<GroupDealDetailPage />}
+              />
+              <Route
+                path="/producer/group-deals/:groupDealId/manage"
+                element={<GroupDealManagePage />}
+              />
 
               {/* 생산자 마이페이지 */}
               <Route path="/producer" element={<ProducerLayout />}>
