@@ -65,6 +65,7 @@ import PasswordResetRequest from "./pages/login/PasswordResetRequest";
 import PasswordResetForm from "./pages/login/PasswordResetForm";
 import AdminBannerPage from "./pages/admin/AdminBannerPage";
 import AdminNoticePage from "./pages/admin/AdminNoticePage";
+import AdminProducerApprovalPage from "./pages/admin/AdminProducerApprovalPage";
 
 // JWT 파싱 헬퍼
 function parseJwt(token) {
@@ -254,6 +255,14 @@ function App() {
                 element={
                   <RequireAdmin>
                     <AdminNoticePage />
+                  </RequireAdmin>
+                }
+              />
+              <Route
+                path="producers"
+                element={
+                  <RequireAdmin>
+                    <AdminProducerApprovalPage />
                   </RequireAdmin>
                 }
               />

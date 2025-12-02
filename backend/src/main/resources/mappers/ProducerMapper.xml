@@ -124,15 +124,6 @@
         WHERE producer_id = #{producerId}
     </update>
 
-    <!-- 반려 -->
-    <update id="rejectProducer">
-        UPDATE PRODUCER
-        SET is_verified = 'N',
-            reject_reason = #{rejectReason},
-            updated_date = SYSDATE
-        WHERE producer_id = #{producerId}
-    </update>
-
     <select id="getDashboardSummary"
         parameterType="long"
         resultType="com.farmday.producer.dto.ProducerDashboardSummaryDto">
@@ -888,7 +879,7 @@
       ]]>
   </update>
 
-    <!-- 대표 이미지를 제외한 상품 이미지 삭제 (상세 이미지만 삭제) -->
+  <!-- 대표 이미지를 제외한 상품 이미지 삭제 (상세 이미지만 삭제) -->
   <delete id="deleteProductImagesByProductIdExceptMain"
           parameterType="long">
     <![CDATA[
@@ -900,5 +891,99 @@
       )
     ]]>
   </delete>
+
+  <!-- 관리자 - 생산자 승인관리 목록 -->
+  <select id="findAdminProducersByStatus"
+          parameterType="string"
+          resultType="com.farmday.admin.dto.AdminProducerDto">
+
+      SELECT
+          p.producer_id      AS producerId,
+          u.user_no          AS userNo,
+          u.userId           AS userId,
+          u.name             AS userName,
+          p.biz_no           AS bizNo,
+          p.biz_name         AS bizName,
+          p.biz_addr         AS bizAddr,
+          p.biz_phone        AS bizPhone,
+          p.created_date     AS createdDate,
+          p.verified_at      AS verifiedAt,
+          p.updated_date     AS updatedDate,
+          p.reject_reason    AS rejectReason
+      FROM USERS u
+      JOIN PRODUCER p
+        ON u.user_no = p.user_no
+      <where>
+          <choose>
+              <!-- 승인 대기 -->
+              <when test="status == 'PENDING'">
+                  u.role = 'PRODUCER_PENDING'
+              </when>
+
+              <!-- 승인 완료 -->
+              <when test="status == 'APPROVED'">
+                  u.role = 'PRODUCER'
+              </when>
+
+              <!-- 반려 내역 -->
+              <when test="status == 'REJECTED'">
+                  u.role = 'USER'
+                  AND p.reject_reason IS NOT NULL
+              </when>
+
+              <!-- 혹시 status 안 들어오면 전체 (옵션) -->
+              <otherwise>
+                  1 = 1
+              </otherwise>
+          </choose>
+      </where>
+      ORDER BY p.created_date DESC
+  </select>
+
+  <!-- USERS.role = PRODUCER 로 변경 -->
+  <update id="approveProducerUserRole" parameterType="long">
+      UPDATE USERS
+      SET role = 'PRODUCER',
+          updated_date = SYSDATE
+      WHERE user_no = (
+          SELECT user_no
+          FROM PRODUCER
+          WHERE producer_id = #{producerId}
+      )
+  </update>
+
+  <!-- PRODUCER 승인 표시 -->
+  <update id="markProducerVerified" parameterType="long">
+      UPDATE PRODUCER
+      SET
+          is_verified   = 'Y',
+          verified_at   = SYSDATE,
+          reject_reason = NULL,
+          updated_date  = SYSDATE
+      WHERE producer_id = #{producerId}
+  </update>
+
+  <!-- USERS.role = USER 로 되돌리기 (혹은 원하는 기본 권한) -->
+  <update id="rejectProducerUserRole" parameterType="long">
+      UPDATE USERS
+      SET role = 'USER',
+          updated_date = SYSDATE
+      WHERE user_no = (
+          SELECT user_no
+          FROM PRODUCER
+          WHERE producer_id = #{producerId}
+      )
+  </update>
+
+  <!-- PRODUCER 테이블에 반려 사유 저장 -->
+  <update id="rejectProducer" parameterType="map">
+      UPDATE PRODUCER
+      SET
+          is_verified   = 'N',
+          verified_at   = NULL,
+          reject_reason = #{rejectReason},
+          updated_date  = SYSDATE
+      WHERE producer_id = #{producerId}
+  </update>
 
 </mapper>

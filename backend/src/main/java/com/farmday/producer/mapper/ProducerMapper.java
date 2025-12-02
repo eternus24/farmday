@@ -1,5 +1,6 @@
 package com.farmday.producer.mapper;
 
+import com.farmday.admin.dto.AdminProducerDto;
 import com.farmday.producer.domain.Producer;
 import com.farmday.producer.dto.DailySalesDto;
 import com.farmday.producer.dto.LowStockProductDto;
@@ -34,9 +35,6 @@ public interface ProducerMapper {
 
     List<LowStockProductDto> findLowStockProducts(@Param("producerId") Long producerId);
 
-    void rejectProducer(@Param("producerId") Long producerId,
-                        @Param("rejectReason") String rejectReason);
-    
     // 판매관리 - 주문 목록
     List<ProducerOrderItemDto> findActiveOrderItemsByProducerId(@Param("producerId") Long producerId);
 
@@ -179,4 +177,20 @@ public interface ProducerMapper {
     int touchOrderUpdatedDateByItemId(@Param("producerId") Long producerId,
                                       @Param("orderItemId") Long orderItemId);
 
+    // 관리자용: 상태별 생산자 목록 조회
+    List<AdminProducerDto> findAdminProducersByStatus(@Param("status") String status);
+
+    // 승인 시 USERS.role 변경
+    void approveProducerUserRole(@Param("producerId") Long producerId);
+
+    // 승인 시 PRODUCER is_verified, verified_at 갱신
+    void markProducerVerified(@Param("producerId") Long producerId);
+
+    // 반려 시 USERS.role 일반 USER로
+    void rejectProducerUserRole(@Param("producerId") Long producerId);
+
+    // 반려 시 PRODUCER 반려 사유 저장
+    void rejectProducer(@Param("producerId") Long producerId,
+                        @Param("rejectReason") String rejectReason);
+    
 }
