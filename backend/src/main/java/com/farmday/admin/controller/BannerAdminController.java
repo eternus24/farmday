@@ -1,10 +1,11 @@
 // src/main/java/com/farmday/banner/controller/BannerAdminController.java
-package com.farmday.banner.controller;
+package com.farmday.admin.controller;
 
-import com.farmday.banner.domain.Banner;
-import com.farmday.banner.dto.BannerSaveRequest;
-import com.farmday.banner.dto.BannerUpdateRequest;
-import com.farmday.banner.service.BannerService;
+import com.farmday.admin.domain.Banner;
+import com.farmday.admin.dto.BannerSaveRequest;
+import com.farmday.admin.dto.BannerUpdateRequest;
+import com.farmday.admin.service.BannerService;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;

@@ -1,12 +1,12 @@
-// src/main/java/com/farmday/banner/dto/BannerSaveRequest.java
-package com.farmday.banner.dto;
+// src/main/java/com/farmday/banner/dto/BannerUpdateRequest.java
+package com.farmday.admin.dto;
 
 import lombok.Data;
 
 import java.time.LocalDate;
 
 @Data
-public class BannerSaveRequest {
+public class BannerUpdateRequest {
     private String title;
     private String imageUrl;
     private String linkUrl;

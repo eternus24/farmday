@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.farmday.admin.mapper.NoticeMapper">
+
+    <!-- 시퀀스 -->
+    <select id="getNextNoticeId" resultType="long">
+        SELECT NOTICE_SEQ.NEXTVAL FROM DUAL
+    </select>
+
+    <select id="getNextNoticeImageId" resultType="long">
+        SELECT NOTICE_IMAGE_SEQ.NEXTVAL FROM DUAL
+    </select>
+
+    <!-- 공지 목록 -->
+    <select id="findAllNotices"
+            resultType="com.farmday.admin.dto.NoticeResponseDto">
+        SELECT
+            n.notice_id     AS noticeId,
+            n.admin_id      AS adminId,
+            n.title         AS title,
+            n.content       AS content,
+            n.is_active     AS isActive,
+            n.view_count    AS viewCount,
+            n.created_date  AS createdDate,
+            n.updated_date  AS updatedDate
+        FROM NOTICE n
+        ORDER BY n.notice_id DESC
+    </select>
+
+    <!-- 공지 단건 (필요하면 사용) -->
+    <select id="findNoticeById"
+            parameterType="long"
+            resultType="com.farmday.admin.dto.NoticeResponseDto">
+        SELECT
+            n.notice_id     AS noticeId,
+            n.admin_id      AS adminId,
+            n.title         AS title,
+            n.content       AS content,
+            n.is_active     AS isActive,
+            n.view_count    AS viewCount,
+            n.created_date  AS createdDate,
+            n.updated_date  AS updatedDate
+        FROM NOTICE n
+        WHERE n.notice_id = #{noticeId}
+    </select>
+
+    <!-- 이미지 목록 -->
+    <select id="findImagesByNoticeId"
+            parameterType="long"
+            resultType="com.farmday.admin.dto.NoticeImageDto">
+        SELECT
+            i.image_id      AS imageId,
+            i.notice_id     AS noticeId,
+            i.image_url     AS imageUrl,
+            i.sort_order    AS sortOrder,
+            i.created_date  AS createdDate
+        FROM NOTICE_IMAGE i
+        WHERE i.notice_id = #{noticeId}
+        ORDER BY i.sort_order ASC, i.image_id ASC
+    </select>
+
+    <!-- 공지 등록 -->
+    <insert id="insertNotice"
+            parameterType="com.farmday.admin.domain.Notice">
+        INSERT INTO NOTICE (
+            notice_id,
+            admin_id,
+            title,
+            content,
+            is_active,
+            view_count,
+            created_date,
+            updated_date
+        ) VALUES (
+            #{noticeId},
+            #{adminId},
+            #{title},
+            #{content},
+            NVL(#{isActive}, 'Y'),
+            NVL(#{viewCount}, 0),
+            SYSDATE,
+            SYSDATE
+        )
+    </insert>
+
+    <!-- 공지 수정 -->
+    <update id="updateNotice"
+            parameterType="com.farmday.admin.domain.Notice">
+        UPDATE NOTICE
+        SET
+            title        = #{title},
+            content      = #{content},
+            is_active    = NVL(#{isActive}, 'Y'),
+            updated_date = SYSDATE
+        WHERE notice_id = #{noticeId}
+    </update>
+
+    <!-- 공지 삭제 -->
+    <delete id="deleteNotice" parameterType="long">
+        DELETE FROM NOTICE
+        WHERE notice_id = #{noticeId}
+    </delete>
+
+    <!-- 이미지 일괄 삭제 -->
+    <delete id="deleteImagesByNoticeId" parameterType="long">
+        DELETE FROM NOTICE_IMAGE
+        WHERE notice_id = #{noticeId}
+    </delete>
+
+    <!-- 이미지 등록 -->
+    <insert id="insertNoticeImage"
+            parameterType="com.farmday.admin.domain.NoticeImage">
+        INSERT INTO NOTICE_IMAGE (
+            image_id,
+            notice_id,
+            image_url,
+            sort_order,
+            created_date
+        ) VALUES (
+            #{imageId},
+            #{noticeId},
+            #{imageUrl},
+            #{sortOrder},
+            SYSDATE
+        )
+    </insert>
+
+</mapper>

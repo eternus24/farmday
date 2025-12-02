@@ -3,7 +3,7 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="com.farmday.banner.mapper.BannerMapper">
+<mapper namespace="com.farmday.admin.mapper.BannerMapper">
 
     <!-- 시퀀스 -->
     <select id="getNextBannerId" resultType="long">
@@ -12,7 +12,7 @@
 
     <!-- 관리자 목록: 최신 등록 순 -->
     <select id="findAllForAdmin"
-            resultType="com.farmday.banner.domain.Banner">
+            resultType="com.farmday.admin.domain.Banner">
         <![CDATA[
         SELECT
             banner_id      AS bannerId,
@@ -32,7 +32,7 @@
 
     <!-- 메인 화면용: 활성 배너 + 기간 안에 있는 것 + 최신순 5개 -->
     <select id="findActiveBannersForMain"
-            resultType="com.farmday.banner.domain.Banner">
+            resultType="com.farmday.admin.domain.Banner">
         <![CDATA[
         SELECT
             banner_id      AS bannerId,
@@ -57,7 +57,7 @@
     <!-- 단건 조회 -->
     <select id="findById"
             parameterType="long"
-            resultType="com.farmday.banner.domain.Banner">
+            resultType="com.farmday.admin.domain.Banner">
         SELECT
             banner_id      AS bannerId,
             title          AS title,
@@ -75,7 +75,7 @@
 
     <!-- 등록 -->
     <insert id="insertBanner"
-            parameterType="com.farmday.banner.domain.Banner">
+            parameterType="com.farmday.admin.domain.Banner">
         <![CDATA[
         INSERT INTO BANNER (
             banner_id,
@@ -105,7 +105,7 @@
 
     <!-- 수정 -->
     <update id="updateBanner"
-            parameterType="com.farmday.banner.domain.Banner">
+            parameterType="com.farmday.admin.domain.Banner">
         <![CDATA[
         UPDATE BANNER
         SET

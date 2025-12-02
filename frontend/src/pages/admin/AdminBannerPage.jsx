@@ -9,21 +9,21 @@ const IMAGE_UPLOAD_URL = "http://192.168.0.76:8080/api/images/upload";
 export default function AdminBannerPage() {
   const { auth } = useContext(AuthContext);
 
-  // accessToken 꺼내기 (프로젝트 상황에 맞게)
   const token =
     auth?.accessToken ||
     auth?.token ||
     localStorage.getItem("accessToken");
 
   const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
-  
+
   const [banners, setBanners] = useState([]);
+  const [selectedBanner, setSelectedBanner] = useState(null); // ✅ 우측 상세에 보여줄 선택된 배너
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingBanner, setEditingBanner] = useState(null); // null = 신규, 객체 = 수정
   const [file, setFile] = useState(null);
   const [error, setError] = useState("");
-  const [isFormOpen, setIsFormOpen] = useState(false); // ✅ 모달 열림/닫힘
+  const [isFormOpen, setIsFormOpen] = useState(false);
 
   const [form, setForm] = useState({
     title: "",
@@ -43,7 +43,7 @@ export default function AdminBannerPage() {
     try {
       const res = await fetch(`${API_BASE}/api/admin/banners`, {
         headers: {
-        ...authHeaders, // 🔹 토큰 추가
+          ...authHeaders,
         },
       });
       if (!res.ok) {
@@ -52,6 +52,7 @@ export default function AdminBannerPage() {
       const data = await res.json();
       data.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
       setBanners(data);
+      setSelectedBanner(data[0] || null); // ✅ 첫 번째 배너를 기본 선택
     } catch (e) {
       console.error(e);
       setError(e.message || "배너 목록 조회 중 오류 발생");
@@ -62,6 +63,7 @@ export default function AdminBannerPage() {
 
   useEffect(() => {
     loadBanners();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleChange = (e) => {
@@ -77,7 +79,9 @@ export default function AdminBannerPage() {
 
   const activeCount = banners.filter((b) => b.isActive === "Y").length;
 
-  // ✅ 신규 등록 모달 열기
+  // ========================
+  // 모달 열기/닫기
+  // ========================
   const openCreateForm = () => {
     setEditingBanner(null);
     setFile(null);
@@ -92,7 +96,6 @@ export default function AdminBannerPage() {
     setIsFormOpen(true);
   };
 
-  // ✅ 수정 모달 열기
   const openEditForm = (banner) => {
     setEditingBanner(banner);
     setFile(null);
@@ -107,13 +110,15 @@ export default function AdminBannerPage() {
     setIsFormOpen(true);
   };
 
-  // 모달 닫기
   const closeForm = () => {
     setIsFormOpen(false);
     setEditingBanner(null);
     setFile(null);
   };
 
+  // ========================
+  // 이미지 업로드
+  // ========================
   const uploadImageIfNeeded = async () => {
     if (!file) {
       return form.imageUrl; // 기존 이미지 유지
@@ -132,6 +137,9 @@ export default function AdminBannerPage() {
     return data.url;
   };
 
+  // ========================
+  // 저장
+  // ========================
   const handleSave = async () => {
     const willBeActive = form.isActive === "Y";
     const isEditing = !!editingBanner;
@@ -173,19 +181,18 @@ export default function AdminBannerPage() {
         imageUrl,
       };
 
-      let res;
-
       const headers = {
         "Content-Type": "application/json",
-        ...authHeaders, // 🔹 토큰 추가
+        ...authHeaders,
       };
-    
+
+      let res;
       if (isEditing) {
         res = await fetch(
           `${API_BASE}/api/admin/banners/${editingBanner.bannerId}`,
           {
             method: "PUT",
-            headers,                          // ✅ 여기로 교체
+            headers,
             body: JSON.stringify(payload),
           }
         );
@@ -203,7 +210,7 @@ export default function AdminBannerPage() {
 
       alert("배너가 저장되었습니다.");
       await loadBanners();
-      closeForm(); // ✅ 저장 후 모달 닫기
+      closeForm();
     } catch (e) {
       console.error(e);
       setError(e.message || "배너 저장 중 오류 발생");
@@ -213,6 +220,9 @@ export default function AdminBannerPage() {
     }
   };
 
+  // ========================
+  // 삭제
+  // ========================
   const handleDelete = async (bannerId) => {
     if (!window.confirm("정말 이 배너를 삭제하시겠습니까?")) return;
 
@@ -220,9 +230,8 @@ export default function AdminBannerPage() {
       const res = await fetch(`${API_BASE}/api/admin/banners/${bannerId}`, {
         method: "DELETE",
         headers: {
-            ...authHeaders, // 🔹 토큰 추가
+          ...authHeaders,
         },
-
       });
       if (!res.ok) {
         throw new Error(`배너 삭제 실패: ${res.status}`);
@@ -235,6 +244,9 @@ export default function AdminBannerPage() {
     }
   };
 
+  // ========================
+  // 순서 변경
+  // ========================
   const moveBanner = async (bannerId, direction) => {
     const idx = banners.findIndex((b) => b.bannerId === bannerId);
     if (idx === -1) return;
@@ -259,8 +271,8 @@ export default function AdminBannerPage() {
       const res = await fetch(`${API_BASE}/api/admin/banners/reorder`, {
         method: "PUT",
         headers: {
-            "Content-Type": "application/json",
-            ...authHeaders, // 🔹 토큰 추가
+          "Content-Type": "application/json",
+          ...authHeaders,
         },
         body: JSON.stringify({ bannerIds }),
       });
@@ -274,105 +286,167 @@ export default function AdminBannerPage() {
   };
 
   return (
-  <PageWrapper>
-    <ContentInner>
-      <PageHeader>
-        <div>
-          <PageTitle>배너 관리</PageTitle>
-          <SubText>
-            메인 화면 배너를 최대 <strong>5개</strong>까지 노출할 수 있습니다.
-          </SubText>
-        </div>
+    <PageWrapper>
+      <ContentInner>
+        <PageHeader>
+          <div>
+            <PageTitle>배너 관리</PageTitle>
+            <SubText>
+              메인 화면 배너를 최대 <strong>5개</strong>까지 노출할 수 있습니다.
+            </SubText>
+          </div>
 
-        <HeaderRight>
-          <ActiveBadge $danger={activeCount > 5}>
-            활성 배너&nbsp;<strong>{activeCount}</strong>/5
-          </ActiveBadge>
-          <PrimaryButton onClick={openCreateForm} style={{ marginLeft: 12 }}>
-            + 신규 배너 등록
-          </PrimaryButton>
-        </HeaderRight>
-      </PageHeader>
+          <HeaderRight>
+            <ActiveBadge $danger={activeCount > 5}>
+              활성 배너&nbsp;<strong>{activeCount}</strong>/5
+            </ActiveBadge>
+            <PrimaryButton onClick={openCreateForm} style={{ marginLeft: 12 }}>
+              + 신규 배너 등록
+            </PrimaryButton>
+          </HeaderRight>
+        </PageHeader>
 
-      {error && <ErrorBox>에러: {error}</ErrorBox>}
+        {error && <ErrorBox>에러: {error}</ErrorBox>}
 
-      {/* 배너 목록 */}
-      <SectionCard>
-        <SectionHeader>
-          <SectionTitle>배너 목록</SectionTitle>
-        </SectionHeader>
+        <SectionCard>
+          <SectionHeader>
+            <SectionTitle>배너 목록</SectionTitle>
+          </SectionHeader>
 
-        {loading ? (
-          <EmptyState>
-            <EmptyTitle>불러오는 중...</EmptyTitle>
-            <EmptyText>잠시만 기다려 주세요.</EmptyText>
-          </EmptyState>
-        ) : banners.length === 0 ? (
-          <EmptyState>
-            <EmptyTitle>등록된 배너가 없습니다.</EmptyTitle>
-            <EmptyText>
-              우측 상단의 <strong>“신규 배너 등록”</strong> 버튼을 눌러 첫 배너를
-              만들어보세요.
-            </EmptyText>
-          </EmptyState>
-        ) : (
-          <TableWrapper>
-            <StyledTable>
-              <thead>
-                <tr>
-                  <Th>순서</Th>
-                  <Th>이미지</Th>
-                  <Th>제목</Th>
-                  <Th>링크</Th>
-                  <Th>노출</Th>
-                  <Th>기간</Th>
-                  <Th>관리</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {banners.map((b, index) => (
-                  <Tr key={b.bannerId}>
-                    <TdCenter>{b.displayOrder || index + 1}</TdCenter>
-                    <TdImage>
-                      {b.imageUrl && (
-                        <BannerThumb src={b.imageUrl} alt={b.title} />
-                      )}
-                    </TdImage>
-                    <Td>{b.title}</Td>
-                    <Td>
-                      <LinkCode>{b.linkUrl}</LinkCode>
-                    </Td>
-                    <TdCenter>
-                      <StatusPill $active={b.isActive === "Y"}>
-                        {b.isActive === "Y" ? "Y" : "N"}
-                      </StatusPill>
-                    </TdCenter>
-                    <Td>
-                      {(b.startDate || "") + (b.endDate ? ` ~ ${b.endDate}` : "")}
-                    </Td>
-                    <Td>
-                      <ActionButtonRow>
-                        <SecondaryButton type="button" onClick={() => openEditForm(b)}>
-                          수정
-                        </SecondaryButton>
-                        <DangerButton
-                          type="button"
-                          onClick={() => handleDelete(b.bannerId)}
+          {loading ? (
+            <EmptyState>
+              <EmptyTitle>불러오는 중...</EmptyTitle>
+              <EmptyText>잠시만 기다려 주세요.</EmptyText>
+            </EmptyState>
+          ) : banners.length === 0 ? (
+            <EmptyState>
+              <EmptyTitle>등록된 배너가 없습니다.</EmptyTitle>
+              <EmptyText>
+                우측 상단의 <strong>“신규 배너 등록”</strong> 버튼을 눌러 첫 배너를
+                만들어보세요.
+              </EmptyText>
+            </EmptyState>
+          ) : (
+            <SectionBody>
+              {/* 왼쪽: 목록 */}
+              <ListColumn>
+                <TableWrapper>
+                  <StyledTable>
+                    <thead>
+                      <tr>
+                        <Th>순서</Th>
+                        <Th>제목</Th>
+                        <Th>링크</Th>
+                        <Th>노출</Th>
+                        <Th>기간</Th>
+                        <Th>관리</Th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {banners.map((b, index) => (
+                        <Tr
+                          key={b.bannerId}
+                          $selected={selectedBanner?.bannerId === b.bannerId}
+                          onClick={() => setSelectedBanner(b)}
                         >
-                          삭제
-                        </DangerButton>
-                      </ActionButtonRow>
-                    </Td>
-                  </Tr>
-                ))}
-              </tbody>
-            </StyledTable>
-          </TableWrapper>
-        )}
-      </SectionCard>
+                          <TdCenter>{b.displayOrder || index + 1}</TdCenter>
+                          <Td>{b.title}</Td>
+                          <Td>
+                            <LinkCode>{b.linkUrl}</LinkCode>
+                          </Td>
+                          <TdCenter>
+                            <StatusPill $active={b.isActive === "Y"}>
+                              {b.isActive === "Y" ? "Y" : "N"}
+                            </StatusPill>
+                          </TdCenter>
+                          <Td>
+                            {(b.startDate || "") +
+                              (b.endDate ? ` ~ ${b.endDate}` : "")}
+                          </Td>
+                          <Td>
+                            <ActionButtonRow>
+                              <SecondaryButton
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openEditForm(b);
+                                }}
+                              >
+                                수정
+                              </SecondaryButton>
+                              <DangerButton
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDelete(b.bannerId);
+                                }}
+                              >
+                                삭제
+                              </DangerButton>
+                            </ActionButtonRow>
+                          </Td>
+                        </Tr>
+                      ))}
+                    </tbody>
+                  </StyledTable>
+                </TableWrapper>
+              </ListColumn>
+
+              {/* 오른쪽: 상세 뷰 */}
+              <DetailColumn>
+                <DetailCard>
+                  {selectedBanner ? (
+                    <>
+                      <DetailHeader>
+                        <DetailTitle>{selectedBanner.title}</DetailTitle>
+                        <StatusPill $active={selectedBanner.isActive === "Y"}>
+                          {selectedBanner.isActive === "Y" ? "노출 Y" : "노출 N"}
+                        </StatusPill>
+                      </DetailHeader>
+
+                      <DetailMetaRow>
+                        <MetaLabel>노출 기간</MetaLabel>
+                        <MetaValue>
+                          {(selectedBanner.startDate || "시작일 없음") +
+                            " ~ " +
+                            (selectedBanner.endDate || "제한 없음")}
+                        </MetaValue>
+                      </DetailMetaRow>
+
+                      <DetailMetaRow>
+                        <MetaLabel>링크</MetaLabel>
+                        <MetaValue>
+                          <LinkCode>{selectedBanner.linkUrl}</LinkCode>
+                        </MetaValue>
+                      </DetailMetaRow>
+
+                      <DetailPreviewTitle>배너 이미지</DetailPreviewTitle>
+                      <DetailPreviewBox>
+                        {selectedBanner.imageUrl ? (
+                          <DetailPreviewImage
+                            src={selectedBanner.imageUrl}
+                            alt={selectedBanner.title}
+                          />
+                        ) : (
+                          <PreviewPlaceholder>
+                            등록된 이미지가 없습니다.
+                          </PreviewPlaceholder>
+                        )}
+                      </DetailPreviewBox>
+                    </>
+                  ) : (
+                    <DetailEmpty>
+                      왼쪽 목록에서 배너를 선택하면 상세 정보가 표시됩니다.
+                    </DetailEmpty>
+                  )}
+                </DetailCard>
+              </DetailColumn>
+            </SectionBody>
+          )}
+        </SectionCard>
       </ContentInner>
 
-      {/* ✅ 모달: 신규/수정 배너 등록 */}
+      {/* 모달: 신규/수정 배너 등록 */}
       {isFormOpen && (
         <ModalOverlay>
           <ModalContent>
@@ -490,7 +564,7 @@ const PageWrapper = styled.div`
   padding: 32px 40px 40px;
 `;
 const ContentInner = styled.div`
-  max-width: 1200px;
+  max-width: 1440px;
   margin: 0 auto;
 `;
 
@@ -540,6 +614,26 @@ const SectionTitle = styled.h3`
   font-size: 18px;
   font-weight: 600;
   color: #111827;
+`;
+
+/* ✅ 목록 + 상세 레이아웃 */
+const SectionBody = styled.div`
+  display: grid;
+  grid-template-columns: minmax(0, 2.8fr) minmax(320px, 1.2fr);
+  gap: 20px;
+  margin-top: 8px;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const ListColumn = styled.div`
+  min-width: 0;
+`;
+
+const DetailColumn = styled.div`
+  min-width: 0;
 `;
 
 const EmptyState = styled.div`
@@ -603,8 +697,11 @@ const Th = styled.th`
 `;
 
 const Tr = styled.tr`
+  cursor: pointer;
+  background: ${(props) => (props.$selected ? "#f9fafb" : "transparent")};
+
   &:hover {
-    background: #f9fafb;
+    background: #f3f4f6;
   }
 `;
 
@@ -616,22 +713,6 @@ const Td = styled.td`
 
 const TdCenter = styled(Td)`
   text-align: center;
-`;
-
-const TdRight = styled(Td)`
-  text-align: right;
-`;
-
-const TdImage = styled(Td)`
-  width: 140px;
-`;
-
-const BannerThumb = styled.img`
-  width: 120px;
-  height: 50px;
-  object-fit: cover;
-  border-radius: 6px;
-  border: 1px solid #e5e7eb;
 `;
 
 const LinkCode = styled.code`
@@ -724,6 +805,86 @@ const IconButton = styled.button`
     opacity: 0.4;
     cursor: default;
   }
+`;
+
+/* ✅ 오른쪽 상세 카드 */
+
+const DetailCard = styled.div`
+  width: 100%;
+  height: 100%;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  padding: 16px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+`;
+
+const DetailHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+`;
+
+const DetailTitle = styled.h4`
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
+const DetailMetaRow = styled.div`
+  display: flex;
+  gap: 8px;
+  font-size: 13px;
+  color: #4b5563;
+`;
+
+const MetaLabel = styled.div`
+  min-width: 60px;
+  color: #6b7280;
+`;
+
+const MetaValue = styled.div`
+  flex: 1;
+`;
+
+const DetailPreviewTitle = styled.div`
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #4b5563;
+`;
+
+const DetailPreviewBox = styled.div`
+  margin-top: 4px;
+  border-radius: 10px;
+  border: 1px dashed #d1d5db;
+  background: #ffffff;
+  width: 100%;
+  height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+`;
+
+const DetailPreviewImage = styled.img`
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: cover;
+`;
+
+const DetailEmpty = styled.div`
+  font-size: 13px;
+  color: #9ca3af;
+  text-align: center;
+  margin: auto 0;
 `;
 
 /* 모달 */

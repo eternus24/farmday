@@ -1,9 +1,9 @@
 // src/main/java/com/farmday/banner/service/BannerService.java
-package com.farmday.banner.service;
+package com.farmday.admin.service;
 
-import com.farmday.banner.domain.Banner;
-import com.farmday.banner.dto.BannerSaveRequest;
-import com.farmday.banner.dto.BannerUpdateRequest;
+import com.farmday.admin.domain.Banner;
+import com.farmday.admin.dto.BannerSaveRequest;
+import com.farmday.admin.dto.BannerUpdateRequest;
 
 import java.util.List;
 

@@ -1,5 +1,5 @@
 // src/main/java/com/farmday/banner/domain/Banner.java
-package com.farmday.banner.domain;
+package com.farmday.admin.domain;
 
 import lombok.Data;
 

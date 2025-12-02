@@ -64,6 +64,7 @@ import FindId from "./pages/login/FindId";
 import PasswordResetRequest from "./pages/login/PasswordResetRequest";
 import PasswordResetForm from "./pages/login/PasswordResetForm";
 import AdminBannerPage from "./pages/admin/AdminBannerPage";
+import AdminNoticePage from "./pages/admin/AdminNoticePage";
 
 // JWT 파싱 헬퍼
 function parseJwt(token) {
@@ -245,6 +246,14 @@ function App() {
                 element={
                   <RequireAdmin>
                     <AdminBannerPage />
+                  </RequireAdmin>
+                }
+              />
+              <Route
+                path="notices"
+                element={
+                  <RequireAdmin>
+                    <AdminNoticePage />
                   </RequireAdmin>
                 }
               />

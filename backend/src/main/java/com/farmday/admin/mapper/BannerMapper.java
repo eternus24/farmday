@@ -1,9 +1,9 @@
 // src/main/java/com/farmday/banner/mapper/BannerMapper.java
-package com.farmday.banner.mapper;
+package com.farmday.admin.mapper;
 
-import com.farmday.banner.domain.Banner;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
+
+import com.farmday.admin.domain.Banner;
 
 import java.util.List;
 
