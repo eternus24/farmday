@@ -95,13 +95,11 @@ export default function MypageLeftSideBar({user_name,overview,moneyKRW,userInfo,
         <div className="mb-3">
           <div className="fw-semibold mb-2">혜택</div>
           <ul className="list-unstyled ms-1 small">
-            <li className="mb-2">
-                <Link
-                className="link-secondary"
-                to="/mypage/membership"
-                >
-                멤버십 및 등급
-                </Link>
+            <li
+              className={showContent === 'membership' ? 'active' : ''}
+              onClick={() => openContent('membership')}
+            >
+              멤버십 및 등급
             </li>
           </ul>
         </div>

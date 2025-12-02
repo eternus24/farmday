@@ -11,7 +11,7 @@
             user_no,
             grade_code,
             grade_name,
-            year_spent_amount,
+            month_spent_amount,
             lifetime_spent_amount,
             created_date,
             updated_date
@@ -41,7 +41,7 @@
             um.user_no              AS userNo,
             um.grade_code           AS gradeCode,
             um.grade_name           AS gradeName,
-            um.year_spent_amount    AS yearSpentAmount,
+            um.month_spent_amount    AS monthSpentAmount,
             um.lifetime_spent_amount AS lifetimeSpentAmount,
             mg.discount_rate        AS discountRate,
             mg.point_rate           AS pointRate,
@@ -57,9 +57,9 @@
     <update id="addSpentAmount">
         UPDATE USER_MEMBERSHIP
         SET
-            year_spent_amount     = year_spent_amount + #{deltaAmount},
-            lifetime_spent_amount = lifetime_spent_amount + #{deltaAmount},
-            updated_date          = SYSDATE
+            month_spent_amount     = NVL(month_spent_amount, 0) + #{deltaAmount},
+            lifetime_spent_amount  = NVL(lifetime_spent_amount, 0) + #{deltaAmount},
+            updated_date           = SYSDATE
         WHERE user_no = #{userNo}
     </update>
 

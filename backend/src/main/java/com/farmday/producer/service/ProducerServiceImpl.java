@@ -1,8 +1,10 @@
 package com.farmday.producer.service;
 
+import com.farmday.membership.service.MembershipService;
 import com.farmday.producer.domain.Producer;
 import com.farmday.producer.dto.DailySalesDto;
 import com.farmday.producer.dto.LowStockProductDto;
+import com.farmday.producer.dto.OrderMembershipInfo;
 import com.farmday.producer.dto.ProducerDashboardSummaryDto;
 import com.farmday.producer.dto.ProducerOrderItemDto;
 import com.farmday.producer.dto.ProducerOrderSummaryDto;
@@ -15,20 +17,9 @@ import com.farmday.producer.mapper.ProducerMapper;
 import com.farmday.user.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -40,6 +31,7 @@ public class ProducerServiceImpl implements ProducerService {
 
     private final ProducerMapper producerMapper;
     private final UserMapper userMapper;
+    private final MembershipService membershipService;
 
     @Override
     public void createProducerForSignup(Long userNo, Producer producer) {
@@ -173,15 +165,41 @@ public class ProducerServiceImpl implements ProducerService {
     // =========================
     // 배송 상태 변경
     // =========================
-
     @Override
     @Transactional
     public void changeDeliveryStatus(Long producerId, Long orderItemId, String deliveryStatus) {
-        int updated = producerMapper.updateDeliveryStatusByOrderItemId(producerId, orderItemId, deliveryStatus);
+        int updated = producerMapper.updateDeliveryStatusByOrderItemId(
+                producerId, orderItemId, deliveryStatus
+        );
         if (updated == 0) {
-            // 이 orderItem이 이 생산자의 상품이 아니거나 없는 경우
             throw new IllegalStateException("배송 상태를 변경할 수 없습니다.");
         }
+
+        // 🔸 실제 상태값에 맞추기 (예: '배송완료')
+        if (!"배송완료".equals(deliveryStatus)) {
+            return;
+        }
+
+        // 1) 이 orderItem이 속한 주문/유저/결제금액 조회
+        OrderMembershipInfo info =
+                producerMapper.findOrderMembershipInfoByOrderItemId(orderItemId);
+
+        if (info == null) {
+            return;
+        }
+
+        Long orderId   = info.getOrderId();
+        Long userNo    = info.getUserNo();
+        Long payAmount = info.getPayAmount();
+
+        // 2) 같은 주문 중 아직 배송완료 아닌 아이템이 있으면 적립 보류
+        int notDeliveredCount = producerMapper.countUndeliveredItemsByOrderId(orderId);
+        if (notDeliveredCount > 0) {
+            return;
+        }
+
+        // 3) 모든 아이템 배송완료 → 멤버십 적립
+        membershipService.applyPaidOrder(userNo, payAmount);
     }
 
     // =========================

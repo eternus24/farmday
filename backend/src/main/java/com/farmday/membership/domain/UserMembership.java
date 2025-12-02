@@ -12,7 +12,7 @@ public class UserMembership {
     private String gradeCode;           // 현재등급 코드
     private String gradeName;           // 현재등급 이름
 
-    private Long yearSpentAmount;       // 최근 1년 금액
+    private Long monthSpentAmount;       // 최근 1년 금액
     private Long lifetimeSpentAmount;   // 총 누적 금액
 
     private Date lastGradeChangedAt;

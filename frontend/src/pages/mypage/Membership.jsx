@@ -96,11 +96,11 @@ export default function Membership() {
   if (!status) return <Loading>멤버쉽 정보를 찾을 수 없어요.</Loading>;
 
   const percent = (() => {
-    const year = status.yearSpentAmount || 0;
+    const month = status.monthSpentAmount || 0;
     const need = status.nextGradeNeedAmount || 0;
-    const total = year + need;
+    const total = month + need;
     if (total === 0) return 0;
-    return Math.round((year / total) * 100);
+    return Math.round((month / total) * 100);
   })();
 
   return (
@@ -139,8 +139,8 @@ export default function Membership() {
         <SummaryTitle>나의 이용 요약</SummaryTitle>
         <SummaryList>
           <li>
-            올해 결제 금액:{" "}
-            <b>{Number(status.yearSpentAmount || 0).toLocaleString()}원</b>
+            이번달 결제 금액:{" "}
+            <b>{Number(status.monthSpentAmount || 0).toLocaleString()}원</b>
           </li>
           <li>
             누적 결제 금액:{" "}
@@ -209,9 +209,11 @@ export default function Membership() {
 /* -------------------- Styled Components -------------------- */
 // 아래 styled 들은 그대로 사용 (변경 없음)
 const Wrapper = styled.div`
-  max-width: 900px;
-  margin: 40px auto;
-  padding: 0 20px;
+  background: #fff;
+  border-radius: 10px;
+  padding: 24px 28px 32px;
+  box-shadow: 0 0 0 1px #f1f1f1;
+  /* max-width, margin auto 제거 */
 `;
 
 const Title = styled.h2`

@@ -11,7 +11,7 @@ public class MembershipStatusResponse {
     private String gradeCode;          // SEASAK / DANGOL / DANGOL_VIP / DANGOL_FAMILY
     private String gradeName;          // 새싹단골 / 단골 / 단골VIP / 단골패밀리
 
-    private Long yearSpentAmount;      // 최근 1년 결제 금액(우선 USER_MEMBERSHIP 값)
+    private Long monthSpentAmount;      // 최근 1년 결제 금액(우선 USER_MEMBERSHIP 값)
     private Long lifetimeSpentAmount;  // 전체 누적 금액
 
     private Double discountRate;       // MEMBERSHIP_GRADE.discount_rate

@@ -4,6 +4,7 @@ import com.farmday.admin.dto.AdminProducerDto;
 import com.farmday.producer.domain.Producer;
 import com.farmday.producer.dto.DailySalesDto;
 import com.farmday.producer.dto.LowStockProductDto;
+import com.farmday.producer.dto.OrderMembershipInfo;
 import com.farmday.producer.dto.ProducerDashboardSummaryDto;
 import com.farmday.producer.dto.ProducerOrderItemDto;
 import com.farmday.producer.dto.ProducerProductItemDto;
@@ -192,5 +193,11 @@ public interface ProducerMapper {
     // 반려 시 PRODUCER 반려 사유 저장
     void rejectProducer(@Param("producerId") Long producerId,
                         @Param("rejectReason") String rejectReason);
+    
+    // 배송상태 변경 후 멤버십 적립용 정보 조회
+    OrderMembershipInfo findOrderMembershipInfoByOrderItemId(@Param("orderItemId") Long orderItemId);
+
+    // 해당 주문에서 아직 배송완료가 아닌 아이템 개수
+    int countUndeliveredItemsByOrderId(@Param("orderId") Long orderId);
     
 }

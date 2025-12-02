@@ -25,7 +25,7 @@ public class MembershipServiceImpl implements MembershipService {
 
         // 2) 최신 year_spent_amount 조회
         MembershipStatusResponse status = userMembershipMapper.findMembershipStatus(userNo);
-        Long yearAmount = status.getYearSpentAmount();
+        Long yearAmount = status.getMonthSpentAmount();
 
         // 3) 해당 금액에 맞는 등급 찾기
         MembershipGrade newGrade = membershipGradeMapper.findGradeByAmount(yearAmount);

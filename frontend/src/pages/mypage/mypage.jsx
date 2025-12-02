@@ -12,6 +12,7 @@ import MypageCanceledOrder from "./MypageCanceledOrder";
 import delivery1 from "../../assets/img/delivery1.png";
 import delivery2 from "../../assets/img/delivery2.jpg";
 import delivery3 from "../../assets/img/delivery3.png";
+import Membership from "./Membership";
 
 function moneyKRW(n) {
   const v = Math.max(0, Math.round(Number(n) || 0));
@@ -467,6 +468,13 @@ export default function MyPage() {
                 canceledOrder={canceledOrder} setCanceledOrder={setCanceledOrder} formatKoreanDateTime={formatKoreanDateTime} moneyKRW={moneyKRW}
               />
             )}
+
+            {showContent === 'membership' && (
+              <div className="col-lg-8">
+                <Membership />
+              </div>
+            )}
+
           </div>
         </div>
       </div>

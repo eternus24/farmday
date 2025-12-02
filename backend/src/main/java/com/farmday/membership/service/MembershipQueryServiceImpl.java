@@ -24,10 +24,10 @@ public class MembershipQueryServiceImpl implements MembershipQueryService {
             return null;
         }
 
-        Long yearAmount = status.getYearSpentAmount();
+        Long yearAmount = status.getMonthSpentAmount();
         if (yearAmount == null) {
             yearAmount = 0L;
-            status.setYearSpentAmount(0L);
+            status.setMonthSpentAmount(0L);
         }
 
         // 1) 다음 등급 찾기

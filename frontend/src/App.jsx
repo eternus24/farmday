@@ -169,7 +169,6 @@ function App() {
               <Route path="/orders/fail" element={<FailPage/>} />
 
               <Route path="/mypage" element={<MyPage/>}/>
-              <Route path="/mypage/membership" element={<Membership/>} />
               <Route path="/mypage/orders/${order.orderId}/delivery" element={<OrderDelivery/>} />
 
               {/*  사용자 SHOP */}
