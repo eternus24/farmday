@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.farmday.banner.mapper.BannerMapper">
+
+    <!-- 시퀀스 -->
+    <select id="getNextBannerId" resultType="long">
+        SELECT BANNER_SEQ.NEXTVAL FROM DUAL
+    </select>
+
+    <!-- 관리자 목록: 최신 등록 순 -->
+    <select id="findAllForAdmin"
+            resultType="com.farmday.banner.domain.Banner">
+        <![CDATA[
+        SELECT
+            banner_id      AS bannerId,
+            title          AS title,
+            image_url      AS imageUrl,
+            link_url       AS linkUrl,
+            is_active      AS isActive,
+            start_date     AS startDate,
+            end_date       AS endDate,
+            created_by     AS createdBy,
+            created_date   AS createdDate,
+            updated_date   AS updatedDate
+        FROM BANNER
+        ORDER BY created_date DESC, banner_id DESC
+        ]]>
+    </select>
+
+    <!-- 메인 화면용: 활성 배너 + 기간 안에 있는 것 + 최신순 5개 -->
+    <select id="findActiveBannersForMain"
+            resultType="com.farmday.banner.domain.Banner">
+        <![CDATA[
+        SELECT
+            banner_id      AS bannerId,
+            title          AS title,
+            image_url      AS imageUrl,
+            link_url       AS linkUrl,
+            is_active      AS isActive,
+            start_date     AS startDate,
+            end_date       AS endDate,
+            created_by     AS createdBy,
+            created_date   AS createdDate,
+            updated_date   AS updatedDate
+        FROM BANNER
+        WHERE is_active = 'Y'
+          AND (start_date IS NULL OR start_date <= TRUNC(SYSDATE))
+          AND (end_date   IS NULL OR end_date   >= TRUNC(SYSDATE))
+        ORDER BY created_date DESC, banner_id DESC
+        FETCH FIRST 5 ROWS ONLY
+        ]]>
+    </select>
+
+    <!-- 단건 조회 -->
+    <select id="findById"
+            parameterType="long"
+            resultType="com.farmday.banner.domain.Banner">
+        SELECT
+            banner_id      AS bannerId,
+            title          AS title,
+            image_url      AS imageUrl,
+            link_url       AS linkUrl,
+            is_active      AS isActive,
+            start_date     AS startDate,
+            end_date       AS endDate,
+            created_by     AS createdBy,
+            created_date   AS createdDate,
+            updated_date   AS updatedDate
+        FROM BANNER
+        WHERE banner_id = #{bannerId}
+    </select>
+
+    <!-- 등록 -->
+    <insert id="insertBanner"
+            parameterType="com.farmday.banner.domain.Banner">
+        <![CDATA[
+        INSERT INTO BANNER (
+            banner_id,
+            title,
+            image_url,
+            link_url,
+            is_active,
+            start_date,
+            end_date,
+            created_by,
+            created_date,
+            updated_date
+        ) VALUES (
+            #{bannerId},
+            #{title},
+            #{imageUrl},
+            #{linkUrl},
+            #{isActive},
+            #{startDate},
+            #{endDate},
+            #{createdBy},
+            SYSDATE,
+            SYSDATE
+        )
+        ]]>
+    </insert>
+
+    <!-- 수정 -->
+    <update id="updateBanner"
+            parameterType="com.farmday.banner.domain.Banner">
+        <![CDATA[
+        UPDATE BANNER
+        SET
+            title        = #{title},
+            image_url    = #{imageUrl},
+            link_url     = #{linkUrl},
+            is_active    = #{isActive},
+            start_date   = #{startDate},
+            end_date     = #{endDate},
+            updated_date = SYSDATE
+        WHERE banner_id = #{bannerId}
+        ]]>
+    </update>
+
+    <!-- 삭제 -->
+    <delete id="deleteBanner" parameterType="long">
+        DELETE FROM BANNER
+        WHERE banner_id = #{bannerId}
+    </delete>
+
+    <!-- (선택) 활성 배너 개수 -->
+    <select id="countActiveBanners" resultType="int">
+        <![CDATA[
+        SELECT COUNT(*)
+        FROM BANNER
+        WHERE is_active = 'Y'
+          AND (start_date IS NULL OR start_date <= TRUNC(SYSDATE))
+          AND (end_date   IS NULL OR end_date   >= TRUNC(SYSDATE))
+        ]]>
+    </select>
+
+</mapper>

@@ -63,6 +63,7 @@ import AwsTest from "./pages/mypage/AwsTest";
 import FindId from "./pages/login/FindId";
 import PasswordResetRequest from "./pages/login/PasswordResetRequest";
 import PasswordResetForm from "./pages/login/PasswordResetForm";
+import AdminBannerPage from "./pages/admin/AdminBannerPage";
 
 // JWT 파싱 헬퍼
 function parseJwt(token) {
@@ -236,6 +237,14 @@ function App() {
                 element={
                   <RequireAdmin>
                     <AdminUserList />
+                  </RequireAdmin>
+                }
+              />
+              <Route
+                path="banners"
+                element={
+                  <RequireAdmin>
+                    <AdminBannerPage />
                   </RequireAdmin>
                 }
               />
