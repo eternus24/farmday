@@ -120,7 +120,7 @@ export default function Header() {
                     Pages
                   </a>
                   <div className="dropdown-menu m-0 bg-secondary rounded-0">
-                    <NavLink to="/cart" className="dropdown-item">
+                    <NavLink className="dropdown-item">
                       Cart
                     </NavLink>
                     <NavLink to="/checkout" className="dropdown-item">
@@ -149,16 +149,14 @@ export default function Header() {
                 >
                   <i className="fas fa-search text-primary"></i>
                 </button>
-                <a href="#" className="position-relative me-4 my-auto">
-                  <NavLink to="/cart">
-                    <i className="fa fa-shopping-bag fa-2x"></i>
-                    <span
-                      className="position-absolute bg-secondary rounded-circle d-flex align-items-center justify-content-center text-dark px-1"
-                      style={{ top: -5, left: 15, height: 20, minWidth: 20 }}
-                    >
-                      {cartAmount}
-                    </span>
-                  </NavLink>
+                <a href="/cart" className="position-relative me-4 my-auto">
+                  <i className="fa fa-shopping-bag fa-2x"></i>
+                  <span
+                    className="position-absolute bg-secondary rounded-circle d-flex align-items-center justify-content-center text-dark px-1"
+                    style={{ top: -5, left: 15, height: 20, minWidth: 20 }}
+                  >
+                    {cartAmount}
+                  </span>
                 </a>
 
                 {/* ✅ 로그인 / 로그아웃 영역 */}

@@ -14,8 +14,6 @@ import com.farmday.producer.dto.TopProductDto;
 
 import java.util.List;
 
-import org.springframework.web.multipart.MultipartFile;
-
 public interface ProducerService {
 
     // 회원가입 시 PRODUCER 생성
@@ -76,5 +74,7 @@ public interface ProducerService {
     void updateProducerProfile(Long producerId, ProducerProfileUpdateRequest request);
 
     void updateRefundStatus(Long producerId, Long orderItemId, String refundStatus);
+
+    boolean existsStoreByProducerId(Long producerId);
 
 }

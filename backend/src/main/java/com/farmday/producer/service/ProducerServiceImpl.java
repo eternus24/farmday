@@ -462,4 +462,10 @@ public class ProducerServiceImpl implements ProducerService {
         producerMapper.touchOrderUpdatedDateByItemId(producerId, orderItemId);
     }
 
+    @Override
+    public boolean existsStoreByProducerId(Long producerId) {
+        int count = producerMapper.existsStoreByProducerId(producerId);
+        return count > 0;
+    }
+
 }

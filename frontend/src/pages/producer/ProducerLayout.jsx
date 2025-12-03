@@ -1,5 +1,5 @@
 // src/pages/producer/ProducerLayout.jsx
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useEffect, useState, useContext } from 'react'
 import '../../assets/css/producer.css'
 import ProducerProfileCard from '../../components/producer/ProducerProfileCard.jsx'
@@ -10,6 +10,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL
 
 export default function ProducerLayout() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { auth } = useContext(AuthContext)
 
   const [producer, setProducer] = useState(null)
@@ -46,8 +47,9 @@ export default function ProducerLayout() {
         const data = res.data
         console.log('producer /me 응답:', data)
 
-        // 🔥 전체 DTO 그대로 저장 (필드 안 자름)
+        // 🔥 전체 DTO 그대로 저장
         setProducer(data)
+        // 백엔드 응답이 hasStore 라고 가정
         setStoreExists(!!data.hasStore)
       } catch (err) {
         console.error('생산자 정보 조회 에러:', err)
@@ -57,16 +59,18 @@ export default function ProducerLayout() {
       }
     }
 
+    // 🔥 auth 또는 현재 경로가 바뀔 때마다 생산자 정보 재조회
     fetchProducer()
-  }, [auth])
+  }, [auth, location.pathname])
 
   const handleStoreButtonClick = () => {
     if (!storeExists) {
-      navigate('/producer/store/create')
+      navigate('/producer/create');
     } else {
-      navigate('/store/my')
+      // 🔥 producer.producerId 를 기반으로 이동
+      navigate(`/store/${producer.producerId}`);
     }
-  }
+  };
 
   if (loading) return <div>생산자 정보를 불러오는 중입니다...</div>
   if (error) return <div>{error}</div>
@@ -114,7 +118,7 @@ export default function ProducerLayout() {
           </header>
 
           <section className="producer-main">
-            {/* 🔥 이제 Outlet 쪽에서 producer.addr, producer.bankName 등 전부 사용 가능 */}
+            {/* 🔥 Outlet 쪽에서 producer 전체 DTO 사용 가능 */}
             <Outlet context={{ producer, storeExists }} />
           </section>
         </main>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.farmday.producer.mapper.ProducerStoreMapper">
+
+    <!-- INSERT -->
+    <insert id="insertStore" parameterType="com.farmday.producer.domain.ProducerStore">
+        INSERT INTO STORE (
+            store_id,
+            producer_id,
+            owner_user_id,
+            store_name,
+            description,
+            thumbnail_url,
+            status,
+            is_active,
+            created_date,
+            updated_date
+        ) VALUES (
+            SEQ_STORE_ID.NEXTVAL,
+            #{producerId},
+            #{ownerUserId},
+            #{storeName},
+            #{description},
+            #{thumbnailUrl},
+            #{status},
+            #{isActive},
+            SYSDATE,
+            SYSDATE
+        )
+    </insert>
+
+    <!-- owner_user_id 로 단일 조회 예시 -->
+    <select id="findByOwnerUserId"
+            parameterType="string"
+            resultType="com.farmday.producer.domain.ProducerStore">
+        SELECT
+            store_id      AS storeId,
+            producer_id   AS producerId,
+            owner_user_id AS ownerUserId,
+            store_name    AS storeName,
+            description,
+            thumbnail_url AS thumbnailUrl,
+            status,
+            is_active     AS isActive,
+            created_date  AS createdDate,
+            updated_date  AS updatedDate
+        FROM STORE
+        WHERE owner_user_id = #{ownerUserId}
+    </select>
+
+</mapper>

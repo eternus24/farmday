@@ -73,10 +73,11 @@ export default function Login() {
     // 전역 AuthContext 업데이트
     setAuth({
       loggedIn: true,
-      name: data.user?.name || data.user?.userId || "회원",
+      name: data.user?.name || "회원",
       photo: finalPhoto,
       userNo: data.user?.userNo,
       role, // ⭐⭐ 여기 추가
+      userId: data.user?.userId,
     });
 
     setMessage("로그인 성공!");

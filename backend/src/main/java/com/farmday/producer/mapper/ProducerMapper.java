@@ -199,5 +199,7 @@ public interface ProducerMapper {
 
     // 해당 주문에서 아직 배송완료가 아닌 아이템 개수
     int countUndeliveredItemsByOrderId(@Param("orderId") Long orderId);
+
+    int existsStoreByProducerId(@Param("producerId") Long producerId);
     
 }

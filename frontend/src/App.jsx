@@ -95,6 +95,7 @@ function getInitialAuth() {
   let photo = null;
   let userName = null;
   let roleFromLoginUser = null;
+  let loginUserId = null;
 
   const loginUserStr = localStorage.getItem("loginUser");
   if (loginUserStr) {
@@ -104,13 +105,14 @@ function getInitialAuth() {
       photo = user.photo || null;
       userName = user.name || user.username || user.userId || null;
       roleFromLoginUser = user.role || null;
+      loginUserId = user.userId || null;
     } catch (e) {
       console.error("[App] loginUser 파싱 실패:", e);
     }
   }
 
   if (!token) {
-    return { loggedIn: false, name: "손님", photo, userNo, role: null };
+    return { loggedIn: false, name: "손님", photo, userNo, role: null, userId: null, };
   }
 
   if (token.startsWith("Bearer ")) {
@@ -119,7 +121,7 @@ function getInitialAuth() {
 
   const payload = parseJwt(token);
   if (!payload) {
-    return { loggedIn: false, name: "손님", photo, userNo, role: null };
+    return { loggedIn: false, name: "손님", photo, userNo, role: null, userId: null, };
   }
 
   const nameFromToken =
@@ -137,12 +139,19 @@ function getInitialAuth() {
 
   const finalRole = roleFromLoginUser || roleFromToken || null;
 
+  // 🔹 userId도 토큰에서 백업으로 한 번 더 시도 (혹시 loginUser가 비어있는 경우 대비)
+  const idFromToken =
+    payload.userId || payload.sub || payload.username || payload.name;
+
+  const finalUserId = loginUserId || idFromToken || null;
+
   return {
     loggedIn: true,
     name: finalName,
     photo,
     userNo,
     role: finalRole,
+    userId: finalUserId,
   };
 }
 
@@ -192,7 +201,6 @@ function App() {
                 <Route path="list" element={<StoreList />} />
                 <Route path="status" element={<StoreStatus />} />
                 <Route path="question" element={<StoreQuestion />} />
-                <Route path="upload" element={<StoreCreate />} />
               </Route>
 
               <Route path="/review/write/:order_item_id" element={<ReviewWrite/>}/>
@@ -219,6 +227,7 @@ function App() {
                 <Route path="orders/:orderId" element={<ProducerOrderDetailPage />} />
                 <Route path="products" element={<ProducerProductsPage />} />
                 <Route path="profile" element={<ProducerProfilePage />} />
+                <Route path="create" element={<StoreCreate />} />
               </Route>
 
               <Route path="/signup" element={<Signup />} />

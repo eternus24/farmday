@@ -1018,4 +1018,13 @@
     ]]>
   </select>
 
+  <!-- 생산자의 스토어 존재 여부 확인 -->
+  <select id="existsStoreByProducerId"
+          parameterType="long"
+          resultType="int">
+      SELECT COUNT(*)
+      FROM STORE
+      WHERE producer_id = #{producerId}
+  </select>
+
 </mapper>

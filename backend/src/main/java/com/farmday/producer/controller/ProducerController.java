@@ -57,6 +57,11 @@ public class ProducerController {
             return ResponseEntity.notFound().build();
         }
 
+        Long producerId = producer.getProducerId();
+
+        // 🔥 여기서 스토어 존재 여부 체크
+        boolean hasStore = producerService.existsStoreByProducerId(producerId);
+
         ProducerMeResponse dto = new ProducerMeResponse(
                 // 유저
                 user.getUserId(),
@@ -77,7 +82,7 @@ public class ProducerController {
                 producer.getBankAccountNo(),
                 producer.getAccountHolder(),
                 producer.getIsVerified(),
-                false
+                hasStore   // ✅ 여기! 이제 진짜 값으로 내려감
         );
 
         return ResponseEntity.ok(dto);
