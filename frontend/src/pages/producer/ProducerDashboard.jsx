@@ -137,12 +137,11 @@ export default function ProducerDashboard() {
     if (!dailySales.length) return null;
 
     const labels = dailySales.map((d) => {
-      // salesDate가 문자열(ISO)이라고 가정
       try {
         const date = new Date(d.salesDate);
         return `${date.getMonth() + 1}/${date.getDate()}`;
       } catch {
-        return d.salesDate; // 파싱 실패 시 원본
+        return d.salesDate;
       }
     });
 
@@ -157,12 +156,18 @@ export default function ProducerDashboard() {
           data: amountData,
           borderWidth: 2,
           tension: 0.2,
+          borderColor: "rgba(75, 192, 192, 1)",      // ✅ 라인 색
+          backgroundColor: "rgba(75, 192, 192, 0.2)", // ✅ 영역 색(옵션)
+          fill: true,
         },
         {
           label: "주문 건수",
           data: orderCountData,
           borderWidth: 2,
           borderDash: [4, 4],
+          borderColor: "rgba(255, 159, 64, 1)",      // ✅ 다른 색
+          backgroundColor: "rgba(255, 159, 64, 0.2)",
+          fill: false,
         },
       ],
     };
@@ -195,11 +200,13 @@ export default function ProducerDashboard() {
           label: "현재 재고",
           data: stockData,
           borderWidth: 1,
+          backgroundColor: "rgba(54, 162, 235, 0.6)",  // ✅ 파란 바
         },
         {
           label: "안전 재고",
           data: safetyData,
           borderWidth: 1,
+          backgroundColor: "rgba(255, 99, 132, 0.6)", // ✅ 빨간 바
         },
       ],
     };
@@ -222,12 +229,24 @@ export default function ProducerDashboard() {
     const labels = topProducts.map((p) => p.productName);
     const quantityData = topProducts.map((p) => p.totalQuantity || 0);
 
+    const colors = [
+      "rgba(255, 99, 132, 0.7)",
+      "rgba(54, 162, 235, 0.7)",
+      "rgba(255, 206, 86, 0.7)",
+      "rgba(75, 192, 192, 0.7)",
+      "rgba(153, 102, 255, 0.7)",
+      "rgba(255, 159, 64, 0.7)",
+    ];
+
     return {
       labels,
       datasets: [
         {
           label: "판매 수량",
           data: quantityData,
+          backgroundColor: quantityData.map((_, idx) => colors[idx % colors.length]), // ✅ 색 반복
+          borderColor: "#ffffff",
+          borderWidth: 2,
         },
       ],
     };
