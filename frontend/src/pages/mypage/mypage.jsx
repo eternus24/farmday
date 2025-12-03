@@ -13,6 +13,7 @@ import delivery1 from "../../assets/img/delivery1.png";
 import delivery2 from "../../assets/img/delivery2.jpg";
 import delivery3 from "../../assets/img/delivery3.png";
 import Membership from "./Membership";
+import MyInfo from "./MyInfo";
 
 function moneyKRW(n) {
   const v = Math.max(0, Math.round(Number(n) || 0));
@@ -473,6 +474,10 @@ export default function MyPage() {
               <div className="col-lg-8">
                 <Membership />
               </div>
+            )}
+
+            {showContent === 'myInfo' && (
+              <MyInfo API_BASE={API_BASE} userId={user_Id} />
             )}
 
           </div>

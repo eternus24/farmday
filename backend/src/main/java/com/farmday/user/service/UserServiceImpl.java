@@ -1,6 +1,8 @@
 package com.farmday.user.service;
 
 import com.farmday.user.domain.User;
+import com.farmday.user.dto.MyInfoResponseDto;
+import com.farmday.user.dto.MyInfoUpdateRequestDto;
 import com.farmday.user.mapper.UserMapper;
 import com.farmday.verification.domain.EmailVerification;
 import com.farmday.verification.mapper.EmailVerificationMapper;
@@ -380,6 +382,22 @@ public class UserServiceImpl implements UserService {
 
         // 3) 토큰은 사용 처리
         emailVerificationMapper.markUsed(ev.getEmailId());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public MyInfoResponseDto getMyInfo(String userId) {
+        MyInfoResponseDto dto = userMapper.findMyInfoByUserId(userId);
+        return dto;
+    }
+
+    @Override
+    @Transactional
+    public void updateMyInfo(MyInfoUpdateRequestDto request) {
+        int updated = userMapper.updateMyInfo(request);
+        if (updated == 0) {
+            throw new IllegalArgumentException("존재하지 않는 회원입니다: " + request.getUserId());
+        }
     }
 
 }

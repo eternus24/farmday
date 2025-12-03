@@ -1,9 +1,9 @@
 // src/components/Header.jsx
-import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { useContext, useEffect } from 'react';
-import { AuthContext } from '../contexts/AuthContext';
+import { Link, NavLink, useNavigate } from "react-router-dom";
+import { useContext, useEffect } from "react";
+import { AuthContext } from "../contexts/AuthContext";
 import defaultAvatarImg from "../assets/img/user-default1.png";
-import { CartContext } from '../contexts/CartContext';
+import { CartContext } from "../contexts/CartContext";
 
 export default function Header() {
   const navigate = useNavigate();
@@ -12,46 +12,69 @@ export default function Header() {
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
   const profileSrc = auth.photo
-  ? auth.photo.startsWith("http")
-    ? auth.photo                  // 카카오 같은 외부 URL이면 그대로
-    : `${API_BASE}${auth.photo}`  // /uploads/... 는 백엔드 도메인 붙여주기
-  : defaultAvatar;
+    ? auth.photo.startsWith("http")
+      ? auth.photo // 카카오 같은 외부 URL이면 그대로
+      : `${API_BASE}${auth.photo}` // /uploads/... 는 백엔드 도메인 붙여주기
+    : defaultAvatar;
 
-  const { cartAmount, setCartAmount, findCartAmount } = useContext(CartContext);
+  const { cartAmount, setCartAmount, findCartAmount } =
+    useContext(CartContext);
 
   useEffect(() => {
     findCartAmount();
-  },[])
+  }, []);
 
+  // ✅ 프로필 클릭 시 역할에 따른 이동 처리
+  const handleProfileClick = () => {
+    if (!auth.loggedIn) {
+      navigate("/login");
+      return;
+    }
+
+    const role = auth.role || "";
+
+    // "PRODUCER" 또는 "ROLE_PRODUCER" 모두 커버
+    if (role.includes("PRODUCER")) {
+      navigate("/producer");
+    } else {
+      navigate("/mypage");
+    }
+  };
 
   // ✅ 로그아웃 처리
   const handleLogout = async () => {
-    const refreshToken = localStorage.getItem('refreshToken');
-    
+    const refreshToken = localStorage.getItem("refreshToken");
+
     try {
       if (refreshToken) {
         await fetch(API_BASE, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ refreshToken }),
         });
       }
     } catch (err) {
-      console.error('[Header] 로그아웃 요청 실패:', err);
+      console.error("[Header] 로그아웃 요청 실패:", err);
       // 서버 에러 나도 클라이언트 토큰은 지울 거라서 그냥 진행
     }
 
     // ✅ 클라이언트 토큰/유저정보 모두 제거
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('loginUser');
-    localStorage.removeItem("loginAvatar");  // 🔹 추가
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("loginUser");
+    localStorage.removeItem("loginAvatar"); // 🔹 추가
 
     // ✅ 상태 초기화
-    setAuth({ loggedIn: false, name: '손님' });
+    setAuth({
+      loggedIn: false,
+      name: "손님",
+      photo: null,
+      userNo: null,
+      role: null,
+    });
 
     // ✅ 로그인 페이지로 이동 (원하면 "/" 로 바꿔도 됨)
-    navigate('/login');
+    navigate("/login");
   };
 
   return (
@@ -73,7 +96,10 @@ export default function Header() {
               <span className="fa fa-bars text-primary"></span>
             </button>
 
-            <div className="collapse navbar-collapse bg-white" id="navbarCollapse">
+            <div
+              className="collapse navbar-collapse bg-white"
+              id="navbarCollapse"
+            >
               <div className="navbar-nav mx-auto">
                 <NavLink to="/" className="nav-item nav-link">
                   Home
@@ -137,8 +163,11 @@ export default function Header() {
 
                 {/* ✅ 로그인 / 로그아웃 영역 */}
                 <div className="d-flex align-items-center my-auto">
-                  <NavLink to="/mypage">
-                    {/* 프로필 이미지 */}
+                  <div
+                    onClick={handleProfileClick}
+                    style={{ cursor: "pointer" }}
+                    className="d-flex align-items-center"
+                  >
                     <img
                       src={profileSrc}
                       alt="프로필"
@@ -150,14 +179,10 @@ export default function Header() {
                         marginRight: 8,
                       }}
                     />
-
-                    {/* 이름 + '님' */}
-                    <span
-                      style={{ fontSize: "14px", fontWeight: 600 }}
-                    >
+                    <span style={{ fontSize: "14px", fontWeight: 600 }}>
                       {auth.name}님
                     </span>
-                  </NavLink>
+                  </div>
 
                   {auth.loggedIn ? (
                     <button

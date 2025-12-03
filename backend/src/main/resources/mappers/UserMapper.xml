@@ -370,4 +370,46 @@
         WHERE user_no    = #{userNo}
     </update>
 
+    <!-- ✅ 마이페이지 - 내 정보 조회 -->
+    <select id="findMyInfoByUserId"
+        parameterType="string"
+        resultType="com.farmday.user.dto.MyInfoResponseDto">
+        SELECT
+            u.user_no          AS userNo,
+            u.role             AS role,
+            u.userId           AS userId,   <!-- ✅ 컬럼명 수정 -->
+            u.name             AS name,
+            u.phone            AS phone,
+            u.email            AS email,
+            u.addr             AS addr,
+            TO_CHAR(u.birth, 'YYYY-MM-DD')              AS birth,
+            u.gender           AS gender,
+            u.photo            AS photo,
+            TO_CHAR(u.created_date, 'YYYY-MM-DD HH24:MI:SS') AS createdDate,
+            TO_CHAR(u.last_login_at, 'YYYY-MM-DD HH24:MI:SS') AS lastLoginAt
+        FROM USERS u
+        WHERE u.userId = #{userId}         <!-- ✅ 여기도 동일 -->
+    </select>
+
+    <!-- ✅ 마이페이지 - 내 정보 수정 -->
+    <update id="updateMyInfo"
+            parameterType="com.farmday.user.dto.MyInfoUpdateRequestDto">
+        UPDATE USERS
+        <set>
+            name  = #{name},
+            phone = #{phone},
+            email = #{email},
+            addr  = #{addr},
+            <if test="birth != null and birth != ''">
+                birth = TO_DATE(#{birth}, 'YYYY-MM-DD'),
+            </if>
+            gender = #{gender},
+            <if test="photo != null and photo != ''">
+                photo = #{photo},
+            </if>
+            updated_date = SYSDATE
+        </set>
+        WHERE userId = #{userId}
+    </update>
+
 </mapper>

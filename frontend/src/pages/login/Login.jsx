@@ -45,14 +45,15 @@ export default function Login() {
       return;
     }
 
-    console.log("로그인 응답 data:", data);      // ✅ 추가
-    console.log("userNo 체크:", data?.user?.userNo);  // ✅ 추가
+    console.log("로그인 응답 data:", data);
+    console.log("userNo 체크:", data?.user?.userNo);
+    console.log("role 체크:", data?.user?.role);   // ✅ 추가해서 한번 확인해봐
 
     // 토큰 저장
     localStorage.setItem("accessToken", data.accessToken);
     localStorage.setItem("refreshToken", data.refreshToken);
 
-    // 유저 정보 저장
+    // 유저 정보 저장 (role 포함)
     localStorage.setItem("loginUser", JSON.stringify(data.user));
 
     // 프로필 사진 결정
@@ -63,12 +64,19 @@ export default function Login() {
     }
     localStorage.setItem("loginAvatar", finalPhoto);
 
+    // 🔹 역할 가져오기 (필드명은 백엔드 응답에 맞춰)
+    const role =
+      data.user?.role ||
+      data.user?.roles?.[0] || // 혹시 배열이면 첫 번째
+      null;
+
     // 전역 AuthContext 업데이트
     setAuth({
       loggedIn: true,
       name: data.user?.name || data.user?.userId || "회원",
       photo: finalPhoto,
       userNo: data.user?.userNo,
+      role, // ⭐⭐ 여기 추가
     });
 
     setMessage("로그인 성공!");

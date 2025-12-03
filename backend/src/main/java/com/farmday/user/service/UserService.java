@@ -2,6 +2,8 @@ package com.farmday.user.service;
 
 import com.farmday.producer.domain.Producer;
 import com.farmday.user.domain.User;
+import com.farmday.user.dto.MyInfoResponseDto;
+import com.farmday.user.dto.MyInfoUpdateRequestDto;
 import com.farmday.verification.domain.EmailVerification;
 
 public interface UserService {
@@ -61,5 +63,11 @@ public interface UserService {
      * 비밀번호 실제 변경 (ResetPassword)
      */
     void resetPassword(String token, String newPassword);
+
+    // ✅ 마이페이지 - 내 정보 조회
+    MyInfoResponseDto getMyInfo(String userId);
+
+    // ✅ 마이페이지 - 내 정보 수정
+    void updateMyInfo(MyInfoUpdateRequestDto request);
 
 }

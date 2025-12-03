@@ -95,10 +95,7 @@ export default function MypageLeftSideBar({user_name,overview,moneyKRW,userInfo,
         <div className="mb-3">
           <div className="fw-semibold mb-2">혜택</div>
           <ul className="list-unstyled ms-1 small">
-            <li
-              className={showContent === 'membership' ? 'active' : ''}
-              onClick={() => openContent('membership')}
-            >
+            <li className="mb-2 link-secondary" onClick={() => openContent('membership')} style={{cursor: 'pointer'}}>
               멤버십 및 등급
             </li>
           </ul>
@@ -115,13 +112,8 @@ export default function MypageLeftSideBar({user_name,overview,moneyKRW,userInfo,
                 배송지 관리
                 </Link>
             </li>
-            <li className="mb-2">
-                <Link
-                className="link-secondary"
-                to="/mypage/profile"
-                >
-                회원 정보 관리
-                </Link>
+            <li className="mb-2 link-secondary" onClick={() => openContent("myInfo")} style={{cursor: 'pointer'}}>
+                내 정보 수정
             </li>
             <li className="mb-2">
                 <Link

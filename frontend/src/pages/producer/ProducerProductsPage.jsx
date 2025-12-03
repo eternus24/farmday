@@ -33,6 +33,7 @@ const KEYWORD_GROUPS = [
       { code: "DIRECT_FROM_FARM", label: "산지 직송" },
       { code: "NO_PESTICIDE", label: "무농약/저농약" },
       { code: "ORGANIC", label: "유기농" },
+      { code: "FIELD_GROWN", label: "노지 재배" },
     ]
   },
   {
@@ -50,6 +51,7 @@ const KEYWORD_GROUPS = [
       { code: "FOR_SALAD", label: "샐러드용" },
       { code: "FOR_SNACK", label: "간식용" },
       { code: "FOR_COOK", label: "요리·조리용" },
+      { code: "FOR_JUICE", label: "주스·스무디용" },
     ]
   },
   {
@@ -80,7 +82,7 @@ export default function ProducerProductsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalMode, setModalMode] = useState('create')
   const [editingTarget, setEditingTarget] = useState(null) // 수정 대상 row
-  const [selectedKeywords, setSelectedKeywords] = useState([]);
+  const [selectedKeywords, setSelectedKeywords] = useState([])
 
   const [formProduct, setFormProduct] = useState({
     productName: '',
@@ -91,36 +93,34 @@ export default function ProducerProductsPage() {
     stockQty: '',
     summary: '', // ★ 짧은 설명
     detailDesc: '', // ★ 상세 설명
-    origin: '',          // ★ 원산지
-    harvestDate: '',     // ★ 수확일
-    expireDate: '',      // ★ 유통기한
+    origin: '', // ★ 원산지
+    harvestDate: '', // ★ 수확일
+    expireDate: '', // ★ 유통기한
   })
   const [imageFile, setImageFile] = useState(null) // 대표 이미지
   const [detailImages, setDetailImages] = useState([]) // ★ 상세 이미지들
   const [imagePreview, setImagePreview] = useState('')
   const [isUnitCustom, setIsUnitCustom] = useState(false)
 
-  const IMAGE_UPLOAD_BASE = "http://192.168.0.76:8080";
+  const IMAGE_UPLOAD_BASE = 'http://192.168.0.76:8080'
 
   async function uploadImageFile(file) {
-    if (!file) return null;
+    if (!file) return null
 
-    const formData = new FormData();
-    formData.append("file", file);
+    const formData = new FormData()
+    formData.append('file', file)
 
     const res = await fetch(`${IMAGE_UPLOAD_BASE}/api/images/upload`, {
-      method: "POST",
+      method: 'POST',
       body: formData,
-    });
+    })
 
     if (!res.ok) {
-      throw new Error(`이미지 업로드 실패: HTTP ${res.status}`);
+      throw new Error(`이미지 업로드 실패: HTTP ${res.status}`)
     }
 
-    // 업로드 서버 응답 형식에 맞게
-    // AwsTest에서 `{ url: "..." }` 였으니까 그대로 가정
-    const data = await res.json();
-    return data.url; // or data.path 등 실제 키 맞춰야 함
+    const data = await res.json()
+    return data.url
   }
 
   // =========================
@@ -128,9 +128,7 @@ export default function ProducerProductsPage() {
   // =========================
   useEffect(() => {
     const token =
-      auth?.accessToken ||
-      auth?.token ||
-      localStorage.getItem('accessToken')
+      auth?.accessToken || auth?.token || localStorage.getItem('accessToken')
 
     if (!token) {
       setError('로그인이 필요합니다.')
@@ -176,17 +174,13 @@ export default function ProducerProductsPage() {
   // =========================
   const handleChangeField = (detailId, field, value) => {
     setProducts((prev) =>
-      prev.map((p) =>
-        p.detailId === detailId ? { ...p, [field]: value } : p,
-      ),
+      prev.map((p) => (p.detailId === detailId ? { ...p, [field]: value } : p)),
     )
   }
 
   const handleSaveProduct = async (product) => {
     const token =
-      auth?.accessToken ||
-      auth?.token ||
-      localStorage.getItem('accessToken')
+      auth?.accessToken || auth?.token || localStorage.getItem('accessToken')
 
     if (!token) {
       alert('로그인이 필요합니다.')
@@ -236,9 +230,7 @@ export default function ProducerProductsPage() {
     if (!window.confirm('정말 이 상품을 삭제하시겠습니까?')) return
 
     const token =
-      auth?.accessToken ||
-      auth?.token ||
-      localStorage.getItem('accessToken')
+      auth?.accessToken || auth?.token || localStorage.getItem('accessToken')
 
     if (!token) {
       alert('로그인이 필요합니다.')
@@ -246,13 +238,16 @@ export default function ProducerProductsPage() {
     }
 
     try {
-      await axios.delete(`${API_BASE}/api/producer/products/${product.productId}`, {
-        headers: {
-          Authorization: token.startsWith('Bearer ')
-            ? token
-            : `Bearer ${token}`,
+      await axios.delete(
+        `${API_BASE}/api/producer/products/${product.productId}`,
+        {
+          headers: {
+            Authorization: token.startsWith('Bearer ')
+              ? token
+              : `Bearer ${token}`,
+          },
         },
-      })
+      )
 
       setProducts((prev) =>
         prev.filter((p) => p.productId !== product.productId),
@@ -277,11 +272,15 @@ export default function ProducerProductsPage() {
       stockQty: '',
       summary: '',
       detailDesc: '',
+      origin: '',
+      harvestDate: '',
+      expireDate: '',
     })
     setImageFile(null)
     setDetailImages([])
     setImagePreview('')
     setIsUnitCustom(false)
+    setSelectedKeywords([])
   }
 
   const openCreateModal = () => {
@@ -311,13 +310,15 @@ export default function ProducerProductsPage() {
       stockQty,
       summary: product.summary || '',
       detailDesc: product.detailDesc || '',
+      origin: product.origin || '',
+      harvestDate: product.harvestDate || '',
+      expireDate: product.expireDate || '',
     })
 
     if (unitName && !UNIT_OPTIONS.includes(unitName)) {
       setIsUnitCustom(true)
     }
 
-    // 이미지 미리보기 (대표 이미지)
     if (product.mainImage) {
       setImagePreview(product.mainImage)
     }
@@ -361,115 +362,104 @@ export default function ProducerProductsPage() {
   }
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault()
 
     const token =
-      auth?.accessToken ||
-      auth?.token ||
-      localStorage.getItem("accessToken");
+      auth?.accessToken || auth?.token || localStorage.getItem('accessToken')
 
     if (!token) {
-      alert("로그인이 필요합니다.");
-      return;
+      alert('로그인이 필요합니다.')
+      return
     }
 
-    // 필수값 체크는 그대로
     if (!formProduct.productName) {
-      alert("상품명을 입력해 주세요.");
-      return;
+      alert('상품명을 입력해 주세요.')
+      return
     }
     if (!formProduct.baseCategoryId) {
-      alert("카테고리를 선택해 주세요.");
-      return;
+      alert('카테고리를 선택해 주세요.')
+      return
     }
     if (!formProduct.unitName) {
-      alert("규격(단위)을 입력해 주세요.");
-      return;
+      alert('규격(단위)을 입력해 주세요.')
+      return
     }
     if (!formProduct.price) {
-      alert("가격을 입력해 주세요.");
-      return;
+      alert('가격을 입력해 주세요.')
+      return
     }
 
     try {
-      // 1) 대표 이미지 업로드 (있으면)
-      let mainImageUrl = editingTarget?.mainImage || null;
+      // 1) 대표 이미지 업로드
+      let mainImageUrl = editingTarget?.mainImage || null
 
       if (imageFile) {
-        mainImageUrl = await uploadImageFile(imageFile); // 🔥 76번 서버 호출
+        mainImageUrl = await uploadImageFile(imageFile)
       }
 
-      // 2) 상세 이미지 업로드 (여러장)
-      const descriptionImageUrls = [];
+      // 2) 상세 이미지 업로드
+      const descriptionImageUrls = []
       if (detailImages && detailImages.length > 0) {
         for (const file of detailImages) {
-          const url = await uploadImageFile(file); // 🔥 76번 서버 호출 반복
-          if (url) descriptionImageUrls.push(url);
+          const url = await uploadImageFile(file)
+          if (url) descriptionImageUrls.push(url)
         }
       }
 
-      // 3) 이제는 파일 대신 "URL + 나머지 데이터" 를 JSON으로 백엔드에 보냄
+      // 3) JSON payload
       const payload = {
         productName: formProduct.productName,
         baseCategoryId: formProduct.baseCategoryId,
-        grade: formProduct.grade || "",
+        grade: formProduct.grade || '',
         unitName: formProduct.unitName,
         price: Number(formProduct.price),
         stockQty: Number(formProduct.stockQty || 0),
-        summary: formProduct.summary || "",
-        detailDesc: formProduct.detailDesc || "",
-        origin: formProduct.origin || "",
-        harvestDate: formProduct.harvestDate || "",
-        expireDate: formProduct.expireDate || "",
-        mainImageUrl,              // 🔥 대표 이미지 URL
-        descriptionImageUrls,      // 🔥 상세 이미지 URL 배열
-      };
+        summary: formProduct.summary || '',
+        detailDesc: formProduct.detailDesc || '',
+        origin: formProduct.origin || '',
+        harvestDate: formProduct.harvestDate || '',
+        expireDate: formProduct.expireDate || '',
+        mainImageUrl,
+        descriptionImageUrls,
+      }
 
-      let res;
+      let res
 
-      if (modalMode === "create") {
-        // ====================
+      if (modalMode === 'create') {
         // 신규 등록
-        // ====================
-        res = await axios.post(
-          `${API_BASE}/api/producer/products`,
-          payload,
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: token.startsWith("Bearer ")
-                ? token
-                : `Bearer ${token}`,
-            },
-          }
-        );
+        res = await axios.post(`${API_BASE}/api/producer/products`, payload, {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: token.startsWith('Bearer ')
+              ? token
+              : `Bearer ${token}`,
+          },
+        })
 
-        alert("상품이 등록되었습니다.");
+        alert('상품이 등록되었습니다.')
 
         if (res.data) {
-          setProducts((prev) => [...prev, res.data]);
+          setProducts((prev) => [...prev, res.data])
         }
-      } else if (modalMode === "edit" && editingTarget) {
-        // ====================
+      } else if (modalMode === 'edit' && editingTarget) {
         // 수정
-        // ====================
         res = await axios.patch(
           `${API_BASE}/api/producer/products/${editingTarget.productId}`,
           payload,
           {
             headers: {
-              "Content-Type": "application/json",
-              Authorization: token.startsWith("Bearer ")
+              'Content-Type': 'application/json',
+              Authorization: token.startsWith('Bearer ')
                 ? token
                 : `Bearer ${token}`,
             },
-          }
-        );
+          },
+        )
 
-        alert("상품 정보가 수정되었습니다.");
+        alert('상품 정보가 수정되었습니다.')
 
         if (res.data) {
-          const updated = res.data;
+          const updated = res.data
           setProducts((prev) =>
             prev.map((p) =>
               p.productId === updated.productId
@@ -481,18 +471,18 @@ export default function ProducerProductsPage() {
                     stockQty: updated.stockQty,
                     status: updated.status ?? p.status,
                   }
-                : p
-            )
-          );
+                : p,
+            ),
+          )
         }
       }
 
-      closeModal();
+      closeModal()
     } catch (err) {
-      console.error("상품 등록/수정 에러:", err);
-      alert(err.message || "상품을 저장하는 중 오류가 발생했습니다.");
+      console.error('상품 등록/수정 에러:', err)
+      alert(err.message || '상품을 저장하는 중 오류가 발생했습니다.')
     }
-  };
+  }
 
   // =========================
   // 렌더링
@@ -574,7 +564,10 @@ export default function ProducerProductsPage() {
                     <StatusCircle status={p.status}>{p.status}</StatusCircle>
                   </td>
                   <td>
-                    <EditCircleButton type="button" onClick={() => openEditModal(p)}>
+                    <EditCircleButton
+                      type="button"
+                      onClick={() => openEditModal(p)}
+                    >
                       수정
                     </EditCircleButton>
                   </td>
@@ -730,7 +723,7 @@ export default function ProducerProductsPage() {
                   </ButtonGroup>
                 </FormRow>
 
-                {/* 규격(단위) 선택 + 기타 */}
+                {/* 규격(단위) */}
                 <FormRow>
                   <FormLabel>규격(단위)</FormLabel>
                   <ButtonGroup>
@@ -748,7 +741,6 @@ export default function ProducerProductsPage() {
                       </OptionButton>
                     ))}
 
-                    {/* 기타 버튼 */}
                     <OptionButton
                       type="button"
                       $active={isUnitCustom}
@@ -774,7 +766,7 @@ export default function ProducerProductsPage() {
                   )}
                 </FormRow>
 
-                {/* 가격 / 재고 */}
+                {/* 가격 */}
                 <FormRow>
                   <FormLabel>가격</FormLabel>
                   <TextInput
@@ -788,6 +780,7 @@ export default function ProducerProductsPage() {
                   />
                 </FormRow>
 
+                {/* 재고 */}
                 <FormRow>
                   <FormLabel>재고</FormLabel>
                   <TextInput
@@ -805,43 +798,43 @@ export default function ProducerProductsPage() {
                 <FormRow>
                   <FormLabel>설명 키워드 선택</FormLabel>
 
-                  {KEYWORD_GROUPS.map((group) => (
-                    <div key={group.group} style={{ marginBottom: "10px" }}>
-                      
-                      {/* 그룹명 */}
-                      <div style={{
-                        fontSize: "12px",
-                        fontWeight: "600",
-                        color: "#4a4a4a",
-                        marginBottom: "6px"
-                      }}>
-                        {group.group}
-                      </div>
+                  <KeywordGrid>
+                    {KEYWORD_GROUPS.map((group) => (
+                      <KeywordGroup key={group.group}>
+                        <KeywordGroupTitle>{group.group}</KeywordGroupTitle>
 
-                      <ButtonGroup>
-                        {group.items.map((k) => (
-                          <OptionButton
-                            key={k.code}
-                            type="button"
-                            $active={selectedKeywords.includes(k.code)}
-                            onClick={() => {
-                              setSelectedKeywords(prev =>
-                                prev.includes(k.code)
-                                  ? prev.filter(c => c !== k.code)
-                                  : [...prev, k.code]
-                              );
-                            }}
-                          >
-                            {k.label}
-                          </OptionButton>
-                        ))}
-                      </ButtonGroup>
-                    </div>
-                  ))}
+                        <KeywordButtonsRow>
+                          {group.items.map((k) => (
+                            <KeywordButton
+                              key={k.code}
+                              type="button"
+                              $active={selectedKeywords.includes(k.code)}
+                              onClick={() => {
+                                setSelectedKeywords((prev) =>
+                                  prev.includes(k.code)
+                                    ? prev.filter((c) => c !== k.code)
+                                    : [...prev, k.code]
+                                );
+                              }}
+                            >
+                              {k.label}
+                            </KeywordButton>
+                          ))}
+                        </KeywordButtonsRow>
+                      </KeywordGroup>
+                    ))}
+                  </KeywordGrid>
 
                   <SecondaryButton
                     type="button"
-                    style={{ marginTop: "6px" }}
+                    style={{
+                      marginTop: "14px",
+                      width: "100%",
+                      justifyContent: "center",
+                      padding: "12px 18px",
+                      fontSize: "15px",
+                      borderRadius: "12px",
+                    }}
                     onClick={() => {
                       const templates = {
                         // 신선도·수확
@@ -852,6 +845,7 @@ export default function ProducerProductsPage() {
                         DIRECT_FROM_FARM: "산지에서 바로 보내 유통 단계를 줄이고 신선함과 가성비를 모두 챙겼습니다.",
                         NO_PESTICIDE:     "화학 농약 사용을 최소화한 재배 방식으로 안심하고 드실 수 있습니다.",
                         ORGANIC:          "인증 기준에 맞춰 재배한 유기농 농산물로 건강한 한 끼를 준비해 보세요.",
+                        FIELD_GROWN:      "햇볕과 바람을 그대로 받는 노지 재배로 건강한 맛을 살렸습니다.",
 
                         // 맛·식감
                         SWEET_TASTE:  "높은 당도로 한입 베어 물면 달콤한 맛이 입안 가득 퍼집니다.",
@@ -863,6 +857,7 @@ export default function ProducerProductsPage() {
                         FOR_SALAD:    "씻어서 바로 사용하기 좋아 샐러드·피클 등 간편 요리에 제격입니다.",
                         FOR_SNACK:    "손에 집기 좋은 크기로 간식이나 도시락, 간단한 주전부리로 활용하기 좋습니다.",
                         FOR_COOK:     "구이, 볶음, 찜 등 다양한 조리에 두루 잘 어울리는 만능 재료입니다.",
+                        FOR_JUICE:    "착즙 주스나 스무디로 활용하기 좋아 상큼한 음료로 즐기기 좋습니다.",
 
                         // 보관·선물
                         STORAGE_COOL: "구매 후 냉장 보관하시면 더 오래 신선하게 즐기실 수 있습니다.",
@@ -871,7 +866,7 @@ export default function ProducerProductsPage() {
                       };
 
                       let result = selectedKeywords
-                        .map(code => templates[code])
+                        .map((code) => templates[code])
                         .filter(Boolean)
                         .join("\n");
 
@@ -886,7 +881,7 @@ export default function ProducerProductsPage() {
                   </SecondaryButton>
                 </FormRow>
 
-                {/* ✅ 여기 상세 설명 필드 다시 추가 */}
+                {/* 상세 설명 */}
                 <FormRow>
                   <FormLabel>상세 설명</FormLabel>
                   <TextArea
@@ -905,7 +900,9 @@ export default function ProducerProductsPage() {
                   <TextInput
                     type="text"
                     value={formProduct.origin}
-                    onChange={(e) => handleFormChange('origin', e.target.value)}
+                    onChange={(e) =>
+                      handleFormChange('origin', e.target.value)
+                    }
                     placeholder="예) 경북 영주"
                   />
                 </FormRow>
@@ -916,7 +913,9 @@ export default function ProducerProductsPage() {
                   <TextInput
                     type="date"
                     value={formProduct.harvestDate}
-                    onChange={(e) => handleFormChange('harvestDate', e.target.value)}
+                    onChange={(e) =>
+                      handleFormChange('harvestDate', e.target.value)
+                    }
                   />
                 </FormRow>
 
@@ -926,7 +925,9 @@ export default function ProducerProductsPage() {
                   <TextInput
                     type="date"
                     value={formProduct.expireDate}
-                    onChange={(e) => handleFormChange('expireDate', e.target.value)}
+                    onChange={(e) =>
+                      handleFormChange('expireDate', e.target.value)
+                    }
                   />
                 </FormRow>
 
@@ -975,7 +976,7 @@ const HeaderRight = styled.div`
 const SectionCard = styled.section`
   background: #ffffff;
   border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04)
   padding: 18px 20px 20px;
   margin-bottom: 16px;
 `
@@ -1084,15 +1085,16 @@ const StockList = styled.ul`
 
 const BaseButton = styled.button`
   border-radius: 999px;
-  padding: 6px 14px;
+  padding: 9px 18px;
   border: none;
-  font-size: 13px;
+  font-size: 14px;
   cursor: pointer;
   transition: all 0.15s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 4px;
+  min-height: 40px;
 
   &:disabled {
     opacity: 0.6;
@@ -1134,7 +1136,6 @@ const SaveCircleButton = styled(BaseButton)`
   }
 `
 
-// ★ 동그란 수정 버튼 (흰색 테두리)
 const EditCircleButton = styled(BaseButton)`
   width: 44px;
   height: 44px;
@@ -1152,7 +1153,6 @@ const EditCircleButton = styled(BaseButton)`
   }
 `
 
-// ★ 삭제 버튼
 const DeleteCircleButton = styled(BaseButton)`
   width: 44px;
   height: 44px;
@@ -1172,7 +1172,8 @@ const DeleteCircleButton = styled(BaseButton)`
 const ModalOverlay = styled.div`
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.35);
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(4px);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -1180,46 +1181,62 @@ const ModalOverlay = styled.div`
 `
 
 const ModalContent = styled.div`
-  width: 520px;
-  max-height: 80vh;
-  background: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.18);
+  width: min(860px, 94vw);
+  max-height: 88vh;
+  background: #f5faf6;
+  border-radius: 20px;
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.35);
   display: flex;
   flex-direction: column;
   overflow: hidden;
 `
 
 const ModalHeader = styled.div`
-  padding: 16px 20px 10px;
+  padding: 18px 24px 14px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #eceff4;
+  background: linear-gradient(135deg, #4caf50, #66bb6a);
+  color: #ffffff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 `
 
 const ModalTitle = styled.h3`
   margin: 0;
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #ffffff;
 `
 
 const ModalCloseButton = styled.button`
   border: none;
-  background: transparent;
+  background: rgba(255, 255, 255, 0.16);
   font-size: 22px;
   cursor: pointer;
-  color: #666;
+  color: #ffffff;
   line-height: 1;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   &:hover {
-    color: #111;
+    background: rgba(255, 255, 255, 0.26);
   }
 `
 
 const ModalBody = styled.div`
-  padding: 14px 20px 18px;
+  padding: 18px 22px 20px;
   overflow-y: auto;
+  background: radial-gradient(
+    circle at top left,
+    #e8f5e9 0,
+    #f5faf6 40%,
+    #ffffff 100%
+  );
 `
 
 const FormRow = styled.div`
@@ -1227,40 +1244,51 @@ const FormRow = styled.div`
   display: flex;
   flex-direction: column;
   gap: 6px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #e3e8ef;
+  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.06);
 `
 
 const FormLabel = styled.label`
-  font-size: 13px;
-  font-weight: 600;
-  color: #555;
+  font-size: 14px;
+  font-weight: 700;
+  color: #4b5563;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 `
 
 const TextInput = styled.input`
-  padding: 8px 10px;
-  border-radius: 8px;
-  border: 1px solid #d0d7e2;
-  font-size: 13px;
+  padding: 11px 13px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  font-size: 15px;
   box-sizing: border-box;
+  background: #f9fafb;
 
   &:focus {
     outline: none;
-    border-color: #4caf50;
-    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.14);
+    border-color: #43a047;
+    box-shadow: 0 0 0 2px rgba(67, 160, 71, 0.18);
+    background: #ffffff;
   }
 `
 
 const TextArea = styled.textarea`
-  padding: 10px 12px;
-  border-radius: 8px;
-  border: 1px solid #d0d7e2;
-  font-size: 13px;
+  padding: 11px 13px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  font-size: 15px;
   resize: vertical;
-  min-height: 120px;
+  min-height: 140px;
+  background: #f9fafb;
 
   &:focus {
     outline: none;
-    border-color: #4caf50;
-    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.14);
+    border-color: #43a047;
+    box-shadow: 0 0 0 2px rgba(67, 160, 71, 0.18);
+    background: #ffffff;
   }
 `
 
@@ -1271,40 +1299,119 @@ const ButtonGroup = styled.div`
 `
 
 const OptionButton = styled.button`
-  padding: 6px 10px;
-  font-size: 12px;
-  border-radius: 999px;
-  border: 1px solid ${({ $active }) => ($active ? '#4caf50' : '#d0d7e2')};
-  background: ${({ $active }) => ($active ? '#e9f7ec' : '#f8f9fc')};
-  color: ${({ $active }) => ($active ? '#2e7d32' : '#333')};
+  padding: 10px 16px;
+  min-height: 40px;
+  font-size: 14px;
+
+  border-radius: 10px;
+  border: 1px solid ${({ $active }) => ($active ? '#43a047' : '#d0d7e2')};
+  background: ${({ $active }) => ($active ? '#e1f5e5' : '#f8fafc')};
+  color: ${({ $active }) => ($active ? '#1b5e20' : '#374151')};
   cursor: pointer;
-  transition: all 0.15s ease;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  transition: all 0.12s ease-out;
 
   &:hover {
-    background: ${({ $active }) => ($active ? '#dff3e5' : '#eef1fa')};
+    background: ${({ $active }) => ($active ? '#d4f0d9' : '#eef2ff')};
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: none;
   }
 `
+
+const KeywordGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 24px;
+  align-items: flex-start;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+`
+
+const KeywordGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+`
+
+const KeywordGroupTitle = styled.div`
+  font-size: 13px;
+  font-weight: 600;
+  color: #4a4a4a;
+  margin-bottom: 4px;
+`
+
+const KeywordButtonsRow = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+`;
+
+const KeywordButton = styled.button`
+  flex: 0 0 calc(50% - 4px);           /* ⭐ 한 줄에 2개, 같은 넓이 */
+  padding: 10px 14px;
+  min-height: 40px;
+  font-size: 14px;
+  border-radius: 10px;
+
+  border: 1px solid ${({ $active }) => ($active ? '#43a047' : '#d0d7e2')};
+  background: ${({ $active }) => ($active ? '#e1f5e5' : '#f8fafc')};
+  color: ${({ $active }) => ($active ? '#1b5e20' : '#374151')};
+
+  cursor: pointer;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  transition: all 0.12s ease-out;
+
+  &:hover {
+    background: ${({ $active }) => ($active ? '#d4f0d9' : '#eef2ff')};
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: none;
+  }
+`;
 
 const ImagePreviewWrapper = styled.div`
   margin-top: 8px;
 
   img {
-    width: 160px;
-    border-radius: 10px;
+    width: 190px;
+    border-radius: 12px;
     border: 1px solid #e0e6f0;
     object-fit: cover;
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.15);
   }
 `
 
 const HelperText = styled.p`
   font-size: 12px;
-  color: #888;
+  color: #6b7280;
   margin-top: 4px;
 `
 
 const ModalFooter = styled.div`
-  margin-top: 20px;
+  margin-top: 18px;
+  padding-top: 12px;
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+  border-top: 1px solid #e2e8f0;
+  background: linear-gradient(to top, #f8fafc, transparent);
 `

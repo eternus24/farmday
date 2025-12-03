@@ -486,31 +486,32 @@
     <!-- ======================= -->
     <!-- 상품관리 - 내 상품 목록 -->
     <!-- ======================= -->
-        <select id="findProductItemsByProducerId"
+    <select id="findProductItemsByProducerId"
         parameterType="map"
         resultType="com.farmday.producer.dto.ProducerProductItemDto">
-        SELECT
-            p.product_id        AS productId,
-            pd.detail_id        AS detailId,
-            p.name              AS productName,
-            p.base_category_id  AS baseCategoryId,  <!-- ★ 추가 -->
-            pd.unit_name        AS unitName,
-            pd.price            AS price,
-            pd.stock_qty        AS stockQty,
-            p.status            AS status,
-            pd.updated_date     AS updatedDate
-        FROM PRODUCT p
-        JOIN PRODUCT_DETAIL pd
-          ON p.product_id = pd.product_id
-        WHERE p.producer_id = #{producerId}
-        <if test="status != null and status != ''">
-          AND p.status = #{status}
-        </if>
-        ORDER BY
-            p.created_date DESC,
-            p.product_id DESC,
-            pd.detail_id ASC
-    </select>
+      SELECT
+          p.product_id        AS productId,
+          pd.detail_id        AS detailId,
+          p.name              AS productName,
+          p.base_category_id  AS baseCategoryId,  <!-- 그대로 -->
+          pd.grade            AS grade,           <!-- ★ 추가 -->
+          pd.unit_name        AS unitName,
+          pd.price            AS price,
+          pd.stock_qty        AS stockQty,
+          p.status            AS status,
+          pd.updated_date     AS updatedDate
+      FROM PRODUCT p
+      JOIN PRODUCT_DETAIL pd
+        ON p.product_id = pd.product_id
+      WHERE p.producer_id = #{producerId}
+      <if test="status != null and status != ''">
+        AND p.status = #{status}
+      </if>
+      ORDER BY
+          p.created_date DESC,
+          p.product_id DESC,
+          pd.detail_id ASC
+  </select>
 
     <!-- ======================= -->
     <!-- 상품관리 - 옵션 수정    -->
@@ -724,14 +725,15 @@
 
   <!-- 등록/수정 후 한 건 조회 -->
   <select id="findProductItemByProductIdForProducer"
-          parameterType="map"
-          resultType="com.farmday.producer.dto.ProducerProductItemDto">
+        parameterType="map"
+        resultType="com.farmday.producer.dto.ProducerProductItemDto">
       <![CDATA[
       SELECT
           p.product_id        AS productId,
           pd.detail_id        AS detailId,
           p.name              AS productName,
-          p.base_category_id  AS baseCategoryId,  -- ★ 추가
+          p.base_category_id  AS baseCategoryId,  -- 그대로
+          pd.grade            AS grade,           -- ★ 추가
           pd.unit_name        AS unitName,
           pd.price            AS price,
           pd.stock_qty        AS stockQty,
@@ -1005,14 +1007,12 @@
   </select>
 
   <!-- 주문에 속한 품목 중 아직 배송완료가 아닌 개수 -->
-  <select id="countUndeliveredItemsByOrderId"
-          parameterType="long"
-          resultType="int">
+  <select id="countUndeliveredItemsByOrderId" parameterType="long" resultType="int">
     <![CDATA[
     SELECT COUNT(*)
     FROM ORDERS_ITEM oi
     JOIN DELIVERY d
-      ON oi.order_item_id = d.order_item_id   -- ⚠️ 실제 FK에 맞게 수정
+      ON oi.order_item_id = d.order_item_id
     WHERE oi.order_id = #{orderId}
       AND d.delivery_status <> '배송완료'
     ]]>

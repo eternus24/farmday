@@ -256,3 +256,39 @@
     background-color: white;
     font-weight: 400;
 }
+/* =========================
+   마이페이지 내 정보 - 주소 영역
+   (기존 디자인과 톤 맞추기)
+   ========================= */
+.addr-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 주소 입력창: 그냥 form-control 느낌 유지, 폭만 제어 */
+.addr-input {
+  flex: 1;
+}
+
+/* 주소 검색 버튼: 네모 + 살짝 둥글, 기존 버튼 톤 맞춤 */
+.addr-search-btn {
+  min-width: 90px;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 5px;              /* 과하게 둥글지 않게 */
+  border: 1px solid #ffb524;       /* order-cancel-btn 과 비슷한 노랑 톤 */
+  background-color: #ffffff;
+  color: #75af09;                  /* 기존 초록 텍스트 색상 계열 */
+  font-size: 10pt;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.addr-search-btn:hover {
+  background-color: #ffb524;
+  border-color: #ffb524;
+  color: #ffffff;
+}

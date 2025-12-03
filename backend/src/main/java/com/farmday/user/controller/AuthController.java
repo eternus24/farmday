@@ -5,6 +5,8 @@ import com.farmday.producer.service.ProducerService;
 import com.farmday.security.jwt.JwtTokenProvider;
 import com.farmday.user.domain.User;
 import com.farmday.user.domain.UserToken;
+import com.farmday.user.dto.MyInfoResponseDto;
+import com.farmday.user.dto.MyInfoUpdateRequestDto;
 import com.farmday.user.service.UserService;
 import com.farmday.user.service.UserTokenService;
 import com.farmday.verification.domain.EmailVerification;
@@ -490,6 +492,34 @@ public class AuthController {
     public ResponseEntity<?> reset(@RequestBody ResetPasswordDto dto) {
         userService.resetPassword(dto.getToken(), dto.getNewPassword());
         return ResponseEntity.ok("비밀번호가 변경되었습니다.");
+    }
+
+    // ✅ 내 정보 조회
+    @GetMapping("/user-info")
+    public ResponseEntity<MyInfoResponseDto> getMyInfo(
+            @RequestParam("user_id") String userId
+    ) {
+        MyInfoResponseDto dto = userService.getMyInfo(userId);
+        if (dto == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(dto);
+    }
+
+    // ✅ 내 정보 수정
+    @PutMapping("/user-info/{userId}")
+    public ResponseEntity<Void> updateMyInfo(
+            @PathVariable("userId") String userId,
+            @RequestBody MyInfoUpdateRequestDto request
+    ) {
+        // pathVariable로 들어온 userId를 DTO에 세팅
+        request.setUserId(userId);
+
+        // ⚠️ 보안적으로는 여기서도 "로그인한 유저 == userId" 체크하는 게 좋음.
+        //     (SecurityContext에서 꺼내서 비교)
+
+        userService.updateMyInfo(request);
+        return ResponseEntity.ok().build();
     }
 
     // ==========================

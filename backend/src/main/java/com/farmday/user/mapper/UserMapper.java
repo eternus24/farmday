@@ -1,6 +1,8 @@
 package com.farmday.user.mapper;
 
 import com.farmday.user.domain.User;
+import com.farmday.user.dto.MyInfoResponseDto;
+import com.farmday.user.dto.MyInfoUpdateRequestDto;
 
 import java.util.List;
 import java.util.Map;
@@ -56,5 +58,11 @@ public interface UserMapper {
 
     // 비밀번호 변경용 (user_no 기준으로 하는 걸 추천)
     int updatePasswordByUserNo(@Param("userNo") Long userNo, @Param("userPwd") String encodedPwd);
+
+    // 마이페이지 - 내 정보 조회
+    MyInfoResponseDto findMyInfoByUserId(String userId);
+
+    // 마이페이지 - 내 정보 수정
+    int updateMyInfo(MyInfoUpdateRequestDto request);
 
 }

@@ -11,9 +11,11 @@ public class MembershipScheduler {
 
     private final MembershipCouponService membershipCouponService;
 
-    // 매일 오전 10시: 생일 쿠폰 발급
-    @Scheduled(cron = "0 0 10 * * ?")
+    // 매일 오전 4시: 생일 쿠폰 발급
+    // @Scheduled(cron = "0 0 04 * * ?")
+    @Scheduled(cron = "0 0/30 * * * ?")
     public void runBirthdayCouponJob() {
+        System.out.println(">>> [Scheduler] Birthday job started");
         membershipCouponService.issueBirthdayCouponsForToday();
     }
 

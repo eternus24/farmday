@@ -55,7 +55,6 @@ import { SuccessPage } from './pages/orders/Success'
 import { FailPage } from './pages/orders/Fail'
 import MyPage from './pages/mypage/mypage'
 import ScrollToTop from "./components/common/ScrollToTop";
-import Membership from "./pages/mypage/Membership";
 import OrderDelivery from "./pages/mypage/OrderDelivery";
 import ReviewWrite from "./components/review/ReviewWrite";
 
@@ -88,7 +87,6 @@ function parseJwt(token) {
 }
 
 // 앱 시작 시 한 번만 localStorage 보고 초기 로그인 상태 계산
-// 앱 시작 시 한 번만 localStorage 보고 초기 로그인 상태 계산
 function getInitialAuth() {
   let token = localStorage.getItem("accessToken");
 
@@ -96,6 +94,7 @@ function getInitialAuth() {
   let userNo = null;
   let photo = null;
   let userName = null;
+  let roleFromLoginUser = null;
 
   const loginUserStr = localStorage.getItem("loginUser");
   if (loginUserStr) {
@@ -104,13 +103,14 @@ function getInitialAuth() {
       userNo = user.userNo ?? null;
       photo = user.photo || null;
       userName = user.name || user.username || user.userId || null;
+      roleFromLoginUser = user.role || null;
     } catch (e) {
       console.error("[App] loginUser 파싱 실패:", e);
     }
   }
 
   if (!token) {
-    return { loggedIn: false, name: "손님", photo, userNo };
+    return { loggedIn: false, name: "손님", photo, userNo, role: null };
   }
 
   if (token.startsWith("Bearer ")) {
@@ -119,7 +119,7 @@ function getInitialAuth() {
 
   const payload = parseJwt(token);
   if (!payload) {
-    return { loggedIn: false, name: "손님", photo, userNo };
+    return { loggedIn: false, name: "손님", photo, userNo, role: null };
   }
 
   const nameFromToken =
@@ -128,11 +128,21 @@ function getInitialAuth() {
   // 🔹 loginUser.name 이 있으면 그걸 우선, 없으면 토큰에서
   const finalName = userName || nameFromToken || "손님";
 
+  // 🔹 JWT 안에서 role 꺼내보기 (백엔드 구현에 따라 다를 수 있음)
+  const roleFromToken =
+    payload.role ||
+    (Array.isArray(payload.roles) ? payload.roles[0] : null) ||
+    (Array.isArray(payload.authorities) ? payload.authorities[0] : null) ||
+    (Array.isArray(payload.auth) ? payload.auth[0] : null);
+
+  const finalRole = roleFromLoginUser || roleFromToken || null;
+
   return {
     loggedIn: true,
     name: finalName,
     photo,
     userNo,
+    role: finalRole,
   };
 }
 

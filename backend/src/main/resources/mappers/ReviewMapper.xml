@@ -41,7 +41,6 @@
         title,
         content,
         image_url AS imageUrl,
-        like_count AS likeCount,
         is_visible AS isVisible,
         created_date AS createdDate,
         updated_date AS updatedDate,
