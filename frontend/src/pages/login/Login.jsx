@@ -37,7 +37,6 @@ export default function Login() {
     navigate("/password/reset-request");
   };
 
-
   // 🔹 로그인 성공 시 공통 처리
   const handleLoginSuccess = (data) => {
     if (!data || !data.accessToken || !data.refreshToken || !data.user) {
@@ -47,7 +46,47 @@ export default function Login() {
 
     console.log("로그인 응답 data:", data);
     console.log("userNo 체크:", data?.user?.userNo);
-    console.log("role 체크:", data?.user?.role);   // ✅ 추가해서 한번 확인해봐
+    console.log("role 체크:", data?.user?.role);
+
+    // ============================
+    // ✅ 1) 차단 여부 우선 체크
+    //    (isBlocked / is_blocked / blocked 등 여러 케이스 방어)
+    // ============================
+    const rawIsBlocked =
+      data.user?.isBlocked ??
+      data.user?.is_blocked ??
+      data.user?.blocked ??
+      null;
+
+    const isBlocked =
+      rawIsBlocked === null || rawIsBlocked === undefined
+        ? "N"
+        : String(rawIsBlocked).toUpperCase(); // 'Y' / 'N' / true / false 등 방어
+
+    if (isBlocked === "Y") {
+      const blockReason =
+        data.user?.blockReason ?? data.user?.block_reason ?? "";
+
+      let msg = "차단된 계정입니다. 관리자에게 문의해 주세요.";
+      if (blockReason) {
+        msg += ` (사유: ${blockReason})`;
+      }
+
+      setMessage(msg);
+
+      // 혹시 이전에 뭐가 저장돼 있었으면 방어 차원에서 삭제
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("loginUser");
+      localStorage.removeItem("loginAvatar");
+
+      // ✅ 여기서 바로 종료 → 토큰/로그인 상태 절대 세팅 안 함
+      return;
+    }
+
+    // ============================
+    // ✅ 2) 정상 계정만 토큰/유저 정보 저장
+    // ============================
 
     // 토큰 저장
     localStorage.setItem("accessToken", data.accessToken);
@@ -76,7 +115,7 @@ export default function Login() {
       name: data.user?.name || "회원",
       photo: finalPhoto,
       userNo: data.user?.userNo,
-      role, // ⭐⭐ 여기 추가
+      role,
       userId: data.user?.userId,
     });
 
@@ -85,11 +124,7 @@ export default function Login() {
   };
 
   const openEmailVerifyPopup = () => {
-    window.open(
-      "/pre-signup",
-      "emailVerifyPopup",
-      "width=500,height=600"
-    );
+    window.open("/pre-signup", "emailVerifyPopup", "width=500,height=600");
   };
 
   const onChange = (e) => {
@@ -128,6 +163,7 @@ export default function Login() {
         if (res.status === 401) {
           setMessage("아이디 또는 비밀번호가 올바르지 않습니다.");
         } else if (res.status === 403) {
+          // ✅ 서버에서 403을 주는 경우 (차단, 권한 문제 등)
           setMessage("접근이 차단된 계정입니다.");
         } else {
           setMessage("로그인에 실패했습니다. 다시 시도해 주세요.");
@@ -143,10 +179,22 @@ export default function Login() {
 
   const GoogleIcon = () => (
     <svg width="18" height="18" viewBox="0 0 48 48">
-      <path fill="#EA4335" d="M24 9.5c3.9 0 7.1 1.6 9.3 3.8l6.9-6.9C35.9 2.9 30.2 0 24 0 14.6 0 6.6 5.4 2.6 13.3l8.1 6.3C12.6 14 17.9 9.5 24 9.5z"/>
-      <path fill="#FBBC05" d="M46.5 24c0-1.5-.1-2.5-.4-3.7H24v7.5h12.8c-.5 3-2.1 5.6-4.6 7.4l7.1 5.6C43.5 37.3 46.5 31.2 46.5 24z"/>
-      <path fill="#34A853" d="M10.7 28.9c-.5-1.5-.8-3.1-.8-4.9s.3-3.4.8-4.9l-8.1-6.3C1.3 16.4 0 20 0 24s1.3 7.6 3.3 11.1l7.4-6.2z"/>
-      <path fill="#4285F4" d="M24 48c6.2 0 11.9-2.1 16.1-5.7l-7.1-5.6c-2 1.3-4.7 2.2-9 2.2-6.1 0-11.4-4.4-13.3-10.4l-7.4 6.2C6.6 42.6 14.6 48 24 48z"/>
+      <path
+        fill="#EA4335"
+        d="M24 9.5c3.9 0 7.1 1.6 9.3 3.8l6.9-6.9C35.9 2.9 30.2 0 24 0 14.6 0 6.6 5.4 2.6 13.3l8.1 6.3C12.6 14 17.9 9.5 24 9.5z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M46.5 24c0-1.5-.1-2.5-.4-3.7H24v7.5h12.8c-.5 3-2.1 5.6-4.6 7.4l7.1 5.6C43.5 37.3 46.5 31.2 46.5 24z"
+      />
+      <path
+        fill="#34A853"
+        d="M10.7 28.9c-.5-1.5-.8-3.1-.8-4.9s.3-3.4.8-4.9l-8.1-6.3C1.3 16.4 0 20 0 24s1.3 7.6 3.3 11.1l7.4-6.2z"
+      />
+      <path
+        fill="#4285F4"
+        d="M24 48c6.2 0 11.9-2.1 16.1-5.7l-7.1-5.6c-2 1.3-4.7 2.2-9 2.2-6.1 0-11.4-4.4-13.3-10.4l-7.4 6.2C6.6 42.6 14.6 48 24 48z"
+      />
     </svg>
   );
 
@@ -177,7 +225,7 @@ export default function Login() {
       callback: async (response) => {
         try {
           const res = await fetch(
-            "http://localhost:8080/api/auth/social/google", // 구글은 로컬에서만 테스트라면 localhost
+            "http://localhost:8080/api/auth/social/google",
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -192,7 +240,11 @@ export default function Login() {
             console.log("구글 소셜 로그인 성공:", data);
             handleLoginSuccess(data);
           } else {
-            setMessage("구글 소셜 로그인에 실패했습니다.");
+            if (res.status === 403) {
+              setMessage("접근이 차단된 계정입니다.");
+            } else {
+              setMessage("구글 소셜 로그인에 실패했습니다.");
+            }
           }
         } catch (err) {
           console.error(err);
@@ -212,7 +264,6 @@ export default function Login() {
       return;
     }
 
-    // SDK 로드됐는데 init 안 되어 있으면 여기서 초기화
     if (!window.Kakao.isInitialized()) {
       window.Kakao.init(KAKAO_JS_KEY);
     }
@@ -224,7 +275,7 @@ export default function Login() {
     }
 
     window.Kakao.Auth.login({
-      scope: "profile_nickname profile_image account_email", // 필요한 동의항목
+      scope: "profile_nickname profile_image account_email",
       success: async function (authObj) {
         try {
           const res = await fetch(
@@ -243,7 +294,11 @@ export default function Login() {
             console.log("카카오 소셜 로그인 성공:", data);
             handleLoginSuccess(data);
           } else {
-            setMessage("카카오 소셜 로그인에 실패했습니다.");
+            if (res.status === 403) {
+              setMessage("접근이 차단된 계정입니다.");
+            } else {
+              setMessage("카카오 소셜 로그인에 실패했습니다.");
+            }
           }
         } catch (err) {
           console.error(err);
@@ -485,6 +540,10 @@ const SocialButton = styled.button`
   justify-content: center;
   gap: 8px;
 
-  &:hover { background-color: #f8f9fa; }
-  &:active { transform: scale(0.98); }
+  &:hover {
+    background-color: #f8f9fa;
+  }
+  &:active {
+    transform: scale(0.98);
+  }
 `;

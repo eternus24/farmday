@@ -33,9 +33,9 @@
             last_login_at,
             created_date,
             updated_date,
-            is_blocked,
-            block_reason,
-            blocked_at
+            is_blocked         AS isBlocked, 
+            block_reason       AS blockReason,
+            blocked_at         AS blockedAt 
         FROM USERS
         WHERE userId = #{userId}
     </select>

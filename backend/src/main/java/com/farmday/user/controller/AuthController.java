@@ -208,6 +208,19 @@ public class AuthController {
         try {
             User user = userService.login(request.getUserId(), request.getPassword());
 
+            // ✅ 여기서 차단 여부 체크
+            if ("Y".equalsIgnoreCase(user.getIsBlocked())) {
+                String reason = user.getBlockReason();
+                String msg = "차단된 계정입니다. 관리자에게 문의해 주세요.";
+                if (reason != null && !reason.trim().isEmpty()) {
+                    msg += " (사유: " + reason + ")";
+                }
+
+                return ResponseEntity
+                        .status(HttpStatus.FORBIDDEN)
+                        .body(msg);
+            }
+
             userService.updateLastLogin(user.getUserNo());
 
             String accessToken = jwtTokenProvider.generateAccessToken(user);
