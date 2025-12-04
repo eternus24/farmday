@@ -35,6 +35,7 @@ import GroupDealListPage from "./pages/groupdeal/GroupDealListPage";
 import GroupDealDetailPage from "./pages/groupdeal/GroupDealDetailPage";
 import GroupDealManagePage from "./pages/groupdeal/GroupDealManagePage";
 import ProducerGroupDealCreatePage from "./pages/groupdeal/ProducerGroupDealCreatePage";
+import PricePage from "./components/price/PricePageContent";
 
 // 사용자 SHOP 관련
 import ShopMain from './pages/shop/ShopMain';
@@ -211,19 +212,21 @@ function App() {
               <Route path="/review/write/:order_item_id" element={<ReviewWrite/>}/>
 
               {/* 공동구매(소비자 + 판매자) */}
-              <Route path="/group-deals" element={<GroupDealListPage />} />
+              <Route path="/groupdeal" element={<GroupDealListPage />} />
               <Route
-                path="/group-deals/new"
+                path="/groupdeal/new"
                 element={<ProducerGroupDealCreatePage />}
               />
               <Route
-                path="/group-deals/:groupDealId"
+                path="/groupdeal/:groupDealId"
                 element={<GroupDealDetailPage />}
               />
               <Route
-                path="/producer/group-deals/:groupDealId/manage"
+                path="/producer/groupdeal/:groupDealId/manage"
                 element={<GroupDealManagePage />}
               />
+
+              <Route path="/price" element={<PricePage />} />
 
               {/* 생산자 마이페이지 */}
               <Route path="/producer" element={<ProducerLayout />}>

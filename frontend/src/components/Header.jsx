@@ -114,7 +114,7 @@ export default function Header() {
                 <NavLink to="/shop" className="nav-item nav-link">
                   상품
                 </NavLink>
-                <NavLink to="/group-deals" className="nav-item nav-link">
+                <NavLink to="/groupdeal" className="nav-item nav-link">
                   공동구매
                 </NavLink>
 

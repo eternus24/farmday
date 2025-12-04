@@ -96,7 +96,7 @@ function GroupDealListPage() {
   }, [deals, selectedCategory, sortOption]);
 
   const handleCardClick = (groupDealId) => {
-    navigate(`/group-deals/${groupDealId}`);
+    navigate(`/groupdeal/${groupDealId}`);
   };
 
   return (

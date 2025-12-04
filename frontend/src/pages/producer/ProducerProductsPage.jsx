@@ -1398,13 +1398,13 @@ const ImagePreviewWrapper = styled.div`
     object-fit: cover;
     box-shadow: 0 4px 10px rgba(15, 23, 42, 0.15);
   }
-`
+`;
 
 const HelperText = styled.p`
   font-size: 12px;
   color: #6b7280;
   margin-top: 4px;
-`
+`;
 
 const ModalFooter = styled.div`
   margin-top: 18px;
@@ -1414,4 +1414,4 @@ const ModalFooter = styled.div`
   gap: 8px;
   border-top: 1px solid #e2e8f0;
   background: linear-gradient(to top, #f8fafc, transparent);
-`
+`;

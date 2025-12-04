@@ -1,4 +1,3 @@
-// 경로: frontend/src/pages/groupdeal/GroupDealDetailPage.jsx
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
@@ -6,6 +5,7 @@ import {
   joinGroupDeal,
 } from "../../api/groupDealApi";
 import BarProgress from "./components/BarProgress";
+import GroupDealDetailTabs from "../../layouts/GroupDealDetailTabs";
 
 function formatPrice(value) {
   if (value == null) return "-";
@@ -67,7 +67,11 @@ const GroupDealDetailPage = () => {
         if (!data) {
           setError("공동구매 정보를 찾을 수 없습니다.");
         } else {
-          setDeal(data);
+          // productName 보정 (없으면 title 사용)
+          const normalized = { ...data };
+          normalized.productName = data.productName || data.title;
+
+          setDeal(normalized);
         }
       } catch (e) {
         console.error(e);
@@ -451,6 +455,11 @@ const GroupDealDetailPage = () => {
             </div>
           )}
         </div>
+      </div>
+
+      {/* 탭 컴포넌트: deal 객체(이미지 경로 포함)를 그대로 전달 */}
+      <div style={{ marginTop: 32 }}>
+        <GroupDealDetailTabs deal={deal} />
       </div>
     </div>
   );

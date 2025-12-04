@@ -1,6 +1,7 @@
 // src/pages/home/index.jsx
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom"
+import PriceTicker from "../../components/price/PriceTicker";
 
 export default function Index() {
   useEffect(() => {
@@ -66,6 +67,9 @@ export default function Index() {
         </div>
       </div>
       {/* Hero End */}
+
+      {/* ✅ 메인 상단 시세 티커 */}
+      <PriceTicker />
 
       {/* Featurs Section Start */}
       <div className="container-fluid featurs py-5">
