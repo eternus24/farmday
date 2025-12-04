@@ -1,12 +1,12 @@
 package com.farmday.review.controller;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.farmday.orders.OrdersService;
@@ -16,13 +16,14 @@ import com.farmday.review.service.ReviewService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/reviews")
+@RequestMapping("/api/reviews/")
 @CrossOrigin("*")
 public class ReviewController {
 
@@ -52,16 +53,19 @@ public class ReviewController {
     //리뷰 조회
     @GetMapping("/{productId}")
     public ResponseEntity<?> getReviews(
-        @PathVariable Long productId,
-        @RequestParam(required = false, defaultValue = "latest") String sort,
-        @RequestParam(required = false, defaultValue = "") String keyword) {
-        try{
-            List<ReviewDTO> reviews = reviewService.getReviews(productId, sort, keyword);
+            @PathVariable Long productId,
+            @RequestParam(required = false, defaultValue = "latest") String sort,
+            @RequestParam(required = false, defaultValue = "") String keyword,
+            @RequestParam(required = false) Long userNo   // ★ 추가
+    ) {
+        try {
+            List<ReviewDTO> reviews = reviewService.getReviews(productId, sort, keyword, userNo);
             return ResponseEntity.ok(reviews);
-        }catch (Exception e) {
-            return ResponseEntity.badRequest().body("리뷰 조회 실패" + e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("리뷰 조회 실패 : " + e.getMessage());
         }
     }
+
     
     // 리뷰 삭제
     @DeleteMapping("/{reviewId}")
@@ -78,12 +82,35 @@ public class ReviewController {
     @PatchMapping("/{reviewId}/reply")
     public ResponseEntity<?> updateReply(
             @PathVariable Long reviewId,
-            @RequestBody ReviewDTO dto
-    ) {
+            @RequestBody Map<String, String> body) {
+
+        String reply = body.get("reply");
+        if (reply == null) {
+            return ResponseEntity.badRequest().body("reply 값이 필요합니다.");
+        }
+
+        ReviewDTO dto = new ReviewDTO();
         dto.setReviewId(reviewId);
+        dto.setReply(reply);
+
         reviewService.updateReply(dto);
-        return ResponseEntity.ok("판매자 답글 저장 완료");
+
+        return ResponseEntity.ok("답글이 등록되었습니다.");
     }
 
+    //전체 리뷰 조회
+    @GetMapping("/store/{storeId}")
+    public List<ReviewDTO> getStoreReviews(@PathVariable Long storeId){
+        return reviewService.getStoreReviews(storeId);
+    }
+
+    @PostMapping("/{reviewId}/like")
+    public ResponseEntity<?> toggleLike(
+            @PathVariable Long reviewId,
+            @RequestParam Long userNo
+    ) {
+        Map<String, Object> result = reviewService.toggleLike(reviewId, userNo);
+        return ResponseEntity.ok(result);
+    }
     
 }

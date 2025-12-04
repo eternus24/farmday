@@ -5,11 +5,13 @@ import { deleteQuestion } from "../../assets/js/api/QuestionApi";
 import QnaEdit from "./QnaEdit";
 
 const QnaList = ({ qnaList }) => {
-  
+
   const { auth } = useContext(AuthContext);
-  const loginId = auth?.name || localStorage.getItem("userId"); 
   const [openId, setOpenId] = useState(null);
   const [editModal, setEditModal] = useState(null);
+
+  const loginUser = JSON.parse(localStorage.getItem("loginUser"));
+  const loginUserId = loginUser?.userId;
 
   const toggleOpen = (id) => {
     setOpenId(openId === id ? null : id);
@@ -24,121 +26,110 @@ const QnaList = ({ qnaList }) => {
 
     try {
       await deleteQuestion(id);
-      alert("QnA 문의 삭제 완료!");
+      alert("QnA 삭제 완료");
       window.location.reload();
     } catch(err) {
-      console.error("QnA 문의 삭제 실패:", err);
-      alert("QnA 문의 삭제 실패");
+      alert("QnA 삭제 실패");
     }
   };
 
   return (
-    <div className="qna-list-modern">
-      
-      {qnaList.length === 0 && (
-        <div className="qna-empty-state">
-          <div className="empty-icon">💬</div>
-          <p>현재 등록된 문의가 없습니다.</p>
-        </div>
-      )}
+    <div className="qna-table-wrapper">
 
+      {/* 테이블 헤더 */}
+      <div className="qna-table-header">
+        <div className="head-state">상태</div>
+        <div className="head-title">제목</div>
+        <div className="head-writer">작성자</div>
+        <div className="head-date">작성일</div>
+      </div>
+
+      {/* 리스트 */}
       {qnaList.map((q) => {
         const canView =
           !q.isPrivate ||
-          String(q.writerUserId) === String(loginId) ||
+          String(q.writerUserId) === String(loginUserId) ||
           auth.role === "ADMIN" ||
           auth.role === "PRODUCER";
 
+        const isOpen = openId === q.qnaId;
+
         return (
-          <div key={q.qnaId} className="qna-card-modern">
-            
-            {/* 카드 헤더 */}
-            <div className="qna-card-header" onClick={() => toggleOpen(q.qnaId)}>
-              
-              {/* 왼쪽: 상태 + 카테고리 + 제목 */}
-              <div className="qna-card-left">
-                {/* 답변 상태 뱃지 */}
-                <span
-                  className={`qna-status-badge ${
-                    q.status === "ANSWERED" ? "answered" : "waiting"
-                  }`}
-                >
-                  {q.status === "ANSWERED" ? "답변완료" : "미답변"}
-                </span>
+          <div key={q.qnaId} className="qna-row">
 
-                {/* 카테고리 뱃지 */}
-                <span className="qna-category-badge">
-                  {q.qnaCategory || "기타문의"}
-                </span>
-
-                {/* 제목 */}
-                <div className="qna-card-title">
-                  {!canView ? (
-                    <>
-                      <span className="lock-icon">🔒</span>
-                      <span>비밀글입니다</span>
-                    </>
-                  ) : (
-                    q.title
-                  )}
-                </div>
+            {/* 상단 요약 줄 */}
+            <div
+              className="qna-summary-row"
+              onClick={() => toggleOpen(q.qnaId)}
+            >
+              <div>
+                {q.status === "ANSWERED" ? (
+                  <span className="state-done">답변완료</span>
+                ) : (
+                  <span className="state-wait">미답변</span>
+                )}
               </div>
 
-              <div className="qna-card-right">
-                <div className="qna-card-meta">
-                  <span className="qna-writer">
-                    {q.writerUserId?.replace(/(?<=.{2})./g, "*")}
-                  </span>
-                  <span className="qna-date">
-                    {q.createdDate?.slice(0, 10)}
-                  </span>
-                </div>
-
-              {/* 펼치기 아이콘 */}
-              <div className="qna-expand-icon">
-                {openId === q.qnaId ? "▲" : "▼"}
+              <div className="qna-title-area">
+                {!canView ? (
+                  <>
+                    <span className="lock-icon">🔒</span>
+                    <span className="qna-title-text">비밀글입니다</span>
+                  </>
+                ) : (
+                  <span className="qna-title-text">{q.title}</span>
+                )}
               </div>
-            </div>
+
+              <div>{q.writerUserId?.replace(/(?<=.{2})./g, "*")}</div>
+              <div>{q.createdDate?.slice(0, 10)}</div>
             </div>
 
-            {/* 카드 본문 (펼쳤을 때) */}
-            {openId === q.qnaId && (
-              <div className="qna-card-body">
+            {/* 펼침 상세 */}
+            {isOpen && (
+              <div className="qna-detail-box">
+
                 {!canView ? (
                   <div className="qna-private-msg">
-                    🔒 작성자만 확인할 수 있는 글입니다.
+                    🔒 작성자만 확인 가능합니다.
                   </div>
                 ) : (
                   <>
-                    {/* 질문 내용 */}
-                    <div className="qna-question-content">
-                      <div className="content-label">문의 내용</div>
-                      <div className="content-text">{q.content}</div>
+                    {/* Q 박스 */}
+                    <div className="q-box">
+                      <div className="q-box-label">Q</div>
+                      <div className="q-box-content">{q.content}</div>
                     </div>
 
-                    {/* 판매자 답변 */}
+                    {/* A 박스 */}
                     {q.answerContent && (
-                      <div className="qna-answer-content">
-                        <div className="answer-label">
-                          <span className="seller-badge">판매자</span>
-                          <span>답변</span>
+                      <div className="a-box">
+                        <div className="a-box-left">
+                          <span className="a-badge">답변</span>
+                          <span className="seller-label">판매자</span>
                         </div>
-                        <div className="answer-text">{q.answerContent}</div>
+                        <div className="a-content">{q.answerContent}</div>
                       </div>
                     )}
 
-                    {/* 작성자 본인일 때만 수정/삭제 버튼 */}
-                    {q.writerUserId === loginId && (
-                      <div className="qna-action-buttons">
-                        <button 
-                          className="qna-action-btn edit" 
-                          onClick={() => onEdit(q)}
+                    {/* 버튼 */}
+                    {q.writerUserId === loginUserId && (
+                      <div className="qa-btn-area">
+                        <button
+                          className="qa-btn edit"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEdit(q);
+                          }}
                         >
                           수정
                         </button>
-                        <button 
-                          className="qna-action-btn delete" 
-                          onClick={() => onDelete(q.qnaId)}
+                        <button
+                          className="qa-btn delete"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete(q.qnaId);
+                          }}
                         >
                           삭제
                         </button>

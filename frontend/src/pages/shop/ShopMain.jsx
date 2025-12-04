@@ -1,7 +1,5 @@
 import React, { useEffect,useState } from 'react';
-
 import ShopFilter from '../../components/shop/ShopFilter';//목록 필터(카테고리/가격..)
-import ShopCategory from '../../components/shop/ShopCategory';//대중소 카테고리 목록
 import ShopProductList from '../../components/shop/ShopProductList'
 import { getProductList } from "../../assets/js/api/ShopApi.js";
 
@@ -64,10 +62,8 @@ const ShopMain = () => {//페이지 역할
   },[filters,sortOption]);
 
   return (
-    <div className='container-fluid fruite py-5'>
         <div className="text-center mb-4">
           <h1 className="shop-title">🛒 제철 과일 상품</h1>
-        </div>
 
       <div className='container py-5'>
         <div className='row g-4'>
@@ -76,7 +72,6 @@ const ShopMain = () => {//페이지 역할
         <div className='col-lg-3'>
           <div className='filter-container-wrap'>
               <ShopFilter filters={filters} setFilters={setFilters} setCurrentPage={setCurrentPage} setSortOption={setSortOption}/>
-              <ShopCategory/>
           </div>
         </div>
 

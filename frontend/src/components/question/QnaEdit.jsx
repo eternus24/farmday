@@ -33,7 +33,6 @@ const QnaEdit = ({qna,onClose,refresh}) => {//답변 수정
             <div className='qna-modal-improved' onClick={(e) => e.stopPropagation()}>
                 <div className="qna-modal-header">
                   <h3>Q&A 수정하기</h3>
-                  <button className="modal-close-btn" onClick={onClose}>✕</button>
                 </div>
                 <div className="qna-modal-body">
                 {/* 제목 */}

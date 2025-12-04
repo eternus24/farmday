@@ -45,7 +45,6 @@ import StoreMyPage from './pages/mystore/StoreMyPage';
 import StoreDashboard from './pages/mystore/StoreDashboard';
 import StoreCreate from './pages/mystore/StoreCreate';
 import StoreList from './pages/mystore/StoreList';
-import StoreStatus from './pages/mystore/StoreStatus';
 import StoreQuestion from './pages/mystore/StoreQuestion';
 
 import Tables from './pages/tables/tables'
@@ -67,6 +66,9 @@ import AdminNoticePage from "./pages/admin/AdminNoticePage";
 import AdminProducerApprovalPage from "./pages/admin/AdminProducerApprovalPage";
 import AdminProductManagePage from "./pages/admin/AdminProductManagePage";
 import HelpCenter from "./pages/help/HelpCenter";
+import StoreEditPage from "./pages/mystore/StoreEditPage";
+import StoreReviewManage from "./pages/mystore/StoreReviewManage";
+import StoreInfoPage from "./pages/mystore/StoreInfoPage";
 
 // JWT 파싱 헬퍼
 function parseJwt(token) {
@@ -200,8 +202,10 @@ function App() {
                 <Route index element={<StoreDashboard />} />
                 <Route path="mainpro" element={<StoreDashboard />} />
                 <Route path="list" element={<StoreList />} />
-                <Route path="status" element={<StoreStatus />} />
+                <Route path="info" element={<StoreInfoPage/>} />
                 <Route path="question" element={<StoreQuestion />} />
+                <Route path="reviews" element={<StoreReviewManage/>}/>
+                <Route path="upload" element={<StoreEditPage />} />
               </Route>
 
               <Route path="/review/write/:order_item_id" element={<ReviewWrite/>}/>

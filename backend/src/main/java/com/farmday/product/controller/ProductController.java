@@ -72,14 +72,21 @@ public class ProductController {
         return ResponseEntity.ok(productService.getProducerProducts(producerId));
     }
 
-    @GetMapping("/producer/{producerId}/top")
-    public ResponseEntity<?> getTopProducts(@PathVariable long producerId) {
-        return ResponseEntity.ok(productService.getTopProducts(producerId));
-    }
-
     @GetMapping("/producer/{producerId}/recent")
     public ResponseEntity<?> getRecentProducts(@PathVariable long producerId) {
         return ResponseEntity.ok(productService.getRecentProducts(producerId));
+    }
+
+    //********   ai 기능 *********/
+    @GetMapping("/search")
+    public ResponseEntity<List<ProductDTO>> searchProducts(
+        @RequestParam(required = false) String keyword,
+        @RequestParam(required = false) Integer maxPrice,
+        @RequestParam(required = false) String sort
+    ){
+        return ResponseEntity.ok(
+            productService.searchProducts(keyword,maxPrice,sort)
+        );
     }
 
 }

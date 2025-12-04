@@ -175,4 +175,59 @@
     LIMIT 10
 </select>
 
+<!-- *************** ai 기능 *************** -->
+<select id="searchProducts" resultType="com.farmday.product.dto.ProductDTO">
+    SELECT 
+        p.product_id        AS productId,
+        p.producer_id       AS producerId,
+        p.base_category_id  AS baseCategoryId,
+        p.name              AS name,
+        p.summary           AS summary,
+        p.main_image        AS mainImage,
+        p.status            AS status,
+        p.created_date      AS createdDate,
+        p.updated_date      AS updatedDate,
+
+        d.detail_id         AS detailId,
+        d.grade             AS grade,
+        d.unit_name         AS unitName,
+        d.price             AS price,
+        d.stock_qty         AS stockQty,
+        d.origin_region     AS originRegion,
+        d.harvest_date      AS harvestDate,
+        d.expire_date       AS expireDate,
+        d.detail_desc       AS detailDesc,
+        d.created_date      AS detailCreatedDate,
+        d.updated_date      AS detailUpdatedDate
+
+    FROM product p
+    LEFT JOIN product_detail d
+        ON p.product_id = d.product_id
+
+    <where>
+        <!-- 상품명 검색 -->
+        <if test="keyword != null and keyword != ''">
+            AND p.name LIKE '%' || #{keyword} || '%'
+        </if>
+
+        <!-- 가격 검색 -->
+        <if test="maxPrice != null">
+            AND d.price <![CDATA[ <= ]]> #{maxPrice}
+        </if>
+    </where>
+
+    <!-- 정렬 -->
+    <choose>
+        <when test="sort == 'cheap'">
+            ORDER BY d.price ASC
+        </when>
+        <when test="sort == 'expensive'">
+            ORDER BY d.price DESC
+        </when>
+        <otherwise>
+            ORDER BY p.created_date DESC
+        </otherwise>
+    </choose>
+</select>
+
 </mapper>

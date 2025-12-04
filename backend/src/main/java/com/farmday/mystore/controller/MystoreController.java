@@ -4,12 +4,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.farmday.mystore.dto.MystoreDTO;
 import com.farmday.mystore.service.MystoreService;
 
+import org.springframework.web.bind.annotation.RequestBody;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -20,7 +22,7 @@ public class MystoreController {
     
     private final MystoreService mystoreService;
 
-    @GetMapping("/{productId}")
+    @GetMapping("/{producerId}")
     public ResponseEntity<MystoreDTO> getStore(@PathVariable long producerId){
         return ResponseEntity.ok(mystoreService.selectStore(producerId));
     }
@@ -29,6 +31,11 @@ public class MystoreController {
     public ResponseEntity<MystoreDTO> getStoreBoard(@PathVariable long producerId){
         return ResponseEntity.ok(mystoreService.selectStoreBoard(producerId));
     }
-    
+
+    @PutMapping("/update")
+    public ResponseEntity<?> updateStore(@RequestBody MystoreDTO dto) {
+        mystoreService.updateStore(dto);
+        return ResponseEntity.ok("success");
+    }
     
 }

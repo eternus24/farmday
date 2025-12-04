@@ -71,16 +71,16 @@ public class ProductServiceImpl implements ProductService {
         return productMapper.getProducerProducts(producerId);
     }
 
-    //top 인기 상품
-    @Override
-    public List<ProductDTO> getTopProducts(long producerId) {
-        return productMapper.getTopProducts(producerId);
-    }
-
     //recent 최근 등록/판매 상품
     @Override
     public List<ProductDTO> getRecentProducts(long producerId) {
         return productMapper.getRecentProducts(producerId);
+    }
+
+    //********   ai 기능 *********/
+    @Override
+    public List<ProductDTO> searchProducts(String keyword, Integer maxPrice, String sort) {
+        return productMapper.searchProducts(keyword, maxPrice, sort);
     }
 
 }

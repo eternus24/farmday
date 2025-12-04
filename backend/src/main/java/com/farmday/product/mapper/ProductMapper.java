@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import com.farmday.mystore.dto.MystoreDTO;
 import com.farmday.product.dto.ProductDTO;
@@ -23,7 +24,13 @@ public interface ProductMapper {
     public MystoreDTO getStoreByProducer(long producerId);
 
     public List<ProductDTO> getProducerProducts(long producerId);
-    public List<ProductDTO> getTopProducts(long producerId);
     public List<ProductDTO> getRecentProducts(long producerId);
+    
+    //********   ai 기능 *********/
+    public List<ProductDTO> searchProducts(
+        @Param("keyword") String keyword,
+        @Param("maxPrice") Integer maxPrice,
+        @Param("sort") String sort
+    );
     
 }

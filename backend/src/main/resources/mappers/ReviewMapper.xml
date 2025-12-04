@@ -6,11 +6,20 @@
 <mapper namespace="com.farmday.review.mapper.ReviewMapper">
 
     <!-- 리뷰 등록 -->
-    <insert id="insertReview" parameterType="com.farmday.review.dto.ReviewDTO">
-    INSERT INTO product_review (
-        review_id, product_id, store_id, order_item_id, writer_user_id, rating, title, content, image_url, product_tags
-    )
-    VALUES (
+    <insert id="writeReview" parameterType="com.farmday.review.dto.ReviewDTO">
+    INSERT INTO PRODUCT_REVIEW (
+        review_id,
+        product_id,
+        store_id,
+        order_item_id,
+        writer_user_id,
+        rating,
+        title,
+        content,
+        image_url,
+        product_tags,
+        created_date
+    ) VALUES (
         PRODUCT_REVIEW_SEQ.NEXTVAL,
         #{productId},
         #{storeId},
@@ -20,7 +29,8 @@
         #{title},
         #{content},
         #{imageUrl},
-        #{productTags}
+        #{productTags},
+        SYSDATE
     )
     </insert>
 
@@ -29,41 +39,61 @@
     DELETE FROM product_review WHERE review_id = #{reviewId}
     </delete>
 
-    <select id="selectReviews" parameterType="map"
+<!-- 리뷰 조회 -->
+<select id="selectReviews" parameterType="map"
         resultType="com.farmday.review.dto.ReviewDTO">
-    SELECT
-        review_id AS reviewId,
-        product_id AS productId,
-        store_id AS storeId,
-        order_item_id AS orderItemId,
-        writer_user_id AS writerUserId,
-        rating,
-        title,
-        content,
-        image_url AS imageUrl,
-        is_visible AS isVisible,
-        created_date AS createdDate,
-        updated_date AS updatedDate,
-        reply,
-        product_tags AS productTags
-    FROM product_review
-    WHERE product_id = #{productId}
-    AND is_visible = 'Y'
 
-    <if test="keyword != null and keyword != ''">
-        AND (title LIKE '%' || #{keyword} || '%' 
-            OR content LIKE '%' || #{keyword} || '%')
-    </if>
+SELECT
+    r.review_id AS reviewId,
+    r.product_id AS productId,
+    r.store_id AS storeId,
+    r.order_item_id AS orderItemId,
+    r.writer_user_id AS writerUserId,
+    r.rating,
+    r.title,
+    r.content,
+    r.image_url AS imageUrl,
+    r.is_visible AS isVisible,
+    r.created_date AS createdDate,
+    r.updated_date AS updatedDate,
+    r.reply,
+    r.product_tags AS productTags,
 
-    ORDER BY 
-    <choose>
-        <when test="sort == 'latest'"> created_date DESC </when>
-        <when test="sort == 'rating'"> rating DESC </when>
-        <otherwise> review_id DESC </otherwise>
-    </choose>
+    CASE 
+        WHEN rl.user_no IS NULL THEN 0
+        ELSE 1
+    END AS liked,
+
+    (SELECT COUNT(*) 
+     FROM review_like 
+     WHERE review_id = r.review_id
+    ) AS likeCount
+
+FROM product_review r
+
+LEFT JOIN review_like rl 
+    ON r.review_id = rl.review_id
+    AND rl.user_no = #{userNo}  
+
+WHERE r.product_id = #{productId}
+  AND r.is_visible = 'Y'
+
+<if test="keyword != null and keyword != ''">
+    AND (r.title LIKE '%' || #{keyword} || '%' 
+        OR r.content LIKE '%' || #{keyword} || '%')
+</if>
+
+ORDER BY 
+<choose>
+    <when test="sort == 'latest'"> r.created_date DESC </when>
+    <when test="sort == 'rating'"> r.rating DESC </when>
+    <otherwise> r.review_id DESC </otherwise>
+</choose>
+
 </select>
 
-<!-- 답글 수정 -->
+
+<!-- 생산자 답글 -->
     <update id="updateReply" parameterType="com.farmday.review.dto.ReviewDTO">
     UPDATE product_review
     SET reply = #{reply},
@@ -72,12 +102,63 @@
     </update>
 
     <select id="findStoreIdByProductId" parameterType="long" resultType="long">
-        select 
-            s.store_id
-        from 
-            product p, store s
-        where
-            product_id=#{product_id} and p.producer_id=s.producer_id
+       SELECT 
+        s.store_id
+    FROM 
+        product p
+        JOIN store s ON p.producer_id = s.producer_id
+    WHERE
+        p.product_id = #{productId}
     </select>
+
+<!-- 스토어 전체 리뷰 조회 -->
+    <select id="getStoreReviews" parameterType="long" resultType="com.farmday.review.dto.ReviewDTO">
+    SELECT
+        r.review_id       AS reviewId,
+        r.product_id      AS productId,
+        r.store_id        AS storeId,
+        r.order_item_id   AS orderItemId,
+        r.writer_user_id  AS writerUserId,
+        r.rating          AS rating,
+        r.title           AS title,
+        r.content         AS content,
+        r.image_url       AS imageUrl,
+        r.is_visible      AS isVisible,
+        r.created_date    AS createdDate,
+        r.updated_date    AS updatedDate,
+        r.reply           AS reply,
+        r.product_tags    AS productTags
+    FROM product_review r
+    WHERE r.store_id = #{storeId}
+    ORDER BY r.created_date DESC
+</select>
+
+<!-- 1) 이미 좋아요 눌렀는지 체크 -->
+<select id="checkLike" parameterType="map" resultType="Integer">
+    SELECT 1
+    FROM review_like
+    WHERE review_id = #{reviewId}
+      AND user_no = #{userNo}
+</select>
+
+<!-- 2) 좋아요 기록 저장 -->
+<insert id="saveLike" parameterType="map">
+    INSERT INTO review_like(review_id, user_no)
+    VALUES (#{reviewId}, #{userNo})
+</insert>
+
+<!-- 4) 좋아요 취소 -->
+<delete id="deleteLike" parameterType="map">
+    DELETE FROM review_like
+    WHERE review_id = #{reviewId}
+      AND user_no = #{userNo}
+</delete>
+
+<!-- 5) 리뷰 수 조회 -->
+<select id="countLike" parameterType="long" resultType="int">
+    SELECT COUNT(*)
+    FROM review_like
+    WHERE review_id = #{reviewId}
+</select>
 
 </mapper>

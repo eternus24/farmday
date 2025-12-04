@@ -7,9 +7,9 @@ const api = axios.create({
 });
 
 // 리뷰 목록
-export const fetchReviews = (productId, sort = "latest", keyword = "") =>
+export const fetchReviews = (productId, sort = "latest", keyword = "",userNo) =>
   api.get(`/api/reviews/${productId}`, {
-    params: { sort, keyword },
+    params: { sort, keyword,userNo },
   });
 
 // 리뷰 작성
@@ -20,6 +20,16 @@ export const writeReview = (reviewData) =>
 export const deleteReview = (reviewId) =>
   api.delete(`/api/reviews/${reviewId}`);
 
+//해당 스토어 전체 리뷰 조회
+export const getStoreReviews = (storeId) =>
+  api.get(`/api/reviews/store/${storeId}`).then((res) => res.data)
 
+//리뷰 좋아요
+export const likeReview = (reviewId,userNo) =>
+  api.post(`/api/reviews/${reviewId}/like?userNo=${userNo}`);
+
+//판매자 답글 등록
+export const updateReply = (reviewId,reply) => 
+  api.patch(`/api/reviews/${reviewId}/reply`, {reply});
 
 export default api;

@@ -21,8 +21,15 @@
         s.status        AS status,
         s.is_active     AS isActive,
         s.created_date  AS createdDate,
-        s.updated_date  AS updatedDate
+        s.updated_date  AS updatedDate,
+
+        p.biz_no AS bizNo,
+        p.bank_name AS bankName,
+        p.bank_account_no AS bankAccountNo,
+        p.account_holder AS accountHolder
     FROM store s
+    LEFT JOIN producer p
+      ON s.producer_id = p.producer_id
     WHERE s.producer_id = #{producerId}
 </select>
 
@@ -47,5 +54,27 @@
     FROM store s
     WHERE s.producer_id = #{producerId}
 </select>
+
+<update id="updateStoreInfo" parameterType="com.farmday.mystore.dto.MystoreDTO">
+    UPDATE store
+    SET 
+        store_name  = #{storeName},
+        description = #{description},
+        phone       = #{phone},
+        addr        = #{addr},
+        addr_detail = #{addrDetail},
+        updated_date = SYSDATE
+    WHERE store_id = #{storeId}
+</update>
+
+<update id="updateProducerInfo" parameterType="com.farmday.mystore.dto.MystoreDTO">
+    UPDATE producer
+    SET
+        biz_no          = #{bizNo},
+        bank_name       = #{bankName},
+        bank_account_no = #{bankAccountNo},
+        account_holder  = #{accountHolder}
+    WHERE producer_id = #{producerId}
+</update>
 
 </mapper>

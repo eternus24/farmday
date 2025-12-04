@@ -5,6 +5,7 @@ import { AuthContext } from "../contexts/AuthContext";
 import defaultAvatarImg from "../assets/img/user-default1.png";
 import { CartContext } from "../contexts/CartContext";
 import logoImg from "../assets/img/FarmDay.png";
+import ChatbotMain from "./aichat/ChatbotMain";//민아 - 추가
 
 export default function Header() {
   const navigate = useNavigate();
@@ -12,11 +13,16 @@ export default function Header() {
   const defaultAvatar = defaultAvatarImg; // 프로젝트 맞게 수정
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
-  const profileSrc = auth.photo
-    ? auth.photo.startsWith("http")
-      ? auth.photo // 카카오 같은 외부 URL이면 그대로
-      : `${API_BASE}${auth.photo}` // /uploads/... 는 백엔드 도메인 붙여주기
-    : defaultAvatar;
+  const rawPhoto = auth?.photo;
+
+  const profileSrc =
+    !rawPhoto || rawPhoto === "null" || rawPhoto === "undefined"
+      ? defaultAvatar
+      : rawPhoto.startsWith("http")
+      ? rawPhoto
+      : rawPhoto.startsWith("/")
+      ? `${API_BASE}${rawPhoto}`
+      : defaultAvatar;
 
   const { cartAmount, setCartAmount, findCartAmount } =
     useContext(CartContext);
@@ -142,6 +148,9 @@ export default function Header() {
               </div>
 
               {/* 우측 아이콘 영역 */}
+              {/* 민아 - AI 챗봇 버튼 */}
+              <button className="btn-search btn border border-secondary btn-md-square rounded-circle bg-white me-4" onClick={() => {
+                  window.dispatchEvent(new Event("open-chatbot")); }}>🤖</button>
               <div className="d-flex m-3 me-0">
                 <button
                   className="btn-search btn border border-secondary btn-md-square rounded-circle bg-white me-4"
@@ -170,6 +179,10 @@ export default function Header() {
                     <img
                       src={profileSrc}
                       alt="프로필"
+                      onError={(e) => {
+                        e.target.onerror = null;          // 무한 루프 방지
+                        e.target.src = defaultAvatar;     // 깨지면 기본 이미지로 강제 교체
+                      }}
                       style={{
                         width: 32,
                         height: 32,
@@ -246,6 +259,7 @@ export default function Header() {
         </div>
       </div>
       {/* Modal Search End */}
+      <ChatbotMain/>
     </>
   );
 }

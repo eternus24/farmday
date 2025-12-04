@@ -1,219 +1,227 @@
-/* -----------------------
-   공통 스타일
------------------------- */
+/* =========================
+   StoreQuestion.jsx 전용 CSS
+   스토어 Q&A 관리 페이지
+   ========================= */
+
 .store-qna-container {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  padding: 10px;
-  background: #f5f7fa;
-  min-height: 100vh;
-  box-sizing: border-box;
-  font-family: 'Inter', sans-serif;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 }
 
-/* -----------------------
-   필터 영역
------------------------- */
+/* 필터 바 */
 .store-qna-filter-bar {
   display: flex;
-  align-items: center;
   gap: 12px;
-  background: #ffffff;
-  padding: 16px 20px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-  border: 1px solid #e5e5e5;
-}
-
-.store-qna-filter-bar select,
-.search-box input {
-  padding: 9px 12px;
-  border: 1px solid #d1d5db;
-  font-size: 14px;
+  margin-bottom: 24px;
+  padding: 20px;
   background: #fff;
+  border-radius: 8px;
+  border: 1px solid #e5e5e5;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
-.store-qna-filter-bar select:focus,
-.search-box input:focus {
+.store-qna-filter-bar select {
+  padding: 10px 16px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #333;
+}
+
+.store-qna-filter-bar select:focus {
   outline: none;
-  border-color: #000;
+  border-color: #333;
 }
 
+.store-qna-filter-bar select:hover {
+  border-color: #999;
+}
+
+/* 검색 박스 */
 .search-box {
   display: flex;
   gap: 8px;
+  flex: 1;
+}
+
+.search-box input {
+  flex: 1;
+  padding: 10px 16px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.search-box input:focus {
+  outline: none;
+  border-color: #333;
 }
 
 .search-box button {
-  padding: 9px 14px;
-  background: #000;
-  color: white;
+  padding: 10px 24px;
+  background: #333;
+  color: #fff;
   border: none;
+  border-radius: 6px;
   font-size: 14px;
-  transition: 0.2s;
+  font-weight: 600;
   cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
 }
 
 .search-box button:hover {
-  background: #333;
+  background: #555;
 }
 
-/* -----------------------
-   메인 2단 레이아웃
------------------------- */
-.store-qna-main {
-  display: flex;
-  gap: 20px;
-}
-
-/* -----------------------
-   테이블 영역
------------------------- */
-.qna-table-area {
-  flex: 1;
+/* 테이블 영역 */
+.qna-table-area-only {
   background: #fff;
-  padding: 16px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
   border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
+/* 테이블 스타일 */
 .qna-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
+}
+
+.qna-table thead {
+  background: #fafafa;
+  border-bottom: 2px solid #e5e5e5;
 }
 
 .qna-table th {
-  background: #f3f4f6;
-  padding: 12px;
-  border-bottom: 1px solid #e5e7eb;
-  font-weight: 600;
-  color: #374151;
+  padding: 16px 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #333;
   text-align: left;
+  letter-spacing: -0.3px;
+}
+
+.qna-table tbody tr {
+  border-bottom: 1px solid #f4f4f4;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.qna-table tbody tr:hover {
+  background: #fafafa;
+}
+
+.qna-table tbody tr.row-selected {
+  background: #f5f5f5;
 }
 
 .qna-table td {
-  padding: 12px;
-  border-bottom: 1px solid #f0f0f0;
-  color: #4b5563;
+  padding: 16px 12px;
+  font-size: 14px;
+  color: #555;
+  vertical-align: middle;
 }
 
-
-.qna-table tr:hover {
-  background: #f9fafb;
-  cursor: pointer;
+.qna-title-col {
+  width: auto;
 }
 
-.row-selected {
-  background: #e8f0fe !important;
+.qna-title-cell {
+  font-weight: 600;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 400px;
 }
 
 /* 상태 뱃지 */
-.badge {
-  padding: 4px 8px;
+.qna-table .badge {
+  display: inline-block;
+  padding: 5px 12px;
   font-size: 12px;
-  font-weight: 500;
-  border: 1px solid;
+  font-weight: 700;
+  border-radius: 4px;
+  white-space: nowrap;
 }
 
-.badge.answered {
-  background: #16a34a;
+.qna-table .badge.answered {
+  background: #333;
   color: #fff;
-  border-color: #16a34a;
 }
 
-.badge.waiting {
-  background: #f59e0b;
-  color: #fff;
-  border-color: #f59e0b;
+.qna-table .badge.waiting {
+  background: #f4f4f4;
+  color: #999;
 }
 
-/* -----------------------
-   페이징
------------------------- */
-.pagination {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  padding: 16px 0;
-}
-
-.pagination button {
-  padding: 6px 12px;
-  border: 1px solid #d1d5db;
-  background: #fff;
-  font-size: 14px;
-  transition: 0.2s;
-  cursor: pointer;
-}
-
-.pagination button:hover:not(:disabled) {
-  background: #e5e7eb;
-  border-color: #000;
-}
-
-.pagination button:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
-.pagination span {
-  line-height: 32px;
-  font-size: 14px;
-  color: #374151;
-}
-
-/* -----------------------
-   오른쪽 상세 패널
------------------------- */
-.qna-detail-panel {
-  width: 420px;
-  background: #fff;
-  padding: 20px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  border: 1px solid #e5e5e5;
-  position: sticky;
-  top: 20px;
-  height: fit-content;
-}
-
-.no-selection {
-  color: #9ca3af;
+/* 텍스트 센터 정렬 */
+.qna-table .text-center {
   text-align: center;
-  padding: 40px 0;
+  padding: 60px 20px;
+  color: #999;
+  font-size: 14px;
 }
 
-.detail-card h3 {
-  margin: 8px 0;
-  font-size: 18px;
-  color: #111827;
-}
-
-.detail-meta {
-  font-size: 13px;
-  color: #6b7280;
+/* 페이징 */
+.qna-table-area-only .pagination {
   display: flex;
-  gap: 10px;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  padding: 24px;
+  border-top: 1px solid #e5e5e5;
+  margin: 0;
 }
 
-.badge.category {
-  background: #000;
+.qna-table-area-only .pagination button {
+  padding: 8px 16px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #666;
+}
+
+.qna-table-area-only .pagination button:hover:not(:disabled) {
+  background: #333;
+  border-color: #333;
   color: #fff;
-  padding: 4px 10px;
-  font-size: 12px;
-  border: 1px solid #000;
 }
 
+.qna-table-area-only .pagination button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.qna-table-area-only .pagination span {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+/* 모달 */
 .qna-modal-backdrop {
   position: fixed;
-  top: 0; left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.5);
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
-  align-items: center;
   justify-content: center;
-  z-index: 999;
+  align-items: center;
+  z-index: 9999;
   animation: fadeIn 0.15s ease-out;
 }
 
@@ -223,11 +231,15 @@
 }
 
 .qna-modal {
-  width: 480px;
+  width: 700px;
+  max-width: 90vw;
+  max-height: 85vh;
   background: #fff;
-  padding: 24px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  animation: modalSlide 0.2s ease;
+  border-radius: 8px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  animation: modalSlide 0.2s ease-out;
+  overflow-y: auto;
+  position: relative;
 }
 
 @keyframes modalSlide {
@@ -241,302 +253,151 @@
   }
 }
 
-/* 제목 셀 (한 줄 유지 + ... 처리) */
-.qna-title-cell {
-  max-width: 280px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+/* 모달 닫기 버튼 */
+.modal-close-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: #f5f5f5;
+  font-size: 16px;
+  color: #666;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+  z-index: 1;
 }
 
-.qna-title-col {
-  width: 280px;
+.modal-close-btn:hover {
+  background: #333;
+  color: #fff;
 }
 
-/* -----------------------
-   상세 내용
------------------------- */
-.detail-section {
-  margin-top: 20px;
+.qna-modal h3 {
+  padding: 28px 28px 20px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #333;
+  border-bottom: 1px solid #e5e5e5;
+  letter-spacing: -0.5px;
+  margin: 0;
 }
 
-.label {
-  font-weight: 600;
-  margin-bottom: 6px;
-  color: #374151;
+/* 모달 섹션 */
+.modal-section {
+  padding: 24px 28px;
+  border-bottom: 1px solid #f4f4f4;
 }
 
-.text-box {
-  background: #f9fafb;
-  padding: 12px;
-  border: 1px solid #e5e7eb;
-  line-height: 1.5;
-  color: #374151;
+.modal-section:last-child {
+  border-bottom: none;
 }
 
-textarea {
-  width: 100%;
-  height: 130px;
-  padding: 12px;
-  border: 1px solid #d1d5db;
-  background: #fff;
-  resize: none;
+.modal-section p {
+  margin: 0 0 12px 0;
+}
+
+.modal-section strong {
+  font-size: 15px;
+  font-weight: 700;
+  color: #333;
+}
+
+/* 모달 텍스트 영역 */
+.qna-modal-text {
+  padding: 16px;
+  background: #fafafa;
+  border: 1px solid #e5e5e5;
+  border-radius: 6px;
   font-size: 14px;
+  line-height: 1.7;
+  color: #555;
+  white-space: pre-wrap;
+  min-height: 80px;
 }
 
-textarea:focus {
+/* Textarea */
+.modal-section textarea {
+  width: 100%;
+  min-height: 140px;
+  padding: 14px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  line-height: 1.7;
+  resize: vertical;
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.modal-section textarea:focus {
   outline: none;
-  border-color: #000;
+  border-color: #333;
+}
+
+.modal-section textarea.readonly-textarea {
+  background: #fafafa;
+  color: #666;
+  cursor: default;
+}
+
+.modal-section textarea::placeholder {
+  color: #999;
+}
+
+/* 제출 버튼 */
+.btn-submit-wrap {
+  text-align: right;
+  margin-top: 16px;
 }
 
 .btn-submit {
-  margin-top: 12px;
-  width: 100%;
-  padding: 10px;
-  background: #000;
+  padding: 12px 28px;
+  background: #333;
+  color: #fff;
   border: none;
-  color: white;
+  border-radius: 6px;
   font-size: 14px;
-  transition: 0.2s;
+  font-weight: 700;
   cursor: pointer;
+  transition: background 0.2s;
+  letter-spacing: -0.3px;
 }
 
 .btn-submit:hover {
-  background: #333;
+  background: #555;
 }
 
-/* ========================= 스토어 리스트 영역 storelist ========================= */
-/* 전체 리스트 박스 */
-.store-product-list {
-  background: #fff;
-  padding: 25px 25px 30px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  margin-top: 20px;
-}
-
-/* 헤더 (제목 + 개수) */
-.store-list-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 18px;
-}
-
-.store-product-list h3 {
-  font-size: 20px;
-  font-weight: 700;
-  color: #222;
-}
-
-.store-list-count {
-  font-size: 14px;
-  color: #777;
-}
-
-/* 빈 데이터 문구 */
-.store-product-empty {
-  padding: 40px 0;
-  text-align: center;
-  font-size: 16px;
-  color: #777;
-}
-
-/* 카드 그리드 */
-.store-product-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 24px;
-}
-
-/* 개별 상품 카드 */
-.store-product-card {
-  border: 1px solid #eee;
-  border-radius: 10px;
-  overflow: hidden;
-  background: #fff;
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
-}
-
-.store-product-card:hover {
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
-  transform: translateY(-3px);
-}
-
-/* 썸네일 영역 (비율 고정) */
-.store-product-thumb {
-  position: relative;
-  width: 100%;
-  padding-top: 125%; /* 4:5 비율 */
-  background: #f5f5f5;
-  overflow: hidden;
-}
-
-.store-product-thumb img {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transform: translate(-50%, -50%);
-}
-
-/* 정보 영역 */
-.store-product-info {
-  padding: 10px 12px 12px;
-}
-
-/* 상품명 (두 줄까지 보이고 ... 처리) */
-.store-product-name {
-  font-size: 16px;
-  color: #333;
-  line-height: 1.4;
-  height: 1.7em;
-  overflow: hidden;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-
-/* 가격 */
-.store-product-price {
-  margin-top: 10px;
-}
-
-.store-product-sale {
-  font-size: 15px;
-  font-weight: 700;
-  color: #111;
-}
-
-/* 메타 정보 (뱃지 + 날짜) */
-.store-product-meta {
-  margin-top: 8px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-/* 무료배송 뱃지 */
-.store-product-badge {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 12px;
-  border: 1px solid #ff5b5b;
-  font-size: 11px;
-  color: #ff5b5b;
-}
-
-/* 등록일 */
-.store-product-date {
-  font-size: 13px;
-  color: #575757;
+.btn-submit:active {
+  background: #555;
 }
 
 /* 반응형 */
 @media (max-width: 768px) {
-  .store-product-list {
-    padding: 18px 16px 22px;
+  .store-qna-filter-bar {
+    flex-direction: column;
   }
 
-  .store-product-grid {
-    gap: 16px;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  }
-
-  .store-product-name {
+  .qna-table {
     font-size: 13px;
   }
 
-  .store-product-sale {
-    font-size: 14px;
+  .qna-table th,
+  .qna-table td {
+    padding: 12px 8px;
   }
-}
 
-/* ========================= storeDashBoard.jsx 파트 ========================= */
+  .qna-title-cell {
+    max-width: 200px;
+  }
 
-/* TOP5 섹션 */
-.store-top-section {
-  margin-bottom: 40px;
-}
-
-.top-product-list {
-  display: flex;
-  gap: 20px;
-}
-
-.top-product-card {
-  width: 160px;
-  cursor: pointer;
-  text-align: center;
-}
-
-.top-product-card .thumb {
-  width: 100%;
-  height: 150px;
-  background: #f4f4f4;
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-.top-product-card .thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.top-title {
-  margin-top: 10px;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-/* 최근 상품 섹션 */
-.store-recent-section {
-  margin-top: 40px;
-}
-
-.recent-list {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.recent-card {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  border-radius: 12px;
-  background: #fafafa;
-  cursor: pointer;
-}
-
-.recent-card .thumb {
-  width: 70px;
-  height: 70px;
-  background: #eee;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.recent-card .thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.recent-title {
-  font-size: 15px;
-  font-weight: 600;
-}
-
-.recent-desc {
-  font-size: 13px;
-  color: #666;
-}
-
-.empty-text {
-  color: #999;
-  padding: 15px 0;
+  .qna-modal {
+    width: 95vw;
+  }
 }

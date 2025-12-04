@@ -19,7 +19,9 @@ public interface ProductService {
     public MystoreDTO getStoreByProducer(long producerId);
 
     public List<ProductDTO> getProducerProducts(long producerId);
-    public List<ProductDTO> getTopProducts(long producerId);
     public List<ProductDTO> getRecentProducts(long producerId);
+    
+    //********   ai 기능 *********/
+    public List<ProductDTO> searchProducts(String keyword, Integer maxPrice, String sort);
 
 }

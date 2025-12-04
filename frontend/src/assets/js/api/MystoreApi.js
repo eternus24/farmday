@@ -11,5 +11,7 @@ export const getStoreInfo = (producerId) => {
   return api.get(`/api/mystore/${producerId}`);
 };
 
+export const updateStoreInfo = (storeData) =>
+  api.put(`/api/mystore/update`, storeData);
 
 export default api;

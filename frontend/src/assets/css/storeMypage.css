@@ -1,0 +1,135 @@
+/* =========================
+   스토어 마이페이지 전체 레이아웃
+   ========================= */
+
+.mypage-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  background: #fafafa;
+}
+
+/* =========================
+   헤더
+   ========================= */
+
+.mypage-header {
+  background: #fff;
+  border-bottom: 1px solid #e5e5e5;
+  margin-bottom: 20px;
+}
+
+.mypage-header-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* 프로필 */
+
+.mypage-profile-section {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 32px 0 24px;
+  position: relative;
+}
+
+.mypage-thumb {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid #f0f0f0;
+  background: #fafafa;
+}
+
+.mypage-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mypage-thumb-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 38px;
+  color: #d0d0d0;
+}
+
+.mypage-info {
+  flex: 1;
+}
+
+.mypage-name {
+  font-size: 24px;
+  font-weight: 700;
+  color: #222;
+  margin-bottom: 6px;
+}
+
+.mypage-desc {
+  font-size: 14px;
+  color: #777;
+}
+
+/* =========================
+   설정 버튼
+   ========================= */
+
+.mypage-setting-btn {
+  position: absolute;
+  right: 0;
+  top: 32px;
+  padding: 10px 20px;
+  background: #333;
+  color: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* =========================
+   네비게이션
+   ========================= */
+
+.mypage-nav {
+  border-top: 1px solid #eee;
+}
+
+.mypage-nav ul {
+  display: flex;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.mypage-nav li {
+  flex: 1;
+}
+
+.mypage-nav a {
+  display: block;
+  text-align: center;
+  padding: 16px 0;
+  font-size: 15px;
+  color: #666;
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+}
+
+.mypage-nav li.active a {
+  color: #222;
+  border-bottom: 2px solid #222;
+}
+
+/* =========================
+   자식 페이지 표시 영역
+   ========================= */
+
+.mypage-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px 20px 60px;
+}

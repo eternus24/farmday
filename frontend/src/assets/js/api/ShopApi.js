@@ -31,15 +31,14 @@ export const getProducerProducts = async (producerId) => {
   return (await api.get(`/api/products/producer/${producerId}/products`)).data;
 }
 
-//생산자 인기 상품
-export const getTopProducts = async (producerId) => {
-  return (await api.get(`/api/products/producer/${producerId}/top`)).data;
-}
-
 //생산자 최근 등록/판매 상품
 export const getRecentProducts = async (producerId) => {
   return (await api.get(`/api/products/producer/${producerId}/recent`)).data;
 };
 
+/*********** ai 기능 ***********/
+export const searchProducts = async(params) => {
+  return(await api.get("/api/products/search",{params})).data;
+}
 
 export default api;

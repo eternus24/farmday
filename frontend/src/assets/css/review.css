@@ -1,21 +1,121 @@
 /* ========================================
-   ⭐ 리뷰 작성 - 2단 레이아웃 (모던 시크)
+   ⭐ 리뷰 작성 페이지 - 전체 컨테이너
    ======================================== */
-/* 리뷰 제목 */
-.review-title-box {
+.review-write-container {
+  max-width: 1100px;
+  margin: 40px auto;
+  padding: 0 20px;
+  font-family: "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+
+/* 레이아웃 */
+.review-write-layout {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 40px;
+  background: #fff;
+  padding: 32px;
+  border-radius: 8px;
+  border: 1px solid #e5e5e5;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.04);
+}
+
+/* ================================
+   📌 왼쪽 상품 정보
+================================ */
+.review-left-section {
+  background: #fafafa;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  padding: 24px;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.review-product-image {
+  width: 100%;
+  height: 260px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+}
+
+.review-product-info h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #000;
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.review-product-info p {
+  font-size: 16px;
+  font-weight: 600;
+  color: #444;
+  text-align: center;
+}
+
+/* 후기 선택 버튼 */
+.review-select-btn {
+  width: 100%;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid #ddd;
+  background: #ffffff;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: 0.2s;
+}
+
+.review-select-btn:hover {
+  border-color: #000;
+  background: #f5f5f5;
+  color: #000;
+}
+
+/* 선택된 태그 표시 */
+.selected-review-tags {
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
+}
+
+.selected-tag {
+  padding: 6px 14px;
+  background: #5f7161;
+  color: #fff;
+  font-size: 13px;
+  border-radius: 40px;
+}
+
+/* ================================
+   📌 오른쪽 입력 영역
+================================ */
+.review-form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* 제목 */
+.review-title-box label,
+.review-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 10px;
 }
 
 .review-title-input {
   width: 100%;
-  padding: 12px 14px;
+  padding: 14px;
   border: 1px solid #ddd;
+  border-radius: 6px;
   font-size: 15px;
-  font-weight: 500;
-  color: #000;
-  transition: border-color 0.2s;
+  transition: border 0.2s;
 }
 
 .review-title-input:focus {
@@ -23,159 +123,130 @@
   border-color: #000;
 }
 
-.review-write-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 40px 20px;
-  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-}
-
-/* 좌우 2단 레이아웃 */
-.review-write-layout {
-  display: grid;
-  grid-template-columns: 400px 1fr;
-  gap: 40px;
-  background: #fff;
-  padding: 40px;
-  border: 1px solid #e5e5e5;
-}
-
-/* 왼쪽: 상품 정보 섹션 */
-.review-product-section {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  padding: 30px;
-  background: #fafafa;
-  border: 1px solid #e5e5e5;
-}
-
-.review-product-image {
-  width: 100%;
-  height: 280px;
-  object-fit: cover;
-  border: 1px solid #e0e0e0;
-}
-
-.review-product-info {
-  text-align: center;
-}
-
-.review-product-name {
-  font-size: 16px;
-  font-weight: 600;
-  color: #000;
-  margin-bottom: 8px;
-  line-height: 1.4;
-}
-
-.review-product-price {
-  font-size: 18px;
-  font-weight: 700;
-  color: #000;
-}
-
-/* ⭐ 카테고리 선택 모드 */
-.review-category-section {
-  padding: 30px;
-  background: #fafafa;
-  border: 1px solid #e5e5e5;
-}
-
-.review-category-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: #000;
-  margin-bottom: 24px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #ddd;
-}
-
-.category-group {
-  margin-bottom: 24px;
-}
-
-.category-label {
-  font-size: 14px;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 12px;
-}
-
-.category-items {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.category-item-btn {
-  padding: 8px 16px;
-  border: 1px solid #ddd;
-  background: #fff;
-  font-size: 13px;
-  font-weight: 500;
-  color: #666;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.category-item-btn:hover {
-  border-color: #000;
-  background: #f5f5f5;
-}
-
-.category-item-btn.selected {
-  background: #000;
-  color: #fff;
-  border-color: #000;
-}
-
-/* 오른쪽: 작성 폼 섹션 */
-.review-form-section {
-  display: flex;
-  flex-direction: column;
-  gap: 28px;
-}
-
-.review-label {
-  display: block;
-  font-size: 14px;
-  font-weight: 600;
-  color: #000;
-  margin-bottom: 12px;
-}
-
-/* 별점 선택 박스 */
+/* 별점 */
 .review-rating-box {
-  padding: 28px;
   background: #fafafa;
   border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  padding: 24px;
   text-align: center;
 }
 
 .star-container {
   display: flex;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
   margin: 16px 0;
 }
 
 .star-icon {
   cursor: pointer;
-  transition: all 0.2s;
-  font-size: 36px;
+  font-size: 38px;
+  transition: 0.2s;
 }
 
 .star-icon:hover {
-  transform: scale(1.1);
+  transform: scale(1.15);
 }
 
 .rating-text {
   font-size: 15px;
   font-weight: 600;
   color: #333;
-  margin-top: 12px;
 }
+
+/* 내용 입력 */
+.review-textarea-box {
+  position: relative;
+}
+
+.review-textarea {
+  width: 100%;
+  min-height: 200px;
+  padding: 16px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  resize: vertical;
+  transition: border 0.2s;
+}
+
+.review-textarea:focus {
+  border-color: #000;
+}
+
+.char-count {
+  position: absolute;
+  bottom: 10px;
+  right: 16px;
+  font-size: 12px;
+  color: #777;
+}
+
+/* 이미지 업로드 */
+.review-upload-box {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.upload-label-btn {
+  padding: 10px 20px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  background: #fff;
+  transition: 0.2s;
+}
+
+.upload-label-btn:hover {
+  border-color: #000;
+  background: #f5f5f5;
+}
+
+.uploaded-file-name {
+  font-size: 13px;
+  color: #555;
+}
+
+/* 등록 버튼 */
+.review-submit-box {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.review-submit-btn {
+  padding: 14px 36px;
+  border-radius: 6px;
+  background: #000;
+  color: #fff;
+  border: none;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.review-submit-btn:hover {
+  background: #333;
+}
+
+/* ================================
+   📌 반응형
+================================ */
+@media (max-width: 900px) {
+  .review-write-layout {
+    grid-template-columns: 1fr;
+    padding: 24px;
+  }
+
+  .review-product-image {
+    height: 220px;
+  }
+}
+
 
 /* 선택된 태그 표시 스타일 */
 .selected-review-tags {
@@ -627,6 +698,12 @@
   border-color: #000;
 }
 
+.review-empty {
+  text-align: center;
+  padding: 40px 0;
+  color: #888;
+  font-size: 16px;
+}
 
 /* ==============================
    📌 리뷰 리스트 상단 구분선
@@ -706,29 +783,50 @@
   object-fit: cover;
   border: 1px solid #e5e5e5;
 }
+/* ===============================
+   📌 '도움이 돼요' 버튼 (새 디자인)
+================================ */
 
-/* 좋아요 버튼 */
+/* 기본 상태 */
 .like-btn {
-  border: 1px solid #e5e5e5 !important;
-  color: #666;
-  background: #fff !important;
-  font-size: 13px;
-  font-weight: 500;
-  padding: 8px 16px !important;
-  transition: all 0.2s;
+  background-color: #ffffff;
+  border: 1px solid #dcdcdc;
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #181818;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
+/* 호버 시 */
 .like-btn:hover {
-  background: #5f7161 !important;
-  color: #fff;
-  border-color: #5f7161 !important;
+  background-color: #9bc1e0;
+  border-color: #9bc1e0;
+  color: #ffffff;
+}
+
+/* 좋아요 눌린 상태 */
+.like-btn.liked {
+  background-color: #6f94cc;
+  border-color: #6f94cc;
+  color: #ffffff;
+}
+
+/* 눌린 상태에서 호버 */
+.like-btn.liked:hover {
+  background-color: #7099c9;
+  border-color: #7099c9;
 }
 
 /* 판매자 답글 */
 .seller-reply {
   background: #f7f9fc;
   font-size: 14px;
-  color: #333;
+  color: #2e2d2d;
   line-height: 1.6;
   margin-top: 20px;
   padding: 16px 20px !important;

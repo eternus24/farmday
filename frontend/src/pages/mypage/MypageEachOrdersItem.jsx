@@ -107,7 +107,8 @@ export default function MypageEachOrdersItem({item,moneyKRW,handleOpenCancelModa
           {(item.order_status === 'E1' || item.order_status === 'E2') && (
             
             <>
-              <div className="order-cancel-btn" style={{display:"flex",float:"left",marginRight:10}} tabIndex={0} onClick={()=>navigate(`/review/write/${item.order_item_id}`)}>
+            {/* ===== 추가 - state:item ===== */}
+              <div className="order-cancel-btn" style={{display:"flex",float:"left",marginRight:10}} tabIndex={0} onClick={()=>navigate(`/review/write/${item.order_item_id}`,{state:item})}>
                 리뷰 작성
               </div>
               <div className="order-cancel-btn" style={{display:"flex",float:"right"}}>

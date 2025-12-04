@@ -14,13 +14,23 @@ public class MystoreServiceImpl implements MystoreService {
     private final MystoreMapper mystoreMapper;
 
     @Override
-    public MystoreDTO selectStore(long producerId){
+    public MystoreDTO selectStore(Long producerId){
         return mystoreMapper.selectStore(producerId);
     }
 
     @Override
-    public MystoreDTO selectStoreBoard(long producerId){
+    public MystoreDTO selectStoreBoard(Long producerId){
         return mystoreMapper.selectStoreBoard(producerId);
     }
     
+    @Override
+    public void updateStore(MystoreDTO dto){
+
+        //스토어 업데이트
+        mystoreMapper.updateStoreInfo(dto);
+
+        //producer 업데이트
+        mystoreMapper.updateProducerInfo(dto);
+
+    }
 }

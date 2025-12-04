@@ -31,6 +31,16 @@ export default function HelpCenter() {
   const [guideError, setGuideError] = useState("");
   const [openedArticleId, setOpenedArticleId] = useState(null);
 
+  const handle1to1Click = () => {
+    if (!window.ChannelIO) {
+      console.warn("ChannelIO not loaded yet");
+      alert("상담 채팅을 준비 중입니다. 잠시 후 다시 시도해 주세요.");
+      return;
+    }
+    window.ChannelIO("show");  // 숨겨둔 말풍선 보이기 (옵션)
+    window.ChannelIO("open");  // 바로 채팅창 열기
+  };
+
   // FAQ 로딩
   useEffect(() => {
     const fetchFaq = async () => {
@@ -156,12 +166,10 @@ export default function HelpCenter() {
             <HelpBox>
               <HelpTitle>도움이 필요하신가요?</HelpTitle>
               <HelpDesc>실시간 1:1 문의로 상담원과 바로 대화할 수 있어요.</HelpDesc>
-              <HelpButton id="farmday-1to1" type="button">
+              <HelpButton id="farmday-1to1" type="button"
+              onClick={handle1to1Click}>
                 1:1 실시간 문의하기
               </HelpButton>
-              <HelpSub>
-                상담 운영 시간, 실제 연락처 정보 등은 추후 설정 값으로 연동할 수 있습니다.
-              </HelpSub>
             </HelpBox>
           </SideNav>
 
@@ -355,7 +363,7 @@ export default function HelpCenter() {
                     수 있습니다.
                   </p>
                   <ul>
-                    <li>평일 10:00 ~ 18:00 (예시)</li>
+                    <li>평일 10:00 ~ 18:00</li>
                     <li>점심 시간 12:00 ~ 13:00 제외</li>
                     <li>
                       화면 좌측 하단 <strong>1:1 실시간 문의하기</strong> 버튼을
@@ -365,8 +373,8 @@ export default function HelpCenter() {
 
                   <h4 className="h4">다른 문의 채널</h4>
                   <ul>
-                    <li>이메일: support@farmday.com (예시)</li>
-                    <li>전화: 02-000-0000 (예시)</li>
+                    <li>이메일: support@farmday.com</li>
+                    <li>전화: 02-222-3333</li>
                   </ul>
 
                   <p className="note">

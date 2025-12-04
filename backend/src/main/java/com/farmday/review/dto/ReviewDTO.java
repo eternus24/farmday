@@ -17,12 +17,14 @@ public class ReviewDTO {
     private String title; //리뷰 제목
     private String content; //리뷰 내용
     private String imageUrl; //리뷰 이미지
-    private int likeCount;//좋아요 수
     private boolean isVisible;//노출 여부
     private LocalDateTime createdDate;//작성일
     private LocalDateTime updatedDate;//수정일
 
     private String reply; //판매자 답글 - 추가
     private String productTags;//상품 태그 - 추가
+
+    private int liked;//0,1 값
+    private int likeCount; //집계값
 
 }
