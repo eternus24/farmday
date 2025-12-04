@@ -5,6 +5,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, Link } from "react-router-dom";
 import "../../assets/css/cart.css";
 import { loadTossPayments, ANONYMOUS } from "@tosspayments/tosspayments-sdk";
+import { random123DaysLaterLabelKST } from "./dateCalc";
 
 function money(n) { return `$${n.toFixed(2)}`; }
 
@@ -55,7 +56,8 @@ export default function Orders() {
             grade_and_unit_name: `(${row.grade}) ${row.unit_name}`,
             price: Number(row?.price ?? 3.99),
             img: row.main_image,
-            eta: "11/24(월) 도착 예정",
+            eta: random123DaysLaterLabelKST() + " 도착 예정",
+            store_name: row.store_name,
           };
         })
         .filter(Boolean);
@@ -131,9 +133,10 @@ export default function Orders() {
     return Math.round(((discountAmount + usedPoints) / subtotal) * 100);
   }, [discountAmount, usedPoints, subtotal]);
 
-  const rewardBase = Math.floor(subtotal * 0.01); // LV.4 1% 적립 예시
+  const rewardBase = Math.floor(subtotal * userInfo.point_rate * 0.01);
+  // const [rewardBase, setRewardBase] = useState(Math.floor(subtotal * 0.01));
   const farmpayPoints = Math.floor(subtotal * 0.05);
-  const rewardReview = 1000; // 후기 적립 최대
+  const rewardReview = 1000*items.length; // 후기 적립 최대
   const rewardTotal = rewardBase + rewardReview;
 
   const [delivery_message,setDelivery_message] = useState('')
@@ -338,10 +341,11 @@ export default function Orders() {
                           <div className="rounded me-3 bg-white border" style={{width: 100, height: 100}} aria-label={`${it.name} no image`} />
                         )}
                         <div className="flex-grow-1">
-                          <div className="fw-semibold">{it.name}</div>
                           <div className="text-muted small">
-                            {it.summary}
+                            {it.store_name}
                           </div>
+                          <div className="fw-semibold">{it.name}</div>
+                          
                           <div className="text-muted small">{it.grade_and_unit_name} / {it.qty}개</div>
                           <div className="fw-semibold mt-1">{moneyKRW(it.price)}</div>
                         </div>
@@ -350,7 +354,7 @@ export default function Orders() {
                         <i className="fa fa-truck me-2" aria-hidden="true" />
                         {it.eta}
                       </div>
-                      <button className="btn btn-sm btn-outline-secondary rounded-pill mt-2">쿠폰 사용</button>
+                      {/* <button className="btn btn-sm btn-outline-secondary rounded-pill mt-2">쿠폰 사용</button> */}
                     </div>
                   ))}
 
@@ -451,7 +455,7 @@ export default function Orders() {
                     {/* 적립 혜택 */}
                     <h6 className="mt-3">적립 혜택 <i className="fa fa-info-circle" aria-hidden="true" /></h6>
                     <div className="d-flex justify-content-between small text-muted mt-2">
-                      <span>{userInfo.user_grade} 등급 : 1% 적립</span><span>{moneyKRW(rewardBase)}</span>
+                      <span>{userInfo.user_grade} 등급 : {userInfo.point_rate}% 적립</span><span>{moneyKRW(rewardBase)}</span>
                     </div>
                     <div className="d-flex justify-content-between small text-muted">
                       <span>사진 리뷰 작성</span><span>최대 {moneyKRW(rewardReview)}</span>

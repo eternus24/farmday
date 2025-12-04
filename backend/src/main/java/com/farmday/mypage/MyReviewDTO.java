@@ -14,6 +14,7 @@ public class MyReviewDTO {
     private String title; //리뷰 제목
     private String content; //리뷰 내용
     private String image_url; //리뷰 이미지
+    private int like_count;//좋아요 수
     private boolean is_visible;//노출 여부
     private String created_date;//작성일
     private String updated_date;//수정일

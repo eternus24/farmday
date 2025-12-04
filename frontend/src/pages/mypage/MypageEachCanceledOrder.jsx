@@ -3,44 +3,6 @@ import { NavLink } from "react-router-dom";
 export default function MypageEachCanceledOrder({co,formatKoreanDateTime,moneyKRW}) {
 
   return (
-    // <div key={co.orders_canceled_id} className="order-box">
-    //   <div className="d-flex justify-content-between align-items-center">
-        
-    //     <span className="order-date-span">
-    //       {formatKoreanDateTime(co.order_created_date)}
-    //     </span>
-    //     <span className="me-2">
-    //       주문번호 {co.toss_orderid.replaceAll('order-','')}
-    //     </span>
-          
-    //   </div>
-
-    //   <div className="d-flex align-items-center mt-3">
-    //     <NavLink to={`/shop/detail/${co.product_id}`}>
-    //       <img src={co.main_image} className={`orders-canceled-img`}/>
-    //     </NavLink>
-        
-    //     <div className="orders-thumbnail-detail">
-    //       <div className="fw-semibold">
-            
-    //         스토어명 : {co.store_name}
-    //         <br/>
-            
-    //         상품명 : {co.name}
-    //         <br/>
-    //         <br/>
-    //         수량 : {co.quantity}
-    //         <br/>
-    //         가격 : {co.price_at_order}
-    //       </div>
-    //     </div>
-        
-        
-        
-    //   </div>
-
-      
-    // </div>
     <div key={co.orders_canceled_id} className="order-canceled-box">
       <div className="d-flex justify-content-between align-items-center">
         
@@ -80,7 +42,7 @@ export default function MypageEachCanceledOrder({co,formatKoreanDateTime,moneyKR
           </div>
 
           <div className="orders-item-detail-price">
-            {moneyKRW(co.price_at_order)}
+            {moneyKRW(co.price_at_order*co.quantity)}
           </div>
 
           

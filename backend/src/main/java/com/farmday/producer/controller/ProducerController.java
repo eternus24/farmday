@@ -1,5 +1,10 @@
 package com.farmday.producer.controller;
 
+import com.farmday.mypage.MembershipGradeDTO;
+import com.farmday.mypage.OrdersCanceledDTO;
+import com.farmday.orders.OrdersDTO;
+import com.farmday.orders.OrdersItemDTO;
+import com.farmday.orders.OrdersService;
 import com.farmday.producer.domain.Producer;
 import com.farmday.producer.dto.DailySalesDto;
 import com.farmday.producer.dto.LowStockProductDto;
@@ -40,6 +45,7 @@ public class ProducerController {
 
     private final UserService userService;
     private final ProducerService producerService;
+    private final OrdersService ordersService;
 
     @GetMapping("/me")
     public ResponseEntity<ProducerMeResponse> getMyProducerInfo(
@@ -334,7 +340,7 @@ public class ProducerController {
             @AuthenticationPrincipal String loginUserId,
             @PathVariable Long orderItemId,
             @RequestParam("refundStatus") String refundStatus
-    ) {
+    ) throws Exception {
         // 1) 로그인 유저 확인
         User user = userService.findByUserId(loginUserId);
         if (user == null) {
@@ -348,6 +354,64 @@ public class ProducerController {
         }
 
         Long producerId = producer.getProducerId();
+
+        OrdersItemDTO ordersItem = ordersService.findOrdersItemById(orderItemId.intValue());
+        String user_id = ordersItem.getUser_id();
+
+        String status = ordersItem.getOrder_status();
+
+        if (!status.equals("B1")) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        if (refundStatus.equals("E2")) { //환불 거부 -> 구매 확정 처리
+
+            MembershipGradeDTO membershipGrade = ordersService.findMembershipGradeInfo(ordersService.findUserMembershipInfo(user_id));
+
+            double point_rate = membershipGrade.getPoint_rate();
+            
+            int earned_points = (int)(ordersItem.getLine_total_amount() * point_rate * 0.01);
+            int current_points = ordersService.findUserPoints(user_id);
+            int updated_points = current_points + earned_points;
+
+            ordersService.updateUserPoints(user_id, updated_points);
+
+            System.out.println("적립금 "+earned_points+"점을 얻어 총 "+updated_points+"점이 되었습니다.");
+
+            ordersService.changeDeliveryStatus(orderItemId.intValue(), "배송완료");
+
+        } else if (refundStatus.equals("R1")) { //환불 승인 -> 구매 취소 처리
+
+            OrdersDTO order = ordersService.findOrdersByOrderId(ordersItem.getOrder_id());
+
+            int product_total_amount = order.getProduct_total_amount();
+            int order_total_amount = order.getOrder_total_amount();
+            int item_total_amount = ordersItem.getLine_total_amount();
+
+            int refund_amount = order_total_amount * item_total_amount / product_total_amount;
+            int refund_points = order.getUsed_points() * item_total_amount / product_total_amount;
+
+            int current_points = ordersService.findUserPoints(user_id);
+            int updated_points = current_points + refund_points;
+            ordersService.updateUserPoints(user_id, updated_points);
+
+            System.out.println("환불로 인해 "+refund_points+"점을 반환받아 "+updated_points+"점이 되었습니다.");
+
+            //orders에 있는 OrdersCanceledDTO는 중복이라 삭제했음, mypage의 DTO로 해야 함
+            OrdersCanceledDTO cancel = new OrdersCanceledDTO();
+            cancel.setOrder_item_id(orderItemId.intValue());
+            cancel.setProduct_id(ordersItem.getProduct_id());
+            cancel.setUser_id(user_id);
+            cancel.setCancel_reason("상품 불량");
+            cancel.setRefund_amount(refund_amount);
+
+            ordersService.insertOrdersItemIntoCancel(cancel);
+
+            ordersService.changeDeliveryStatus(orderItemId.intValue(), "환불완료");
+
+        } else {
+            return ResponseEntity.badRequest().build();
+        }
 
         // 3) 서비스 호출 (본인 상품인지까지 안에서 체크)
         producerService.updateRefundStatus(producerId, orderItemId, refundStatus);

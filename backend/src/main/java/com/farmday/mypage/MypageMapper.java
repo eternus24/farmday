@@ -19,6 +19,8 @@ public interface MypageMapper {
 		@Param("product_id")int product_id
 	) throws Exception;
 
+		public List<WishlistDTO> findWishlistByUserId(String user_id) throws Exception;
+
 		public List<OrdersCanceledDTO> findCanceledOrderByUserId(String user_id) throws Exception;
 
     public int insertWishlist(WishlistDTO dto) throws Exception;

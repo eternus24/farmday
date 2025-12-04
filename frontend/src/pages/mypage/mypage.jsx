@@ -12,6 +12,7 @@ import MypageCanceledOrder from "./MypageCanceledOrder";
 import delivery1 from "../../assets/img/delivery1.png";
 import delivery2 from "../../assets/img/delivery2.jpg";
 import delivery3 from "../../assets/img/delivery3.png";
+import MypageWishlist from "./MypageWishlist";
 import Membership from "./Membership";
 import MyInfo from "./MyInfo";
 
@@ -85,6 +86,7 @@ export default function MyPage() {
   const [ordersItem, setOrdersItem] = useState([]);
   const [myReview, setMyReview] = useState([]);
   const [canceledOrder, setCanceledOrder] = useState([]);
+  const [wishlist, setWishlist] = useState([]);
 
   // ⭐ 어떤 주문의 상세가 열려 있는지 저장
   const [openOrderId, setOpenOrderId] = useState(null);
@@ -192,15 +194,14 @@ export default function MyPage() {
       setDeliveryInfo({
         productName: data.name,
         status: data.delivery_status,
-        carrier: "CJ대한통운",
-        trackingNo: "1234-5678-9012",
+        carrier: data.carrier_name,
+        trackingNo: data.tracking_number,
         receiver: data.user_name,
         address: data.receiver_addr,
-        stepList: [
-          { time: "2025-11-27 09:12", text: "택배사 집화 완료" },
-          { time: "2025-11-27 14:35", text: "물류센터 이동 중" },
-          { time: "2025-11-28 08:10", text: "배달 지역 배송터미널 도착" },
-        ],
+        created_date: data.created_date,
+        shipped_at: data.shipped_at,
+        delivered_at: data.delivered_at,
+        order_status: data.order_status
       });
 
     } catch (e) {
@@ -224,6 +225,23 @@ export default function MyPage() {
       if (e.name === "AbortError") return;
       console.error("load canceledOrder failed:", e);
       setCanceledOrder([]);
+    }
+  }
+
+
+  async function getWishlist() {
+    try {
+      const res = await fetch(
+        `${API_BASE}/mypage/findWishlistByUserId?user_id=${user_Id}`,
+        { credentials: "include", cache: "no-store" }
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setWishlist(data);
+    } catch (e) {
+      if (e.name === "AbortError") return;
+      console.error("load wishlist failed:", e);
+      setWishlist([]);
     }
   }
 
@@ -300,17 +318,27 @@ export default function MyPage() {
         cache: "no-store",
       });
 
+      const bodyText = await res.text();
+      const trimmed = (bodyText || "").trim();
+
       if (!res.ok) {
-        const msg = await res.text();
-        // why: 서버에서 상태 부적합 등 세부 메시지를 내려줄 수 있어 사용자에게 그대로 안내
-        alert(`취소 실패: ${msg || res.status}`);
+        alert(`취소 실패: ${trimmed || res.status}`);
         return;
       }
 
-      alert("주문이 정상적으로 취소되었습니다.");
+      const shippingFeeCharged = trimmed === "shipping_fee_charged";
+      const shippingFeeRefunded = trimmed === "shipping_fee_refunded";
+
+      if (shippingFeeCharged) {
+        alert("주문이 정상적으로 취소되었습니다.\n※ 환불 후 무료배송조건 미충족으로 배송비가 추가로 부과될 예정입니다.");
+      } else if (shippingFeeRefunded) {
+        alert("주문이 정상적으로 취소되었습니다.\n※ 해당 주문의 배송이 모두 취소되어 지불하신 배송비가 고객님의 계좌로 입금 될 예정입니다(3영업일 이내).")
+      } else {
+        alert("주문이 정상적으로 취소되었습니다.");
+      }
+
       handleCloseCancelModal();
       if (openOrderId) {
-        // why: 상태 변경 즉시 반영
         await getOrdersItem(openOrderId);
       }
     } catch (e) {
@@ -326,13 +354,14 @@ export default function MyPage() {
     getUserOrders();
     getMyReview();
     getCanceledOrder();
+    getWishlist();
   }, []);
 
   function openContent(content) {
     if (content === 'orderList') getUserOrders();
     if (content === 'myReview') getMyReview();
     if (content === 'canceledOrder') getCanceledOrder();
-    // if (content === 'wishlist') getCanceledOrder();
+    if (content === 'wishlist') getCanceledOrder();
 
     setShowContent(content);
   }
@@ -470,6 +499,12 @@ export default function MyPage() {
               />
             )}
 
+            {showContent === 'wishlist' && (
+              <MypageWishlist
+                formatKoreanDateTime={formatKoreanDateTime} moneyKRW={moneyKRW} wishlist={wishlist} getWishlist={getWishlist}
+              />
+            )}
+
             {showContent === 'membership' && (
               <div className="col-lg-8">
                 <Membership />
@@ -479,7 +514,7 @@ export default function MyPage() {
             {showContent === 'myInfo' && (
               <MyInfo API_BASE={API_BASE} userId={user_Id} />
             )}
-
+              
           </div>
         </div>
       </div>
@@ -625,9 +660,24 @@ export default function MyPage() {
               <div className="delivery-img-container">
                 <img src={delivery1} className="delivery-img"/>
                 <br/>
-                <div className={`delivery-img-name`}>
-                  주문 확인
-                </div>
+                {deliveryInfo?.order_status === 'R1' ? (
+                  <div className={`delivery-img-name btn-canceled`}>
+                    {deliveryInfo?.status === '배송취소' && (
+                      <>주문 취소</>
+                    )}
+                    {deliveryInfo?.status === '환불완료' && (
+                      <>상품 환불</>
+                    )}
+                  </div>
+                ) : (
+                  <div className={`
+                    delivery-img-name
+                    ${deliveryInfo?.created_date ? 'btn-activated' : ''}
+                  `}>
+                    주문 확인
+                  </div>
+                )}
+                
               </div>
               <div>
                 &gt;
@@ -637,7 +687,7 @@ export default function MyPage() {
                 <br/>
                 <div className={`
                   delivery-img-name
-                  ${deliveryInfo?.status === '배송준비' ? 'btn-disabled' : ''}
+                  ${deliveryInfo?.shipped_at ? 'btn-activated' : ''}
                 `}>
                   배송중
                 </div>
@@ -650,7 +700,7 @@ export default function MyPage() {
                 <br/>
                 <div className={`
                   delivery-img-name
-                  ${(deliveryInfo?.status === '배송준비' || deliveryInfo?.status === '배송중') ? 'btn-disabled' : ''}
+                  ${deliveryInfo?.delivered_at ? 'btn-activated' : ''}
                 `}>
                   배송 완료
                 </div>
@@ -675,18 +725,37 @@ export default function MyPage() {
               className="border rounded-3 p-2 mb-3"
               style={{ maxHeight: 180, overflowY: "auto" }}
             >
-              {(deliveryInfo?.stepList ?? []).map((step, idx) => (
-                <div key={idx} className="small mb-1">
-                  <div className="text-muted">{step.time}</div>
-                  <div>{step.text}</div>
-                </div>
-              ))}
+              
 
-              {!deliveryInfo?.stepList && (
-                <div className="small text-muted">
-                  예시 데이터입니다. 실제 배송 이력과 연동해 주세요.
+              <div className="delivery-detail-container">
+                <div className="delivery-detail-created-date">{deliveryInfo?.created_date}</div>
+                <div className="delivery-detail-content">
+                  {deliveryInfo?.order_status === 'R1' ? (
+                    <>주문이 취소되었습니다.</>
+                  ) : (
+                    <>판매자가 고객님의 주문을 확인하는 중입니다.</>
+                  )}
+                  
+                </div>
+              </div>
+              {deliveryInfo?.shipped_at && (
+                <div className="delivery-detail-container">
+                  <div className="delivery-detail-created-date">{deliveryInfo?.shipped_at}</div>
+                  <div className="delivery-detail-content">
+                    고객님의 상품이 배송 중입니다.
+                  </div>
                 </div>
               )}
+              {deliveryInfo?.delivered_at && (
+                <div className="delivery-detail-container">
+                  <span className="delivery-detail-created-date">{deliveryInfo?.delivered_at}</span>
+                  <span className="delivery-detail-content">
+                    고객님께 배송이 완료되었습니다.
+                  </span>
+                </div>
+              )}
+              
+
             </div>
 
             <div className="small text-muted mb-3">

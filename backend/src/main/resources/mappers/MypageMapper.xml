@@ -23,7 +23,19 @@
   </select>
 
   <select id="findWishlistByUserId" parameterType="String" resultType="com.farmday.mypage.WishlistDTO">
-    select * from wishlist where user_id=#{user_id}
+    select
+      wl.*,
+      p.name,p.main_image,
+      d.grade,d.unit_name,d.origin_region,d.price,
+      s.store_name
+    from
+      wishlist wl, product p, product_detail d, store s
+    where
+      wl.user_id=#{user_id}
+      and wl.product_id=p.product_id
+      and wl.product_id=d.product_id
+      and p.producer_id=s.producer_id
+    order by wl.created_date desc
   </select>
 
   <select id="findCanceledOrderByUserId" parameterType="String" resultType="com.farmday.mypage.OrdersCanceledDTO">

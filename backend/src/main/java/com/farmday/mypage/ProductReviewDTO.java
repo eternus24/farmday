@@ -14,10 +14,12 @@ public class ProductReviewDTO {
     private String title;
     private String content;
     private String image_url;
+    private int like_count;
     private String is_visible;
     private String created_date;
     private String updated_date;
     private String reply;
     private String product_tags;
+
 
 }

@@ -10,7 +10,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.farmday.cart.CartDTO;
 import com.farmday.cart.CartService;
+import com.farmday.mypage.MembershipGradeDTO;
 import com.farmday.mypage.MypageService;
+import com.farmday.mypage.OrdersCanceledDTO;
 
 import java.util.List;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -55,11 +57,21 @@ public class OrdersController {
         if (user_id == null || user_id.isEmpty() || item == null) {
             return ResponseEntity.badRequest().build();
         }
+
+        int used_points = item.getUsed_points();
+        int current_points = ordersService.findUserPoints(user_id);
+
+        int updated_points = current_points - used_points;
+        ordersService.updateUserPoints(user_id, updated_points);
+        
+
+
         item.setOrder_status("A");
         item.setProduct_total_amount(item.getSubtotal());
 
         String toss_orderid = item.getToss_orderid();
         ordersService.insertOrders(item);
+
 
         // 토스페이먼츠 결제로 생성된 고유 주문번호를 통해 방금 생성된 order의 PK값 찾아오기
         int order_id = ordersService.findOrdersByTossOrderId(toss_orderid).getOrder_id();
@@ -153,8 +165,49 @@ public class OrdersController {
             return ResponseEntity.badRequest().body("not_appropriate_status");
         }
 
+        OrdersDTO order = ordersService.findOrdersByOrderId(ordersItem.getOrder_id());
 
-        int refund_amount = 0;
+
+        int product_total_amount = order.getProduct_total_amount();
+        int order_total_amount = order.getOrder_total_amount();
+        int item_total_amount = ordersItem.getLine_total_amount();
+
+        int refund_amount = order_total_amount * item_total_amount / product_total_amount;
+
+        // 환불 시 남은 구매금액이 4만원 이하가 된다면 면제받은 배송비를 다시 부과
+        int canceled_total_amount = ordersService.findTotalCanceledAmountByOrderId(order.getOrder_id());
+
+        int remaining_total_amount = product_total_amount - canceled_total_amount;
+        boolean isShippingFeeCharged = false;
+        boolean isShippingFeeRefunded = false;
+
+        if (order.getShipping_fee()==0 && (remaining_total_amount - item_total_amount)<40000) {
+            if (remaining_total_amount - item_total_amount>0) {
+                isShippingFeeCharged = true;
+                ordersService.chargeShippingFeeAfterCancel(order.getOrder_id(), 3000);
+            }
+        } else if (order.getShipping_fee()>0 && (remaining_total_amount<=item_total_amount)) {
+            isShippingFeeRefunded = true;
+            ordersService.chargeShippingFeeAfterCancel(order.getOrder_id(), -3000);
+        }
+
+
+
+        int refund_points = order.getUsed_points() * item_total_amount / product_total_amount;
+
+        int current_points = ordersService.findUserPoints(user_id);
+        int updated_points = current_points + refund_points;
+        ordersService.updateUserPoints(user_id, updated_points);
+
+        System.out.println("환불로 인해 "+refund_points+"점을 반환받아 "+updated_points+"점이 되었습니다.");
+        
+
+        
+
+
+
+
+
 
         OrdersCanceledDTO cancel = new OrdersCanceledDTO();
         cancel.setOrder_item_id(order_item_id);
@@ -170,7 +223,11 @@ public class OrdersController {
 
         ordersService.changeDeliveryStatus(order_item_id,"배송취소");
 
-
+        if (isShippingFeeCharged) {
+            return ResponseEntity.ok("shipping_fee_charged");
+        } else if (isShippingFeeRefunded) {
+            return ResponseEntity.ok("shipping_fee_refunded");
+        }
         return ResponseEntity.ok("");
     }
     
@@ -181,6 +238,8 @@ public class OrdersController {
         @PathVariable("user_id") String user_id,
         @RequestParam("order_item_id")int order_item_id) throws Exception {
         
+        System.out.println("디버깅 확인: 주문 확정 컨트롤러 진입");
+
         OrdersItemDTO ordersItem = ordersService.findOrdersItemById(order_item_id);
 
         String status = ordersItem.getOrder_status();
@@ -188,6 +247,18 @@ public class OrdersController {
         if (!status.equals("A2")) {
             return ResponseEntity.badRequest().body("not_appropriate_status");
         }
+
+        MembershipGradeDTO membershipGrade = ordersService.findMembershipGradeInfo(ordersService.findUserMembershipInfo(user_id));
+
+        double point_rate = membershipGrade.getPoint_rate();
+        
+        int earned_points = (int)(ordersItem.getLine_total_amount() * point_rate * 0.01);
+        int current_points = ordersService.findUserPoints(user_id);
+        int updated_points = current_points + earned_points;
+
+        ordersService.updateUserPoints(user_id, updated_points);
+
+        System.out.println("적립금 "+earned_points+"점을 얻어 총 "+updated_points+"점이 되었습니다.");
 
         ordersService.changeOrdersItemStatus(order_item_id, "E1");
 

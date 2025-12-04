@@ -23,6 +23,11 @@ public class MypageService {
         return mypageMapper.isWishlistExist(user_id,product_id);
     }
 
+    public List<WishlistDTO> findWishlistByUserId(String user_id) throws Exception {
+        return mypageMapper.findWishlistByUserId(user_id);
+    }
+
+
     public List<OrdersCanceledDTO> findCanceledOrderByUserId(String user_id) throws Exception {
         return mypageMapper.findCanceledOrderByUserId(user_id);
     }

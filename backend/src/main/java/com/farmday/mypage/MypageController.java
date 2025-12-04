@@ -10,6 +10,8 @@ import com.farmday.orders.DeliveryDTO;
 
 import org.springframework.web.bind.annotation.PostMapping;
 
+
+
 @RestController
 public class MypageController {
     
@@ -18,6 +20,15 @@ public class MypageController {
         this.mypageService = mypageService;
     }
     
+
+    @GetMapping("/mypage/isWishlistExist")
+    public boolean isWishlistExist(
+        @RequestParam("user_id")String user_id,
+        @RequestParam("product_id")int product_id
+    ) throws Exception {
+        return (mypageService.isWishlistExist(user_id, product_id)>0);
+    }
+
     @PostMapping("/mypage/clickWishlistBtn")
     public void clickWishlistBtn(
         @RequestParam("user_id")String user_id,
@@ -36,8 +47,22 @@ public class MypageController {
 
             mypageService.insertWishlist(wishlist);
         }
-
     }
+
+    @GetMapping("/mypage/findWishlistByUserId")
+    public List<WishlistDTO> findWishlistByUserId(@RequestParam("user_id") String user_id) throws Exception {
+        return mypageService.findWishlistByUserId(user_id);
+    }
+
+    @GetMapping("/mypage/deleteWishlist")
+    public void deleteWishlist(
+        @RequestParam("user_id")String user_id,
+        @RequestParam("product_id")int product_id
+    ) throws Exception {
+        mypageService.deleteWishlist(user_id, product_id);
+    }
+
+
 
     @GetMapping("/mypage/findReviewByUserId")
     public List<MyReviewDTO> findReviewByUserId(@RequestParam("user_id") String user_id) throws Exception {

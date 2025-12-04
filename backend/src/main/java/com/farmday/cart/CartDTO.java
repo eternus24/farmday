@@ -12,7 +12,7 @@ public class CartDTO {
 
 
 
-    //ProductDTO (join용)
+    //Product (join용)
     private int producer_id;
     private int base_category_id;
     private String product_name;
@@ -22,7 +22,7 @@ public class CartDTO {
     private String product_created_date;
     private String product_updated_date;
 
-    //Product_DetailDTO (join용)
+    //Product_Detail (join용)
     private int detail_id;
     private String grade;
     private String unit_name;
@@ -35,4 +35,7 @@ public class CartDTO {
     private String product_detail_created_date;
     private String product_detail_updated_date;
 
+    //Store (join용)
+    private String store_name;
+    
 }

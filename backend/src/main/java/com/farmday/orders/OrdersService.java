@@ -4,6 +4,8 @@ package com.farmday.orders;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.farmday.mypage.MembershipGradeDTO;
+import com.farmday.mypage.OrdersCanceledDTO;
 
 import java.util.List;
 
@@ -19,6 +21,18 @@ public class OrdersService {
 
     public int findUserPoints(String user_id) throws Exception {
         return ordersMapper.findUserPoints(user_id);
+    }
+
+    public String findUserMembershipInfo(String user_id) throws Exception {
+        return ordersMapper.findUserMembershipInfo(user_id);
+    }
+
+    public MembershipGradeDTO findMembershipGradeInfo(String grade_code) throws Exception {
+        return ordersMapper.findMembershipGradeInfo(grade_code);
+    }
+
+    public OrdersDTO findOrdersByOrderId(int order_id) throws Exception {
+        return ordersMapper.findOrdersByOrderId(order_id);
     }
 
     public OrdersDTO findOrdersByTossOrderId(String toss_orderid) throws Exception {
@@ -43,8 +57,10 @@ public class OrdersService {
         return ordersMapper.insertOrdersItemIntoDelivery(dto);
     }
 
-
-
+    public int updateUserPoints(String user_id, int points) throws Exception {
+        return ordersMapper.updateUserPoints(user_id, points);
+    }
+    
 
     public List<OrdersDTO> findAllOrdersByUserId(String user_id) throws Exception {
         return ordersMapper.findAllOrdersByUserId(user_id);
@@ -67,5 +83,13 @@ public class OrdersService {
         return ordersMapper.changeDeliveryStatus(order_item_id,delivery_status);
     }
 
+
+    public int findTotalCanceledAmountByOrderId(int order_id) throws Exception {
+        return ordersMapper.findTotalCanceledAmountByOrderId(order_id);
+    }
+
+    public int chargeShippingFeeAfterCancel(int order_id, int shipping_fee) throws Exception {
+        return ordersMapper.chargeShippingFeeAfterCancel(order_id, shipping_fee);
+    }
 
 }

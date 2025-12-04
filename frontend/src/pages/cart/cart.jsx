@@ -90,7 +90,7 @@ export default function Cart() {
   }, [API_BASE, user_id]);
 
   const subtotal = useMemo(() => items.reduce((s, it) => s + it.price * it.qty, 0), [items]);
-  const shipping = subtotal>=40000 ? 3000 : 0;
+  const shipping = subtotal<40000 ? 3000 : 0;
   const total = Math.max(0, subtotal + shipping - discount);
 
   const clamp = (n) => Math.min(999, Math.max(1, n || 1));

@@ -1,6 +1,7 @@
 // frontend/src/pages/toss/SuccessPage.jsx (예시 경로)
-import React, { useEffect, useRef, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { CartContext } from "../../contexts/CartContext";
 
 function formatDateTime(iso) {
   if (!iso) return "-";
@@ -34,6 +35,7 @@ export function SuccessPage() {
 
   const calledRef = useRef(false);
   const savedRef = useRef(false); // 중복 insert 방지용
+  const { findCartAmount } = useContext(CartContext);
 
   useEffect(() => {
 
@@ -160,6 +162,8 @@ export function SuccessPage() {
         }
       } catch (e) {
         console.error("orders insert error:", e);
+      } finally {
+        await findCartAmount();
       }
     })();
 

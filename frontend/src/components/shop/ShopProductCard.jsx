@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { useNavigate } from "react-router-dom";
 import '../../assets/css/shopfilter.css';
 import { CartContext } from '../../contexts/CartContext';
@@ -42,6 +42,33 @@ const ShopProductCard = ({product}) => {//상품 카드(이미지/가격/찜 버
         await findCartAmount();
     }
 
+    async function checkWishlist() {
+        const response = await fetch(`${API_BASE}/mypage/isWishlistExist?user_id=${user_id}&product_id=${product.productId}`);
+        const data = await response.json();
+        setLiked(data);
+    }
+
+    useEffect(() => {
+        checkWishlist();
+    },[])
+
+    async function toggleWishlist(e) {
+        const response = await fetch(`${API_BASE}/mypage/clickWishlistBtn?user_id=${user_id}&product_id=${product.productId}`, {
+            method: "POST",
+            credentials: "include",
+        });
+        if (response.ok) {
+            setLiked(!liked);
+            if (liked) {
+                alert("["+product.name+"] 상품을 찜 목록에서 제거했습니다.");
+            } else {
+                alert("["+product.name+"] 상품을 찜 목록에 추가했습니다.");
+            }
+        } else {
+            console.error("찜목록 토글 실패:", response.statusText);
+        }
+    }
+
     //요일 배열
     const days = ["일", "월", "화", "수", "목", "금", "토"];
 
@@ -83,7 +110,7 @@ const ShopProductCard = ({product}) => {//상품 카드(이미지/가격/찜 버
 
                 {/* 하트 아이콘 */}
                 <span onClick={(e) => { e.stopPropagation();
-                        setLiked(!liked); }}
+                        toggleWishlist(e); }}
                     style={{ cursor: "pointer", fontSize: "22px", fontWeight: "bold",
                         color: liked ? "#ff5052ff" : "#cccccc" }} > ♥
                 </span>

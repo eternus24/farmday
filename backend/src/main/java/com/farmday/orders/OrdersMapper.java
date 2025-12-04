@@ -5,12 +5,21 @@ import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import com.farmday.mypage.MembershipGradeDTO;
+import com.farmday.mypage.OrdersCanceledDTO;
+
 @Mapper
 public interface OrdersMapper {
 
 	UsersDTO findUserInfoForOrder(String user_id) throws Exception;
 
-    int findUserPoints(String user_id) throws Exception;
+  int findUserPoints(String user_id) throws Exception;
+
+	String findUserMembershipInfo(String user_id) throws Exception;
+
+	MembershipGradeDTO findMembershipGradeInfo(String grade_code) throws Exception;
+
+	OrdersDTO findOrdersByOrderId(int order_id) throws Exception;
 
 	OrdersDTO findOrdersByTossOrderId(String toss_orderid) throws Exception;
 
@@ -22,6 +31,12 @@ public interface OrdersMapper {
 	int insertOrdersItem(OrdersItemDTO dto) throws Exception;
 
 	int insertOrdersItemIntoDelivery(DeliveryDTO dto) throws Exception;
+
+	int updateUserPoints(
+		@Param("user_id")String user_id,
+		@Param("points")int points
+	) throws Exception;
+
 
 	List<OrdersDTO> findAllOrdersByUserId(String user_id) throws Exception;
 	
@@ -41,6 +56,12 @@ public interface OrdersMapper {
 		@Param("delivery_status")String delivery_status
 	) throws Exception;
 
+	int findTotalCanceledAmountByOrderId(int order_id) throws Exception;
+
+	int chargeShippingFeeAfterCancel(
+		@Param("order_id")int order_id,
+		@Param("shipping_fee")int shipping_fee
+	) throws Exception;
 
 
 }

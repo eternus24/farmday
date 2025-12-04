@@ -52,25 +52,38 @@ export default function MypageEachOrdersItem({item,moneyKRW,handleOpenCancelModa
       <div className="orders-item-btns-container">
 
         <div className="orders-item-detail-delivery">
-          {item.delivery_status === '배송중' && (
-            <span>🚚&nbsp;</span>
-          )}
-          {(item.delivery_status === null) ? (
-            '배송정보없음'
-          ):(
-            item.delivery_status
-          )}
+          <div onClick={() => handleOpenDeliveryModal(item.order_item_id)} className="orders-item-delivery-status">
+            {item.delivery_status === '배송중' && (
+              <span>🚚&nbsp;</span>
+            )}
+            {(item.delivery_status === null) ? (
+              '배송정보없음'
+            ):(
+              item.delivery_status
+            )}
+          </div>
+          
         </div>
 
         
         <div className="order-item-btns">
           {
-            item.order_status === 'R1' && (
+            (item.order_status === 'R1' && item.delivery_status === '배송취소') && (
               <div
                 className="order-cancel-finished"
                 tabIndex={0}
               >
                 취소 완료
+              </div>
+            )
+          }
+          {
+            (item.order_status === 'R1' && item.delivery_status === '환불완료') && (
+              <div
+                className="order-cancel-finished"
+                tabIndex={0}
+              >
+                환불 완료
               </div>
             )
           }
@@ -107,8 +120,7 @@ export default function MypageEachOrdersItem({item,moneyKRW,handleOpenCancelModa
           {(item.order_status === 'E1' || item.order_status === 'E2') && (
             
             <>
-            {/* ===== 추가 - state:item ===== */}
-              <div className="order-cancel-btn" style={{display:"flex",float:"left",marginRight:10}} tabIndex={0} onClick={()=>navigate(`/review/write/${item.order_item_id}`,{state:item})}>
+              <div className="order-cancel-btn" style={{display:"flex",float:"left",marginRight:10}} tabIndex={0} onClick={()=>navigate(`/review/write/${item.order_item_id}`)}>
                 리뷰 작성
               </div>
               <div className="order-cancel-btn" style={{display:"flex",float:"right"}}>
@@ -119,7 +131,7 @@ export default function MypageEachOrdersItem({item,moneyKRW,handleOpenCancelModa
           {(item.order_status === 'E3') && (
             
             <>
-              <div className="order-cancel-btn" style={{display:"flex",float:"left",marginRight:10}}>
+              <div className="order-cancel-finished" style={{display:"flex",float:"left",marginRight:10}}>
                 리뷰 작성 완료
               </div>
               <div className="order-cancel-btn" style={{display:"flex",float:"right"}}>

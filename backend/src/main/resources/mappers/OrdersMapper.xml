@@ -7,15 +7,34 @@
   <select id="findUserInfoForOrder" parameterType="String" resultType="com.farmday.orders.UsersDTO">
     select 
       u.user_no,u.role,u.userid,u.addr,u.name,u.phone,u.phone_verified,u.email,u.email_verified,u.birth,u.gender,u.photo,u.created_date,u.updated_date,u.is_blocked,u.points,
-      m.grade_code,m.grade_name user_grade
-    from users u, user_membership m
-    where u.userid=#{user_id} and u.user_no=m.user_no
+      m.grade_code,m.grade_name user_grade,
+      mg.point_rate
+    from 
+      users u, user_membership m, membership_grade mg
+    where 
+      u.userid=#{user_id} 
+      and u.user_no=m.user_no
+      and m.grade_code=mg.grade_code
   </select>
 
   <select id="findUserPoints" parameterType="String" resultType="int">
     select points from users where userid=#{user_id}
   </select>
   
+  <select id="findUserMembershipInfo" parameterType="String" resultType="String">
+    select m.grade_code
+    from user_membership m, users u
+    where u.userid=#{user_id} and u.user_no=m.user_no
+  </select>
+
+  <select id="findMembershipGradeInfo" parameterType="String" resultType="com.farmday.mypage.MembershipGradeDTO">
+    select * from membership_grade where grade_code=#{grade_code}
+  </select>
+
+  <select id="findOrdersByOrderId" parameterType="int" resultType="com.farmday.orders.OrdersDTO">
+    select * from orders where order_id=#{order_id}
+  </select>
+
   <select id="findOrdersByTossOrderId" parameterType="String" resultType="com.farmday.orders.OrdersDTO">
     select * from orders where toss_orderid=#{toss_orderid}
   </select>
@@ -35,9 +54,9 @@
 
   <insert id="insertOrders" parameterType="com.farmday.orders.OrdersDTO">
     insert into orders
-      (order_id,user_id,order_status,product_total_amount,shipping_fee,discount_amount,order_total_amount,receiver_name,receiver_phone,receiver_addr,delivery_message,order_type,group_deal_id,toss_orderid,toss_paymentkey)
+      (order_id,user_id,order_status,product_total_amount,shipping_fee,discount_amount,order_total_amount,receiver_name,receiver_phone,receiver_addr,delivery_message,order_type,group_deal_id,toss_orderid,toss_paymentkey,used_points)
     values
-      (ORDERS_SEQ.NEXTVAL,#{user_id},#{order_status},#{product_total_amount},#{shipping_fee},#{discount_amount},#{order_total_amount},#{receiver_name},#{receiver_phone},#{receiver_addr},#{delivery_message},#{order_type},null,#{toss_orderid},#{toss_paymentkey})
+      (ORDERS_SEQ.NEXTVAL,#{user_id},#{order_status},#{product_total_amount},#{shipping_fee},#{discount_amount},#{order_total_amount},#{receiver_name},#{receiver_phone},#{receiver_addr},#{delivery_message},#{order_type},null,#{toss_orderid},#{toss_paymentkey},#{used_points})
   </insert>
 
   <insert id="insertOrdersItem" parameterType="com.farmday.orders.OrdersItemDTO">
@@ -54,7 +73,11 @@
       (#{order_item_id},#{delivery_status})
   </insert>
 
-
+  <update id="updateUserPoints" parameterType="java.util.Map">
+    update users set
+      points=#{points}
+    where userid=#{user_id}
+  </update>
 
 
 
@@ -84,7 +107,7 @@
 
 
 
-  <insert id="insertOrdersItemIntoCancel" parameterType="com.farmday.orders.OrdersCanceledDTO">
+  <insert id="insertOrdersItemIntoCancel" parameterType="com.farmday.mypage.OrdersCanceledDTO">
     insert into orders_canceled
       (orders_canceled_id,user_id,order_item_id,product_id,cancel_reason,refund_amount)
     values
@@ -102,6 +125,23 @@
       delivery_status=#{delivery_status}
     where order_item_id=#{order_item_id}
   </update>
+
+  
+  <select id="findTotalCanceledAmountByOrderId" parameterType="int" resultType="int">
+    select NVL(SUM(line_total_amount), 0) AS total_canceled from (
+      select line_total_amount from orders_item where order_id=#{order_id} and order_item_id in (
+        select order_item_id from orders_canceled
+      )
+    )
+  </select>
+    
+  <update id="chargeShippingFeeAfterCancel" parameterType="java.util.Map">
+    update orders set
+      shipping_fee=shipping_fee+#{shipping_fee},
+      order_total_amount=order_total_amount+#{shipping_fee}
+    where order_id=#{order_id}
+  </update>
+
 
 
 

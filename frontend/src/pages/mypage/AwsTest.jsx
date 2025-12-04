@@ -10,6 +10,9 @@ export default function AwsTest() {
   const { protocol, hostname } = window.location;
   const API_BASE = `${protocol}//${hostname}:8080`;
 
+  // ⚠️ 필요하면 여기만 실제 업로드 엔드포인트로 바꾸면 됨
+  const UPLOAD_ENDPOINT = ``;
+
   const handleFileChange = (e) => {
     const f = e.target.files?.[0];
     if (!f) return;
