@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.farmday.help.mapper.CsArticleMapper">
+
+    <resultMap id="CsArticleResponseMap" type="com.farmday.help.dto.CsArticleResponseDto">
+        <id     property="articleId"   column="ARTICLE_ID"/>
+        <result property="slug"        column="SLUG"/>
+        <result property="title"       column="TITLE"/>
+        <result property="content"     column="CONTENT"/>
+        <result property="articleType" column="ARTICLE_TYPE"/>
+        <result property="categoryId"  column="CATEGORY_ID"/>
+        <result property="isPublished" column="IS_PUBLISHED"/>
+        <result property="publishedAt" column="PUBLISHED_AT"/>
+    </resultMap>
+
+    <!-- 고객센터 GUIDE 탭용 문서 목록 -->
+    <select id="findGuideArticles" resultMap="CsArticleResponseMap">
+        SELECT
+            ARTICLE_ID,
+            SLUG,
+            TITLE,
+            CONTENT,
+            ARTICLE_TYPE,
+            CATEGORY_ID,
+            IS_PUBLISHED,
+            PUBLISHED_AT
+        FROM CS_ARTICLE
+        WHERE IS_PUBLISHED = 'Y'
+          AND SLUG IN ('user-guide', 'refund-policy', 'privacy-policy', 'terms-of-use')
+        ORDER BY
+          CASE SLUG
+            WHEN 'user-guide'    THEN 1
+            WHEN 'refund-policy' THEN 2
+            WHEN 'privacy-policy' THEN 3
+            WHEN 'terms-of-use'  THEN 4
+            ELSE 99
+          END,
+          ARTICLE_ID
+    </select>
+
+</mapper>

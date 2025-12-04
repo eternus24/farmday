@@ -66,6 +66,7 @@ import AdminBannerPage from "./pages/admin/AdminBannerPage";
 import AdminNoticePage from "./pages/admin/AdminNoticePage";
 import AdminProducerApprovalPage from "./pages/admin/AdminProducerApprovalPage";
 import AdminProductManagePage from "./pages/admin/AdminProductManagePage";
+import HelpCenter from "./pages/help/HelpCenter";
 
 // JWT 파싱 헬퍼
 function parseJwt(token) {
@@ -229,6 +230,8 @@ function App() {
                 <Route path="profile" element={<ProducerProfilePage />} />
                 <Route path="create" element={<StoreCreate />} />
               </Route>
+
+              <Route path="/help" element={<HelpCenter/>}/>
 
               <Route path="/signup" element={<Signup />} />
               <Route path="/login" element={<Login />} />

@@ -4,6 +4,7 @@ import { useContext, useEffect } from "react";
 import { AuthContext } from "../contexts/AuthContext";
 import defaultAvatarImg from "../assets/img/user-default1.png";
 import { CartContext } from "../contexts/CartContext";
+import logoImg from "../assets/img/FarmDay.png";
 
 export default function Header() {
   const navigate = useNavigate();
@@ -84,7 +85,7 @@ export default function Header() {
         <div className="container px-0">
           <nav className="navbar navbar-light bg-white navbar-expand-xl">
             <Link to="/" className="navbar-brand">
-              <h1 className="text-primary display-6">Fruitables</h1>
+              <img src={logoImg} alt="FarmDay Logo"style={{ height: "48px", objectFit: "contain"}}/>
             </Link>
 
             <button
@@ -102,13 +103,13 @@ export default function Header() {
             >
               <div className="navbar-nav mx-auto">
                 <NavLink to="/" className="nav-item nav-link">
-                  Home
+                  홈
                 </NavLink>
                 <NavLink to="/shop" className="nav-item nav-link">
-                  Shop
+                  상품
                 </NavLink>
-                <NavLink to="/shop-detail" className="nav-item nav-link">
-                  Shop Detail
+                <NavLink to="/group-deals" className="nav-item nav-link">
+                  공동구매
                 </NavLink>
 
                 <div className="nav-item dropdown">
@@ -135,8 +136,8 @@ export default function Header() {
                   </div>
                 </div>
 
-                <NavLink to="/contact" className="nav-item nav-link">
-                  Contact
+                <NavLink to="/help" className="nav-item nav-link">
+                  고객센터
                 </NavLink>
               </div>
 
