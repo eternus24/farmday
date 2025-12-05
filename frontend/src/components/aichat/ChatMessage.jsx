@@ -2,10 +2,10 @@
 import React from "react";
 import ChatProductCard from "./ChatProductCard";
 
-const ChatMessage = ({ from, text, buttons, category, products, onButtonClick, onProductClick }) => {
+const ChatMessage = ({ from, text, buttons, category, products, onButtonClick }) => {
   return (
     <div className={`chat-message ${from}`}>
-      <div className={`bubble ${category ? `category-${category}` : ""}`}>
+      <div className={`bubble ${products ? "has-products" : ""}`}>
         {text && <div className="message-text">{text}</div>}
 
         {/* 버튼들 */}
@@ -23,7 +23,7 @@ const ChatMessage = ({ from, text, buttons, category, products, onButtonClick, o
         {products && products.length > 0 && (
           <div className="chat-product-slider">
             {products.map((p) => (
-              <ChatProductCard key={p.productId} product={p} onClick={onProductClick} />
+              <ChatProductCard key={p.productId} product={p}/>
             ))}
           </div>
         )}

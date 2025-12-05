@@ -22,6 +22,6 @@ public interface ProductService {
     public List<ProductDTO> getRecentProducts(long producerId);
     
     //********   ai 기능 *********/
-    public List<ProductDTO> searchProducts(String keyword, Integer maxPrice, String sort);
+    public List<ProductDTO> searchProducts(String keyword, Integer minPrice, Integer maxPrice,String sort);
 
 }

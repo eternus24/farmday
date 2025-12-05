@@ -79,8 +79,9 @@ public class ProductServiceImpl implements ProductService {
 
     //********   ai 기능 *********/
     @Override
-    public List<ProductDTO> searchProducts(String keyword, Integer maxPrice, String sort) {
-        return productMapper.searchProducts(keyword, maxPrice, sort);
+    public List<ProductDTO> searchProducts(String keyword, Integer minPrice, Integer maxPrice, String sort) {
+        return productMapper.searchProducts(keyword, minPrice, maxPrice, sort);
     }
+
 
 }

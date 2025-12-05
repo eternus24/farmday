@@ -27,6 +27,20 @@
 }
 /*** Spinner End ***/
 
+/* 프로필 전용 드롭다운 메뉴 */
+.profile-dropdown {
+  min-width: auto;          /* 부트스트랩 기본 10rem 없애기 */
+  width: 120px;             /* 프로필 폭이랑 비슷하게 */
+  padding: 4px 0;
+  border-radius: 12px;
+  top: 100%;                /* 프로필 바로 아래 */
+  left: 0;                  /* 프로필 기준 왼쪽 정렬 */
+  right: auto;              /* 혹시 end 속성 들어온 거 무시 */
+  font-size: 13px;
+}
+.profile-dropdown .dropdown-item {
+  padding: 6px 12px;
+}
 
 /*** Button Start ***/
 .btn {

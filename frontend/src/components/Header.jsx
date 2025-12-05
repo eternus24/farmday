@@ -1,17 +1,18 @@
 // src/components/Header.jsx
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { useContext, useEffect } from "react";
+import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../contexts/AuthContext";
 import defaultAvatarImg from "../assets/img/user-default1.png";
 import { CartContext } from "../contexts/CartContext";
 import logoImg from "../assets/img/FarmDay.png";
-import ChatbotMain from "./aichat/ChatbotMain";//민아 - 추가
+import ChatbotMain from "./aichat/ChatbotMain"; //민아 - 추가
 
 export default function Header() {
   const navigate = useNavigate();
   const { auth, setAuth } = useContext(AuthContext);
-  const defaultAvatar = defaultAvatarImg; // 프로젝트 맞게 수정
+  const defaultAvatar = defaultAvatarImg;
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
+  const [producerMenuOpen, setProducerMenuOpen] = useState(false);
 
   const rawPhoto = auth?.photo;
 
@@ -31,24 +32,20 @@ export default function Header() {
     findCartAmount();
   }, []);
 
-  // ✅ 프로필 클릭 시 역할에 따른 이동 처리
+  const isLoggedIn = auth?.loggedIn;
+  const role = auth?.role || "";
+  const isProducer = role.includes("PRODUCER");
+
+  // 소비자/일반 유저용 프로필 클릭
   const handleProfileClick = () => {
-    if (!auth.loggedIn) {
+    if (!isLoggedIn) {
       navigate("/login");
       return;
     }
-
-    const role = auth.role || "";
-
-    // "PRODUCER" 또는 "ROLE_PRODUCER" 모두 커버
-    if (role.includes("PRODUCER")) {
-      navigate("/producer");
-    } else {
-      navigate("/mypage");
-    }
+    navigate("/mypage");
   };
 
-  // ✅ 로그아웃 처리
+  // 로그아웃 처리
   const handleLogout = async () => {
     const refreshToken = localStorage.getItem("refreshToken");
 
@@ -62,16 +59,13 @@ export default function Header() {
       }
     } catch (err) {
       console.error("[Header] 로그아웃 요청 실패:", err);
-      // 서버 에러 나도 클라이언트 토큰은 지울 거라서 그냥 진행
     }
 
-    // ✅ 클라이언트 토큰/유저정보 모두 제거
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("loginUser");
-    localStorage.removeItem("loginAvatar"); // 🔹 추가
+    localStorage.removeItem("loginAvatar");
 
-    // ✅ 상태 초기화
     setAuth({
       loggedIn: false,
       name: "손님",
@@ -80,7 +74,6 @@ export default function Header() {
       role: null,
     });
 
-    // ✅ 로그인 페이지로 이동 (원하면 "/" 로 바꿔도 됨)
     navigate("/login");
   };
 
@@ -91,7 +84,11 @@ export default function Header() {
         <div className="container px-0">
           <nav className="navbar navbar-light bg-white navbar-expand-xl">
             <Link to="/" className="navbar-brand">
-              <img src={logoImg} alt="FarmDay Logo"style={{ height: "48px", objectFit: "contain"}}/>
+              <img
+                src={logoImg}
+                alt="FarmDay Logo"
+                style={{ height: "48px", objectFit: "contain" }}
+              />
             </Link>
 
             <button
@@ -118,29 +115,9 @@ export default function Header() {
                   공동구매
                 </NavLink>
 
-                <div className="nav-item dropdown">
-                  <a
-                    href="#"
-                    className="nav-link dropdown-toggle"
-                    data-bs-toggle="dropdown"
-                  >
-                    Pages
-                  </a>
-                  <div className="dropdown-menu m-0 bg-secondary rounded-0">
-                    <NavLink className="dropdown-item">
-                      Cart
-                    </NavLink>
-                    <NavLink to="/checkout" className="dropdown-item">
-                      Checkout
-                    </NavLink>
-                    <NavLink to="/testimonial" className="dropdown-item">
-                      Testimonial
-                    </NavLink>
-                    <NavLink to="/404" className="dropdown-item">
-                      404 Page
-                    </NavLink>
-                  </div>
-                </div>
+                <NavLink to="/price" className="nav-item nav-link">
+                  시세정보
+                </NavLink>
 
                 <NavLink to="/help" className="nav-item nav-link">
                   고객센터
@@ -148,9 +125,6 @@ export default function Header() {
               </div>
 
               {/* 우측 아이콘 영역 */}
-              {/* 민아 - AI 챗봇 버튼 */}
-              <button className="btn-search btn border border-secondary btn-md-square rounded-circle bg-white me-4" onClick={() => {
-                  window.dispatchEvent(new Event("open-chatbot")); }}>🤖</button>
               <div className="d-flex m-3 me-0">
                 <button
                   className="btn-search btn border border-secondary btn-md-square rounded-circle bg-white me-4"
@@ -159,6 +133,7 @@ export default function Header() {
                 >
                   <i className="fas fa-search text-primary"></i>
                 </button>
+
                 <a href="/cart" className="position-relative me-4 my-auto">
                   <i className="fa fa-shopping-bag fa-2x"></i>
                   <span
@@ -169,32 +144,113 @@ export default function Header() {
                   </span>
                 </a>
 
-                {/* ✅ 로그인 / 로그아웃 영역 */}
+                {/* 로그인 / 로그아웃 + 프로필 */}
                 <div className="d-flex align-items-center my-auto">
-                  <div
-                    onClick={handleProfileClick}
-                    style={{ cursor: "pointer" }}
-                    className="d-flex align-items-center"
-                  >
-                    <img
-                      src={profileSrc}
-                      alt="프로필"
-                      onError={(e) => {
-                        e.target.onerror = null;          // 무한 루프 방지
-                        e.target.src = defaultAvatar;     // 깨지면 기본 이미지로 강제 교체
-                      }}
-                      style={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: "50%",
-                        objectFit: "cover",
-                        marginRight: 8,
-                      }}
-                    />
-                    <span style={{ fontSize: "14px", fontWeight: 600 }}>
-                      {auth.name}님
-                    </span>
-                  </div>
+                  {/* 🔸 생산자: 예전 네비 드롭다운이랑 비슷한 디자인 */}
+                  {isLoggedIn && isProducer ? (
+                    // ⭐ 우리가 직접 제어하는 커스텀 드롭다운
+                    <div
+                      className="position-relative"
+                      style={{ marginRight: "0.25rem" }}
+                    >
+                      {/* 토글 영역 */}
+                      <div
+                        className="d-flex align-items-center"
+                        style={{ cursor: "pointer" }}
+                        onClick={() => setProducerMenuOpen((prev) => !prev)}
+                      >
+                        <img
+                          src={profileSrc}
+                          alt="프로필"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = defaultAvatar;
+                          }}
+                          style={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: "50%",
+                            objectFit: "cover",
+                            marginRight: 8,
+                          }}
+                        />
+                        <span style={{ fontSize: "14px", fontWeight: 600, marginRight: 4 }}>
+                          {auth.name}님
+                        </span>
+                        {/* 작은 화살표 아이콘 느낌 */}
+                        <span style={{ fontSize: "10px" }}>▼</span>
+                      </div>
+
+                      {/* 드롭다운 메뉴 */}
+                      {producerMenuOpen && (
+                      <div
+                        className="bg-white border rounded shadow-sm"
+                        style={{
+                          position: "absolute",
+                          top: "100%",
+                          left: "0",            // ← 프로필 바로 아래 정렬
+                          marginTop: "6px",
+                          width: "110px",       // ← 딱 적당한 폭
+                          zIndex: 1050,
+                          fontSize: "13px",
+                          overflow: "hidden",
+                          // ⭐ 메뉴글씨 가운데
+                          textAlign: "center",
+                        }}
+                      >
+                        <button
+                          type="button"
+                          className="dropdown-item"
+                          style={{ padding: "6px 10px" }}
+                          onClick={() => {
+                            setProducerMenuOpen(false);
+                            navigate("/mypage");
+                          }}
+                        >
+                          마이페이지
+                        </button>
+
+                        <button
+                          type="button"
+                          className="dropdown-item"
+                          style={{ padding: "6px 10px" }}
+                          onClick={() => {
+                            setProducerMenuOpen(false);
+                            navigate("/producer");
+                          }}
+                        >
+                          생산자 센터
+                        </button>
+                      </div>
+                    )}
+                    </div>
+                  ) : (
+                    // 🔸 비로그인/일반 소비자: 클릭 시 로그인 or 일반 마이페이지
+                    <div
+                      onClick={handleProfileClick}
+                      style={{ cursor: "pointer" }}
+                      className="d-flex align-items-center"
+                    >
+                      <img
+                        src={profileSrc}
+                        alt="프로필"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = defaultAvatar;
+                        }}
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: "50%",
+                          objectFit: "cover",
+                          marginRight: 8,
+                        }}
+                      />
+                      <span style={{ fontSize: "14px", fontWeight: 600 }}>
+                        {auth.name}님
+                      </span>
+                    </div>
+                  )}
 
                   {auth.loggedIn ? (
                     <button
@@ -205,14 +261,12 @@ export default function Header() {
                       로그아웃
                     </button>
                   ) : (
-                    <>
-                      <Link
-                        to="/login"
-                        className="btn btn-outline-primary btn-sm ms-3"
-                      >
-                        로그인
-                      </Link>
-                    </>
+                    <Link
+                      to="/login"
+                      className="btn btn-outline-primary btn-sm ms-3"
+                    >
+                      로그인
+                    </Link>
                   )}
                 </div>
               </div>
@@ -259,7 +313,7 @@ export default function Header() {
         </div>
       </div>
       {/* Modal Search End */}
-      <ChatbotMain/>
+      <ChatbotMain />
     </>
   );
 }

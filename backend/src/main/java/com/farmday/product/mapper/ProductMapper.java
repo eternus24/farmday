@@ -29,8 +29,10 @@ public interface ProductMapper {
     //********   ai 기능 *********/
     public List<ProductDTO> searchProducts(
         @Param("keyword") String keyword,
+        @Param("minPrice") Integer minPrice,
         @Param("maxPrice") Integer maxPrice,
         @Param("sort") String sort
     );
+
     
 }

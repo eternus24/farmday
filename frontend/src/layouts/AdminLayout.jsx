@@ -6,10 +6,10 @@ const ADMIN_MENUS = [
   { label: "대시보드", path: "/admin" },                // default
   { label: "유저관리", path: "/admin/users" },
   { label: "배너관리", path: "/admin/banners" },
-  { label: "공동구매 상품등록", path: "/admin/group-deals" },
+  // { label: "공동구매 상품등록", path: "/admin/group-deals" },
   { label: "공지사항관리", path: "/admin/notices" },
   { label: "생산자 승인", path: "/admin/producers" },
-  { label: "가격 정보관리", path: "/admin/prices" },
+  // { label: "가격 정보관리", path: "/admin/prices" },
   { label: "상품관리", path: "/admin/products" },
 ];
 

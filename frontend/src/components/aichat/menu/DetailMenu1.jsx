@@ -1,130 +1,73 @@
-// src/components/chatbot/menu/DetailMenu1.jsx
-
 import { searchProducts } from '../../../assets/js/api/ShopApi';
+import { showMainMenu } from './MenuMain';
 
-const DetailMenu1 = ({ text, addMessage, menuStep, setMenuStep }) => {
+const DetailMenu1 = ({ text, addMessage, setMenuStep }) => {
 
-    // ================================
     // 0. 뒤로가기
-    // ================================
     if (text === "back") {
         setMenuStep("main");
-        addMessage({
-            from: "bot",
-            text: "메인 메뉴로 돌아갑니다.",
-            buttons: [{ label: "🏠 메인 메뉴", value: "back" }]
-        });
+        showMainMenu(addMessage);
         return;
     }
 
-    // ================================
-    // 1. 상품명 검색 단계(menu1_search)
-    // ================================
-    if (menuStep === "menu1_search") {
-        (async () => {
-            try {
-                const result = await searchProducts({ keyword: text });
-
-                addMessage({
-                    from: "bot",
-                    text: "검색 결과입니다.",
-                    products: result
-                });
-            } catch (err) {
-                console.error("상품 검색 실패:", err);
-                addMessage({
-                    from: "bot",
-                    text: "상품 검색 중 오류가 발생했습니다."
-                });
-            }
-        })(); // 즉시 실행
-        return;
-    }
-
-    // ================================
-    // 2. 가격대 추천 메뉴 열기
-    // ================================
-    if (text === "1-2") {
+    // 1. AI 장보기 → 가격대 버튼 출력
+    if (text === "shop-ai") {
         addMessage({
             from: "bot",
             text: "원하는 가격대를 선택해주세요.",
             buttons: [
-                { label: "💰 5천원 이하", value: "1-2_5000" },
-                { label: "💰 1만원 이하", value: "1-2_10000" },
-                { label: "💰 2만원 이하", value: "1-2_20000" },
+                { label: "💰 5천원 이하", value: "shop-ai_0_5000" },
+                { label: "💰 5천원 ~ 1만원", value: "shop-ai_5000_10000" },
+                { label: "💰 1만원 이상", value: "shop-ai_10000_50000" },
                 { label: "⬅️ 뒤로가기", value: "back" }
             ]
         });
         return;
     }
 
-    // ================================
-    // 2-1. 가격 선택 처리
-    // ================================
-    if (text.startsWith("1-2_")) {
-        const maxPrice = parseInt(text.replace("1-2_", ""), 10);
+    // 2. 가격대 선택 처리
+    if (text.startsWith("shop-ai_")) {
+        const parts = text.split("_");
+        const minPrice = parseInt(parts[1], 10);
+        const maxPrice = parseInt(parts[2], 10);
 
         (async () => {
             try {
-                const result = await searchProducts({ maxPrice });
+                const result = await searchProducts({ minPrice, maxPrice });
 
                 addMessage({
                     from: "bot",
-                    text: `${maxPrice.toLocaleString()}원 이하 추천 상품입니다.`,
+                    text: "FarmDay 추천 상품입니다.",
                     products: result
                 });
+
+                addMessage({
+                    from: "bot",
+                    text: "다른 가격대도 확인할 수 있어요.",
+                    buttons: [
+                        { label: "💰 5천원 이하", value: "shop-ai_0_5000" },
+                        { label: "💰 5천원 ~ 1만원", value: "shop-ai_5000_10000" },
+                        { label: "💰 1만원 이상", value: "shop-ai_10000_50000" },
+                        { label: "⬅️ 뒤로가기", value: "back" }
+                    ]
+                });
             } catch (err) {
-                console.error("가격대 검색 실패:", err);
                 addMessage({
                     from: "bot",
                     text: "검색 중 오류가 발생했습니다."
                 });
             }
         })();
-        return;
-    }
-
-    // ================================
-    // 3. 정렬 추천
-    // ================================
-    if (text.includes("-cheap") || text.includes("-popular") || text.includes("-review")) {
-
-        let sortKey = null;
-
-        if (text.includes("-cheap")) sortKey = "cheap";
-        if (text.includes("-popular")) sortKey = "popular";
-        if (text.includes("-review")) sortKey = "review";
-
-        (async () => {
-            try {
-                const result = await searchProducts({ sort: sortKey });
-
-                addMessage({
-                    from: "bot",
-                    text: "추천 결과입니다!",
-                    products: result
-                });
-            } catch (err) {
-                console.error("정렬 추천 오류:", err);
-                addMessage({
-                    from: "bot",
-                    text: "추천 중 오류가 발생했습니다."
-                });
-            }
-        })();
 
         return;
     }
 
-    // ================================
-    // 4. 처리 불가 입력
-    // ================================
+    // 3. 예외 처리
     addMessage({
         from: "bot",
         text: "알 수 없는 입력입니다. 다시 선택해주세요.",
         buttons: [{ label: "⬅️ 뒤로가기", value: "back" }]
     });
-
 };
 
 export default DetailMenu1;

@@ -81,12 +81,14 @@ public class ProductController {
     @GetMapping("/search")
     public ResponseEntity<List<ProductDTO>> searchProducts(
         @RequestParam(required = false) String keyword,
+        @RequestParam(required = false) Integer minPrice,
         @RequestParam(required = false) Integer maxPrice,
         @RequestParam(required = false) String sort
     ){
         return ResponseEntity.ok(
-            productService.searchProducts(keyword,maxPrice,sort)
+            productService.searchProducts(keyword,minPrice,maxPrice,sort)
         );
     }
+    
 
 }

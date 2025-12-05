@@ -97,9 +97,6 @@ export default function ProducerLayout() {
               <li>
                 <NavLink to="/producer/products">상품 관리</NavLink>
               </li>
-              <li>
-                <NavLink to="/producer/profile">프로필 관리</NavLink>
-              </li>
             </ul>
           </nav>
         </aside>
@@ -107,7 +104,7 @@ export default function ProducerLayout() {
         {/* 우측 메인 컨텐츠 */}
         <main className="producer-content">
           <header className="producer-header">
-            <h1>생산자 마이페이지</h1>
+            <h1>생산자 센터</h1>
             <button
               type="button"
               className="producer-store-btn"

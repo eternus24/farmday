@@ -1,11 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import ChatMessage from './ChatMessage';
 import "../../assets/css/chatbot.css";
-import ChatPriceView from './ChatPriceView';
 import MenuMain from './menu/MenuMain';
-import DetailMenu1 from './menu/DetailMenu1';
-import DetailMenu2 from './menu/DetailMenu2';
-import DetailMenu3 from './menu/DetailMenu3';
+import DetailMenu1 from './menu/DetailMenu1';   // menu1 = AI 장보기 + 가격대 추천
+import DetailMenu2 from './menu/DetailMenu2';   // menu2 = 재료 기반 레시피
+import DetailMenu3 from './menu/DetailMenu3';   // menu3 = 시세/제철 추천
 import { useNavigate } from "react-router-dom";
 
 const ChatbotMain = () => {
@@ -16,77 +15,81 @@ const ChatbotMain = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
 
-    // 메뉴 단계
+    // 메뉴 단계 (새 구조)
     const [menuStep, setMenuStep] = useState("main");
 
     // 시세 분석 관련
     const [productName, setProductName] = useState('');
     const [analysisData, setAnalysisData] = useState(null);
 
-    // 새 구조: 홈 화면 / 대화 화면만 존재
+    // 홈 / 대화 화면
     const [bottomTab, setBottomTab] = useState("home");
 
+    /* 챗봇 열기 */
+    const toggleChatbot = () => setIsOpen(prev => !prev);
 
-    /* ---------------------------------
-       챗봇 열기
-    -----------------------------------*/
-    const toggleChatbot = () => {
-        setIsOpen(prev => !prev);
-    };
-
-
-    /* ---------------------------------
-       메시지 추가
-    -----------------------------------*/
+    /* 메시지 추가 */
     const addMessage = (msg) => {
         setMessages(prev => [...prev, msg]);
     };
 
-    /* ---------------------------------
-       공통 버튼 클릭 처리
-    -----------------------------------*/
+    /* 버튼 클릭 처리 */
     const handleButtonClick = (btn) => {
         addMessage({ from: 'user', text: btn.label });
         processUserInput(btn.value);
     };
 
-    /* ---------------------------------
-       하단 자동 스크롤
-    -----------------------------------*/
+    /* 자동 스크롤 */
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
 
-    /* ---------------------------------
-       상품 카드 클릭 → product detail 이동
-    -----------------------------------*/
+    /* 상품 클릭 */
     const handleProductClick = (productId) => {
         navigate(`/product/${productId}`);
     };
 
-    /* ---------------------------------
-       메뉴 라우트 처리
-    -----------------------------------*/
+    /* 대화 전체 리셋 */
+    const resetChat = () => {
+        setMessages([]);//메시지 초기화
+        setMenuStep("main");//메뉴 초기화
+
+        //처음 메뉴 자동 출력
+        setTimeout(() => {
+            MenuMain({text:"start",addMessage,setMenuStep})
+        }, timeout);
+    }
+
+    /* 메뉴 처리 (핵심 라우팅 부분 정리됨) */
     const processUserInput = async (text) => {
-        if (menuStep === "main") return MenuMain({ text, addMessage, setMenuStep });
-        if (menuStep === "menu1") return DetailMenu1({ text, addMessage, setMenuStep });
-        if (menuStep === "menu2") return DetailMenu2({ text, addMessage, setMenuStep });
-        if (menuStep === "menu3") return DetailMenu3({ text, addMessage, setMenuStep });
+
+        if (menuStep === "main")
+            return MenuMain({ text, addMessage, setMenuStep, menuStep });
+
+        if (menuStep === "shop-ai")
+            return DetailMenu1({ text, addMessage, setMenuStep, menuStep });
+
+        if (menuStep === "recipe")
+            return DetailMenu2({ text, addMessage, setMenuStep, menuStep });
+
+        if (menuStep === "tips")
+            return addMessage({ from: "bot", text: "보관/손질 팁 기능 준비 중입니다." });
+
+        if (menuStep === "store")
+            return addMessage({ from: "bot", text: "생산자/스토어 추천 기능 준비 중입니다." });
+
+        if (menuStep === "support")
+            return addMessage({ from: "bot", text: "고객지원 기능 준비 중입니다." });
 
         addMessage({ from: "bot", text: "⚠️ 오류: 메뉴 단계를 찾을 수 없습니다." });
     };
 
-
-    /* ---------------------------------
-       사용자 입력 정규화
-    -----------------------------------*/
+    /* 사용자 입력 정규화 */
     const normalizeUserInput = (text) => {
         const t = text.trim();
 
         if (/^\d(-\d)?$/.test(t)) return t;
-
         if (t.includes("검색")) return "1-6";
         if (t.includes("가격")) return "1-7";
         if (t.includes("뒤로")) return "back";
@@ -94,10 +97,7 @@ const ChatbotMain = () => {
         return t;
     };
 
-
-    /* ---------------------------------
-       대화창 입력 전송
-    -----------------------------------*/
+    /* 입력 전송 */
     const handleSend = async () => {
         if (!input.trim()) return;
 
@@ -106,27 +106,11 @@ const ChatbotMain = () => {
 
         addMessage({ from: "user", text: userText });
         await processUserInput(normalized);
+
         setInput('');
     };
 
-
-    /* ---------------------------------
-       시세 분석 (임시)
-    -----------------------------------*/
-    const handlePriceCheck = () => {
-        if (!productName.trim()) return;
-        setAnalysisData({
-            productName,
-            todayPrice: 12000,
-            avgPrice: 10000,
-            comment: "최근 평균보다 비싼 편입니다."
-        });
-    };
-
-
-    /* ---------------------------------
-       챗봇 켤 때 기본 메뉴 자동 출력
-    -----------------------------------*/
+    /* 챗봇 켤 때 메인 메뉴 자동 출력 */
     useEffect(() => {
         if (isOpen && messages.length === 0) {
             MenuMain({ text: "start", addMessage, setMenuStep });
@@ -144,7 +128,7 @@ const ChatbotMain = () => {
             {isOpen && (
                 <div className="chatbot-panel">
 
-                    {/* 상단 헤더 */}
+                    {/* 헤더 */}
                     <div className="chatbot-header">
                         <div className="chatbot-header-left">
                             {bottomTab === "chatroom" && (
@@ -157,44 +141,46 @@ const ChatbotMain = () => {
                                 alt="FarmDay" className="chatbot-logo" />
                             <span>FarmDay</span>
                         </div>
+                        <button className='chatbot-reset-btn' onClick={resetChat}>🔄 초기화
+                        </button>
                         <button className="chatbot-close-btn" onClick={toggleChatbot}>✖</button>
                     </div>
 
-                    {/* ===================== 홈 화면 ===================== */}
+                    {/* 홈 화면 */}
                     {bottomTab === "home" && (
                         <>
-                            <div className="chatbot-home-layout">
+                        <div className='chatroom-header-info'>
+                            <div className='chatroom-status'>💡 24시간 운영해요</div>
+                        </div>
 
-                                <div className="chatbot-home-title">대화 종류</div>
+                        <div className="chatbot-home-layout">
+                            <div className="chatbot-home-title">대화 종류</div>
 
-                                <button className="chatbot-home-btn"
-                                        onClick={() => setBottomTab("chatroom")}>
-                                    💬 문의하기
-                                </button>
+                            <button className="chatbot-home-btn"
+                                    onClick={() => setBottomTab("chatroom")}>
+                                🌱 문의하기
+                            </button>
 
-                                <button className="chatbot-home-btn"
-                                        onClick={() => setMenuStep("main")}>
-                                    🌱 일반 대화 시작
-                                </button>
+                            <button className="chatbot-home-btn"
+                                    onClick={() => setMenuStep("menu1")}>
+                                📈 시세 정보
+                            </button>
 
-                                <button className="chatbot-home-btn"
-                                        onClick={() => setMenuStep("menu1")}>
-                                    📈 시세 정보
-                                </button>
+                            <div className='chatroom-faq'>
+                                <div className='chatroom-faq-title'>자주 묻는 질문</div>
+                                <button className="chatroom-faq-item">배송 및 환불</button>
+                                <button className="chatroom-faq-item">계정 및 정보</button>
+                                <button className="chatroom-faq-item">결제 및 멤버십</button>
+                                <button className="chatroom-faq-item">멤버십 적립</button>
                             </div>
+                        </div>
                         </>
                     )}
 
-                    {/* ===================== 대화 화면(chatroom) ===================== */}
+                    {/* 대화 화면 */}
                     {bottomTab === "chatroom" && (
                         <>
-                            <div className="chatroom-header-info">
-                                <div className="chatroom-status">💡 24시간 운영해요</div>
-                            </div>
-
                             <div className="chatroom-main">
-
-                                {/* 기존 챗봇 메시지 영역 */}
                                 <div className='chatbot-messages'>
                                     {messages.map((msg, idx) => (
                                         <ChatMessage
@@ -210,7 +196,6 @@ const ChatbotMain = () => {
                                     ))}
                                     <div ref={messagesEndRef}></div>
                                 </div>
-
                             </div>
 
                             {/* 입력창 */}
@@ -229,7 +214,7 @@ const ChatbotMain = () => {
                         </>
                     )}
 
-                    {/* ===================== 하단 탭(설정 제거됨) ===================== */}
+                    {/* 하단 탭 */}
                     <div className="chatbot-bottom-nav">
                         <button
                             className={bottomTab === "home" ? "active" : ""}
@@ -238,6 +223,7 @@ const ChatbotMain = () => {
                             <span className="nav-icon">🏠</span>
                             <span className="nav-label">홈</span>
                         </button>
+
                         <button
                             className={bottomTab === "chatroom" ? "active" : ""}
                             onClick={() => setBottomTab("chatroom")}

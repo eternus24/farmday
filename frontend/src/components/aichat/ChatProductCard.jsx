@@ -1,7 +1,11 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import "../../assets/css/chatbot.css";
 
-const ChatProductCard = ({product,onClick}) => {
+const ChatProductCard = ({product}) => {
     
+    const navigate = useNavigate();
+
     const {
         productId, name, mainImage, price
     } = product;
@@ -9,7 +13,7 @@ const ChatProductCard = ({product,onClick}) => {
     const formatPrice = (p) => p != null ? `${p.toLocaleString("ko-kr")}원`:"-";
     
     return (
-        <div className='chat-product-card' onClick={() => onClick(productId)}>
+        <div className='chat-product-card' onClick={()=>navigate(`/shop/detail/${product.productId}`)}>
             <div className='chat-product-image-wrap'>
                 {mainImage ? (
                     <img src={mainImage} alt={name} className='chat-product-image'/>
