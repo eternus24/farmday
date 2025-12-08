@@ -47,7 +47,8 @@ public class SecurityConfig {
                         "/css/**",
                         "/js/**",
                         "/images/**",
-                        "/groupdeal/**"
+                        "/groupdeal/**",
+                        "/shop/**"
                 ).permitAll()
                 // 인증/회원가입 API
                 .antMatchers("/api/auth/**").permitAll()
@@ -61,6 +62,7 @@ public class SecurityConfig {
                 .antMatchers("/api/cart/**").authenticated()
                 .antMatchers("/api/order/**").authenticated()
                 .antMatchers("/api/products/**").permitAll()
+                .antMatchers("/api/shop/**").permitAll()
                 // 나머지는 인증 필요
                 .anyRequest().permitAll()
             .and()

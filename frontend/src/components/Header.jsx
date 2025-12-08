@@ -87,7 +87,7 @@ export default function Header() {
               <img
                 src={logoImg}
                 alt="FarmDay Logo"
-                style={{ height: "48px", objectFit: "contain" }}
+                style={{ height: "70px", objectFit: "contain" }}
               />
             </Link>
 

@@ -61,9 +61,9 @@
 
   <insert id="insertOrdersItem" parameterType="com.farmday.orders.OrdersItemDTO">
     insert into orders_Item
-      (order_item_id,order_id,product_id,product_name,discount_amount,price_at_order,quantity,line_total_amount)
+      (order_item_id,order_id,product_id,product_name,price_at_order,quantity,line_total_amount)
     values
-      (ORDERS_ITEM_SEQ.NEXTVAL,#{order_id},#{product_id},#{product_name},#{discount_amount},#{price_at_order},#{quantity},#{line_total_amount})
+      (ORDERS_ITEM_SEQ.NEXTVAL,#{order_id},#{product_id},#{product_name},#{price_at_order},#{quantity},#{line_total_amount})
   </insert>
 
   <insert id="insertOrdersItemIntoDelivery" parameterType="com.farmday.orders.OrdersItemDTO">

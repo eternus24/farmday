@@ -32,25 +32,28 @@
 
     <!-- 메인 화면용: 활성 배너 + 기간 안에 있는 것 + 최신순 5개 -->
     <select id="findActiveBannersForMain"
-            resultType="com.farmday.admin.domain.Banner">
+        resultType="com.farmday.admin.domain.Banner">
         <![CDATA[
-        SELECT
-            banner_id      AS bannerId,
-            title          AS title,
-            image_url      AS imageUrl,
-            link_url       AS linkUrl,
-            is_active      AS isActive,
-            start_date     AS startDate,
-            end_date       AS endDate,
-            created_by     AS createdBy,
-            created_date   AS createdDate,
-            updated_date   AS updatedDate
-        FROM BANNER
-        WHERE is_active = 'Y'
-          AND (start_date IS NULL OR start_date <= TRUNC(SYSDATE))
-          AND (end_date   IS NULL OR end_date   >= TRUNC(SYSDATE))
-        ORDER BY created_date DESC, banner_id DESC
-        FETCH FIRST 5 ROWS ONLY
+        SELECT *
+        FROM (
+            SELECT
+                banner_id      AS bannerId,
+                title          AS title,
+                image_url      AS imageUrl,
+                link_url       AS linkUrl,
+                is_active      AS isActive,
+                start_date     AS startDate,
+                end_date       AS endDate,
+                created_by     AS createdBy,
+                created_date   AS createdDate,
+                updated_date   AS updatedDate
+            FROM BANNER
+            WHERE is_active = 'Y'
+            AND (start_date IS NULL OR start_date <= TRUNC(SYSDATE))
+            AND (end_date   IS NULL OR end_date   >= TRUNC(SYSDATE))
+            ORDER BY created_date DESC, banner_id DESC
+        )
+        WHERE ROWNUM <= 5
         ]]>
     </select>
 

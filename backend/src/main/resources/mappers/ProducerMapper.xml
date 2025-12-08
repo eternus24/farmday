@@ -990,18 +990,18 @@
 
   <!-- 🔹 배송완료 시 멤버십 적립용: orderItemId → 주문/유저/결제금액 -->
   <select id="findOrderMembershipInfoByOrderItemId"
-          parameterType="long"
-          resultType="com.farmday.producer.dto.OrderMembershipInfo">
+        parameterType="long"
+        resultType="com.farmday.producer.dto.OrderMembershipInfo">
     <![CDATA[
     SELECT
-        o.order_id          AS orderId,
-        u.user_no           AS userNo,
-        o.order_total_amount  AS payAmount   -- ★ 주문 최종 결제 금액
+        o.order_id           AS orderId,
+        u.user_no            AS userNo,
+        o.order_total_amount AS payAmount
     FROM ORDERS_ITEM oi
     JOIN ORDERS o
       ON oi.order_id = o.order_id
     JOIN USERS u
-      ON o.user_id = u.userId
+      ON o.user_id = u.user_id   -- 🔥 여기 수정!
     WHERE oi.order_item_id = #{orderItemId}
     ]]>
   </select>

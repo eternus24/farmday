@@ -2,11 +2,18 @@ import React, { useEffect,useState } from 'react';
 import ShopFilter from '../../components/shop/ShopFilter';//목록 필터(카테고리/가격..)
 import ShopProductList from '../../components/shop/ShopProductList'
 import { getProductList } from "../../assets/js/api/ShopApi.js";
+import { useLocation } from 'react-router-dom';
 
 const ShopMain = () => {//페이지 역할
 
+  const location = useLocation();
+
+  // 🔍 URL에서 keyword= 값 꺼내기 (/shop?keyword=사과)
+  const queryParams = new URLSearchParams(location.search);
+  const keywordFromUrl = queryParams.get("keyword") || "";
+
   const [filters, setFilters] = useState({
-    keyword:"",
+    keyword:keywordFromUrl,
     categories: [],
     price: 0
   });
@@ -14,15 +21,6 @@ const ShopMain = () => {//페이지 역할
   const [sortOption, setSortOption] = useState('추천순')
   const [currentPage,setCurrentPage] = useState(1)
   const [products,setProducts] = useState([])//db 상품 리스트 저장
-
-  const loadCategoryCount = async () => {
-    try {
-      const res = await getCategoryCount();
-      setCategoryCount(res.data);
-    }catch(err) {
-      console.error("카테고리별 상품 갯수 로딩 오류:", err);
-    }
-  }
 
   //상품 목록 함수
   const loadProducts = async () => {
