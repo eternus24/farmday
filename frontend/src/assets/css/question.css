@@ -167,7 +167,7 @@
 /* 헤더 */
 .qna-table-header {
   display: grid;
-  grid-template-columns: 120px 1fr 120px 120px;
+  grid-template-columns: 110px 140px 1fr 190px 120px;
   padding: 14px 0;
   background: #fafafa;
   border-bottom: 1px solid #e5e5e5;
@@ -176,8 +176,8 @@
   font-size: 14px;
 }
 
-.head-state, .head-title, .head-writer, .head-date {
-  padding-left: 10px;
+.head-state, .head-category, .head-title, .head-writer, .head-date {
+  padding-left: 20px;
 }
 
 /* 각 행 */
@@ -187,7 +187,7 @@
 
 .qna-summary-row {
   display: grid;
-  grid-template-columns: 120px 1fr 120px 120px;
+  grid-template-columns: 130px 140px 1fr 190px 120px;
   padding: 18px 0;
   cursor: pointer;
   align-items: center;
@@ -336,6 +336,15 @@
 .qa-btn.delete:hover {
   background: #ffeaea;
 }
+
+/* 문의가 없을 때 */
+.qna-empty {
+  padding: 30px 0;
+  text-align: center;
+  font-size: 15px;
+  color: #888;
+}
+
 
 /* =====================================================================
    QnaWrite.jsx & QnaEdit.jsx : Q&A 작성 / 수정 모달 공통

@@ -27,3 +27,8 @@ export function fetchMainCards(limit = 10) {
 export function fetchTodaySummary() {
   return request("/api/price/today-summary");
 }
+
+//개별 품목 시세 상세
+export function fetchPriceDetail(item) {
+  return request("/api/price/detail", { item });
+}

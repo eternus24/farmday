@@ -74,8 +74,8 @@
 }
 
 .chatbot-logo {
-    width: 32px;
-    height: 32px;
+    width: 60px;
+    height: 50px;
     border-radius: 50%;
     object-fit: cover;
 }
@@ -98,21 +98,37 @@
 .chatbot-close-btn:hover {
     background: #f1f1f1;
 }
+
 .chatbot-reset-btn {
-    background: none;
+    background: transparent;
     border: none;
+    color: #666;
     font-size: 18px;
     cursor: pointer;
-    opacity: 0.8;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
 }
 
 .chatbot-reset-btn:hover {
-    opacity: 1;
+    background: #f1f1f1;
 }
+
+
+.chatbot-header-right {
+    display: flex;
+    align-items: center;
+    gap: 6px; /* 버튼 사이 간격 */
+}
+
 
 /* ============================= 홈 화면 ============================= */
 .chatbot-home-layout {
-    padding: 30px 25px;
+    padding: 0 25px 25px; 
     display: flex;
     flex-direction: column;
     gap: 15px;
@@ -145,18 +161,6 @@
     background: #7ac142;
     color: white;
     border-color: #7ac142;
-}
-
-.chatroom-header-info {
-    padding: 15px 20px;
-    background: #fff9e6;
-    border-bottom: 1px solid #e5e5e5;
-}
-
-.chatroom-status {
-    color: #7ac142;
-    font-size: 13px;
-    font-weight: 600;
 }
 
 .chatroom-main {
@@ -348,17 +352,19 @@
     transform: translateY(-1px);
 }
 
-/* ============================= 채팅방 헤더 ============================= */
+/* ============================= 채팅방 헤더 (24간운영) ============================= */
 .chatroom-header-info {
-    padding: 15px 20px;
-    background: #fff9e6;
-    border-bottom: 1px solid #e5e5e5;
+    margin-left: -25px;   
+    margin-right: -25px;  
+    padding: 10px 25px;   
+    background: #ebf7de;
+    border-bottom: 1px solid #dbdbdb;
 }
 
 .chatroom-status {
-    color: #7ac142;
-    font-size: 13px;
-    font-weight: 600;
+    color: #5c7e54;
+    font-size: 14px;
+    font-weight: 700;
 }
 
 /* ============================= 채팅방 본문 ============================= */

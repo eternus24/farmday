@@ -7,8 +7,11 @@ import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.farmday.orders.OrdersItemDTO;
+import com.farmday.orders.OrdersService;
 import com.farmday.review.dto.ReviewDTO;
 import com.farmday.review.mapper.ReviewMapper;
+import com.farmday.review.mapper.UserPointMapper;
 
 import lombok.RequiredArgsConstructor;
 
@@ -18,12 +21,41 @@ import lombok.RequiredArgsConstructor;
 public class ReviewServiceImpl implements ReviewService {
 
     private final ReviewMapper reviewMapper;
+    private final UserPointMapper userPointMapper;
+    private final OrdersService ordersService;
 
     // 리뷰 작성
     @Override
-    public void writeReview(ReviewDTO dto) {
+    public int writeReview(ReviewDTO dto) throws Exception {
+
         reviewMapper.writeReview(dto);
+
+        ordersService.changeOrdersItemStatus(
+            dto.getOrderItemId().intValue(), "E3"
+        );
+
+        OrdersItemDTO item =
+            ordersService.findOrdersItemById(dto.getOrderItemId().intValue());
+
+        int totalPrice = item.getPrice_at_order() * item.getQuantity();
+        int earnPoint = (int)(totalPrice * 0.1);
+
+        Long userNo =
+            ordersService.findUserNoByOrderItemId(dto.getOrderItemId().intValue());
+
+        Map<String, Object> param = new HashMap<>();
+        param.put("userNo", userNo);
+        param.put("pointAmount", earnPoint);
+        param.put("pointType", "REVIEW");
+        param.put("relatedId", dto.getOrderItemId());
+        param.put("description", "리뷰 작성 적립");
+
+        userPointMapper.insertUserPoint(param);
+        userPointMapper.updateUserPoint(param);
+
+        return earnPoint;   // ✅ 프론트로 내려줄 포인트
     }
+
 
     // 리뷰 조회
     @Override

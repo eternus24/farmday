@@ -15,7 +15,7 @@ public interface QuestionService {
     public void deleteQuestion(Long qnaId);
     
     //답변
-    public void insertAnswer(QuestionDTO dto);
+    public void insertAnswer(QuestionDTO dto,String loginUserId);
     public Long getStoreOwnerIdByQnaId(Long qnaId);
 
     public void updateAnswer(QuestionDTO dto);

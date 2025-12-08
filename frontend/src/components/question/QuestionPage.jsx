@@ -6,7 +6,7 @@ import QnaWrite from './QnaWrite';
 import "../../assets/css/question.css";
 import { getQnaApi } from "../../assets/js/api/QuestionApi";
 
-const QuestionPage = ({productId,store,storeId}) => {//문의 메인 페이지
+const QuestionPage = ({productId,store}) => {//문의 메인 페이지
 
     const [qnaList,setQnaList] = useState([])
     const [showWriteModal,setShowWriteModal] = useState(false)
@@ -40,6 +40,18 @@ const QuestionPage = ({productId,store,storeId}) => {//문의 메인 페이지
         console.error("❌ QnA 조회 실패:", err);
     }
 };
+    const refreshQnaList = async () => {
+    try {
+        const categoryParam =
+        filter.qnaCategory === 'all' ? null : filter.qnaCategory;
+
+        const res = await getQnaApi(productId, categoryParam);
+        setQnaList(res.data);
+    } catch (err) {
+        console.error("❌ QnA 새로고침 실패:", err);
+    }
+    };
+
 
     useEffect(() => {
     loadData();
@@ -81,13 +93,13 @@ const QuestionPage = ({productId,store,storeId}) => {//문의 메인 페이지
                 </div>
             </div>
 
-            <QnaList qnaList={qnaList}/>
+            <QnaList qnaList={qnaList} refreshQnaList={refreshQnaList}/>
             <QnaCenter/>
             {showWriteModal && (
                 <QnaWrite
                     productId={productId}
                     storeId={store.storeId}
-                    onClose={() => setShowWriteModal(false)}
+                    onClose={() => setShowWriteModal(false)} refreshQnaList={refreshQnaList}
                 />
                 )}
         </div>

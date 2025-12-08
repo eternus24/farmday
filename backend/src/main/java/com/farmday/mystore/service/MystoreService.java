@@ -1,5 +1,7 @@
 package com.farmday.mystore.service;
 
+import java.util.List;
+
 import com.farmday.mystore.dto.MystoreDTO;
 
 public interface MystoreService {
@@ -12,5 +14,8 @@ public interface MystoreService {
 
     //업데이트
     public void updateStore(MystoreDTO dto);
+
+    //전체 상점
+    public List<MystoreDTO> getAllStoreList();
 
 }

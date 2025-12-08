@@ -1,6 +1,6 @@
 import React from 'react';
 import '../../assets/css/shopDetail.css';
-import jejuImg from '../../assets/img/제목 없음.png';
+import defaultImg from '../../assets/img/farmer.png';
 
 import globe from '../../assets/icons/StreamlinePlumpFoodTruckEventFair.svg';
 import group from '../../assets/icons/MdiAccountGroup.svg';
@@ -9,6 +9,16 @@ import bank from '../../assets/icons/IcOutlineFoodBank.svg';
 import cook from '../../assets/icons/StreamlineFoodKitchenwareForkSpoonForkSpoonFoodDineCookUtensilsEatRestaurantDining.svg';
 
 const StoreDesc = ({product,images}) => {//상품 설명
+
+    //메인 이미지 제외한 실제 서브 이미지 갯수
+    const subImage = 
+        images?.filter(img=> {
+            const main = product.mainImage || product.mainimage;
+            return img.imageUrl!==main;
+        }) || []
+
+    const isSingleImage = subImage.length===1;
+
     return (
         <div className='kurly-check-wrap'>
             <h2 className='kurly-check-title'>Framday Check Point</h2>
@@ -51,29 +61,30 @@ const StoreDesc = ({product,images}) => {//상품 설명
                 </div>
             </div>
             <br/>
-            {/* 상세 설명 */}
+            <div className='detail-white-wrap'>
             {product.detailDesc && (
-                <div className='detail-desc-text'>
-                    <h3><img src={bank} alt="소개" className="icon"/>상품 소개</h3>
-                    <p>{product.detailDesc}</p>
-                </div>
+                <section className="detail-section intro">
+                <h3><img src={bank} alt="소개" className="icon" />상품 소개</h3>
+                <p className="detail-desc-text">{product.detailDesc}</p>
+                </section>
             )}
 
-            {/* 상세 이미지 */}
-            <div className='detail-info-box'>
-                <img src={product.mainImage || product.mainimage} alt={product.name}className="detail-sub-image"/>
-            </div>
+            {/* 상세 이미지 갤러리 (자동 정렬) */}
+            <section className={`detail-section gallery-grid ${isSingleImage ? "single-image":""}`}>
+                {subImage.length > 0 ? (
+                    subImage.map((img, index) => (
+                    <div key={index} className="detail-grid-card">
+                        <img src={img.imageUrl} alt="" />
+                    </div>
+                    ))
+                ) : (
+                    <div className="detail-grid-card default-card">
+                    <img src={defaultImg} alt="기본 상품 이미지" />
+                    </div>
+                )}
+                </section>
 
-            <div className='detail-info-box'>
-                <img src={jejuImg}/>
-            </div>
-
-            {images.map((img,index) => (
-                <div key={index} className='detail-info-box'>
-                    <img src={img.imageUrl} className="detail-sub-image" />
-                </div>
-            ))}
-
+          </div>
         </div>
     );
 };

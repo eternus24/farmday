@@ -6,6 +6,7 @@ import com.farmday.security.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -58,6 +59,11 @@ public class SecurityConfig {
                 .antMatchers("/api/admin/**").hasRole("ADMIN")
                 .antMatchers("/api/producer/**").hasRole
                 ("PRODUCER")
+                //민아 - 답변 기능 (없으면 에러남)
+                .antMatchers(HttpMethod.GET, "/api/questions/**").permitAll()
+                .antMatchers(HttpMethod.POST, "/api/questions").authenticated()
+                .antMatchers(HttpMethod.POST, "/api/questions/*/answer")
+                .authenticated()
                 .antMatchers("/api/mypage/**").authenticated()
                 .antMatchers("/api/cart/**").authenticated()
                 .antMatchers("/api/order/**").authenticated()

@@ -12,7 +12,7 @@ const ChatMessage = ({ from, text, buttons, category, products, onButtonClick })
         {buttons && buttons.length > 0 && (
           <div className="button-group">
             {buttons.map((btn, idx) => (
-              <button key={idx} className="menu-button" onClick={() => onButtonClick(btn)} >
+              <button key={idx} className="menu-button" onClick={() => onButtonClick(btn)}>
                 {btn.label}
               </button>
             ))}

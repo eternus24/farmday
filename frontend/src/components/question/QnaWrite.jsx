@@ -3,7 +3,7 @@ import "../../assets/css/question.css";
 import { insertQuestion } from "../../assets/js/api/QuestionApi";
 import { AuthContext } from '../../contexts/AuthContext';
 
-const QnaWrite = ({ storeId, productId, onClose }) => {
+const QnaWrite = ({ storeId, productId, onClose, refreshQnaList}) => {
 
   const { auth } = useContext(AuthContext);
 
@@ -13,7 +13,6 @@ const QnaWrite = ({ storeId, productId, onClose }) => {
   const [qnaCategory, setQnaCategory] = useState("상품문의");
 
   const handleSubmit = async () => {
-    const loginId = localStorage.getItem("userId");
 
     const data = {
       productId,
@@ -31,7 +30,8 @@ const QnaWrite = ({ storeId, productId, onClose }) => {
     try {
       await insertQuestion(data);
       alert("QnA 문의 등록 완료!");
-      window.location.reload();
+      onClose();
+      refreshQnaList();
     } catch (err) {
       console.error("QnA 문의 등록 실패:", err);
       alert("QnA 문의 등록 실패");

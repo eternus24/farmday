@@ -2,6 +2,7 @@
 package com.farmday.price;
 
 import java.util.List;
+import java.util.Map;
 
 public interface PriceService {
 
@@ -16,4 +17,8 @@ public interface PriceService {
 
     // 지역별 가격 비교
     RegionCompareResponse getRegionCompare(String productNo);
+
+    //민아 - 시세 정보
+    public Map<String, Object> getPriceDetail(String item);
+    
 }

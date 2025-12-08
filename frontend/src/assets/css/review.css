@@ -123,14 +123,6 @@
   border-color: #000;
 }
 
-/* 별점 */
-.review-rating-box {
-  background: #fafafa;
-  border: 1px solid #e5e5e5;
-  border-radius: 8px;
-  padding: 24px;
-  text-align: center;
-}
 
 .star-container {
   display: flex;
@@ -836,4 +828,39 @@
 .seller-reply strong {
   color: #1e3a8a !important;
   font-weight: 600;
+}
+
+/* ✅ 스토어 대시보드 슬라이더 전용 - 충돌 방지 */
+
+.store-review-rating {
+  font-size: 15px;
+  margin-bottom: 14px;
+  letter-spacing: 2px;
+  text-align: center;
+}
+
+.store-review-content {
+  font-size: 15px;
+  color: #333;
+  line-height: 1.7;
+  font-weight: 400;
+  text-align: center;
+  margin-bottom: 16px;
+  padding: 0;
+}
+
+.store-review-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.store-review-meta {
+  font-size: 13px;
+  color: #666;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
 }

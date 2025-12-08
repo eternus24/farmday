@@ -1,5 +1,6 @@
 package com.farmday.review.controller;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -34,21 +35,30 @@ public class ReviewController {
     @PostMapping("/write")
     public ResponseEntity<?> writeReview(@RequestBody ReviewDTO dto) throws Exception {
 
-        String orderStatus = ordersService.findOrdersItemById(dto.getOrderItemId().intValue()).getOrder_status();
+        String orderStatus =
+            ordersService.findOrdersItemById(dto.getOrderItemId().intValue()).getOrder_status();
 
         if (!orderStatus.equals("E1") && !orderStatus.equals("E2")) {
             return ResponseEntity.badRequest().body("리뷰를 등록할 수 없는 상태입니다.");
         }
 
-        try{
+        try {
             dto.setStoreId(reviewService.findStoreIdByProductId(dto.getProductId()));
-            reviewService.writeReview(dto);
-            ordersService.changeOrdersItemStatus(dto.getOrderItemId().intValue(),"E3");
-            return ResponseEntity.ok("리뷰 등록 성공");
+
+            // ✅ 여기서 리뷰 + 포인트 적립까지 처리됨 (Service)
+            int earnPoint = reviewService.writeReview(dto);
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("message", "리뷰 등록 성공");
+            result.put("earnPoint", earnPoint);
+
+            return ResponseEntity.ok(result);
+
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("리뷰 등록 실패" + e.getMessage());
         }
     }
+
 
     //리뷰 조회
     @GetMapping("/{productId}")

@@ -243,4 +243,42 @@ public class PriceServiceImpl implements PriceService {
             return 0;
         }
     }
+
+    //민아 - 시세 정보
+    @Override
+    public Map<String, Object> getPriceDetail(String item) {
+
+        //이미 정상 동작 중인 내부 KAMIS 오늘 시세 리스트 재사용
+        List<PriceCardDto> allItems = getTodayCardsInternal();
+
+        //한글 품목명이 포함된 항목 찾기 (ex: "토마토" → "토마토/1kg")
+        for (PriceCardDto dto : allItems) {
+
+            if (dto.getProductName().contains(item)) {
+
+                Map<String, Object> result = new HashMap<>();
+
+                result.put("productName", dto.getProductName());
+                result.put("unit", dto.getUnit());
+                result.put("todayPrice", dto.getTodayPrice());
+                result.put("diffRate", dto.getDiffRate());
+                result.put("diffPrice", dto.getDiffPrice());
+                result.put("up", dto.isUp());
+
+                return result;
+            }
+        }
+
+        //못 찾았을 경우도 프론트 안 터지게 안전 처리
+        Map<String, Object> empty = new HashMap<>();
+        empty.put("productName", item);
+        empty.put("unit", "");
+        empty.put("todayPrice", 0);
+        empty.put("diffRate", 0);
+        empty.put("diffPrice", 0);
+        empty.put("up", false);
+
+        return empty;
+    }
+    
 }

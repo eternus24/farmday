@@ -1,6 +1,7 @@
 // backend/src/main/java/com/farmday/price/PriceController.java
 package com.farmday.price;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -41,5 +42,11 @@ public class PriceController {
     @GetMapping("/region-compare")
     public RegionCompareResponse getRegionCompare(@RequestParam("productNo") String productNo) {
         return priceService.getRegionCompare(productNo);
+    }
+
+    //민아 - 시세 정보
+    @GetMapping("/detail")
+    public ResponseEntity<?> getPriceDetail(@RequestParam String item){
+        return ResponseEntity.ok(priceService.getPriceDetail(item));
     }
 }

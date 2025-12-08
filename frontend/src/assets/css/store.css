@@ -364,32 +364,6 @@
   }
 }
 
-.review-rating {
-  font-size: 24px;
-  margin-bottom: 16px;
-  letter-spacing: 2px;
-}
-
-.review-content {
-  font-size: 16px;
-  color: #333;
-  margin-bottom: 20px;
-  line-height: 1.7;
-  font-weight: 400;
-  padding: 0 20px;
-}
-
-.review-meta {
-  margin-bottom: 12px;
-  color: #666;
-  font-size: 13px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
 .review-user {
   font-weight: 600;
   color: #444;
@@ -397,13 +371,6 @@
 
 .review-date {
   color: #888;
-}
-
-.review-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 8px;
 }
 
 .review-image {
@@ -469,10 +436,5 @@
 
   .review-item {
     padding: 20px;
-  }
-
-  .review-content {
-    font-size: 14px;
-    padding: 0 10px;
   }
 }

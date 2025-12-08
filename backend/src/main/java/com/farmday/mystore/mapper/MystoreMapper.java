@@ -2,6 +2,8 @@
 package com.farmday.mystore.mapper;
 
 
+import java.util.List;
+
 import org.apache.ibatis.annotations.Mapper;
 
 import com.farmday.mystore.dto.MystoreDTO;
@@ -19,4 +21,7 @@ public interface MystoreMapper {
     public void updateStoreInfo(MystoreDTO dto);
     public void updateProducerInfo(MystoreDTO dto);
     
+    //전체 상점
+    public List<MystoreDTO> getAllStoreList();
+
 }

@@ -9,7 +9,7 @@ const StoreDashboard = () => {
   const {producerId} = useParams()
   const [products, setProducts] = useState([])
   const navigate = useNavigate()
-  const {store} = useOutletContext()
+  const {store,setStore} = useOutletContext()
   
   const [reviews,setReviews]  = useState([])//리뷰 저장
   const [currentIndex,setCurrentIndex] = useState(0)//슬라이드
@@ -66,21 +66,21 @@ const StoreDashboard = () => {
 
       <div className='review-item'>
         
-        <div className='review-rating'>
+        <div className='store-review-rating'>
           {'⭐'.repeat(reviews[currentIndex].rating)}
         </div>
 
-          <p className='review-content'>
+          <p className='store-review-content'>
             {reviews[currentIndex].content}
           </p>
 
           {reviews[currentIndex].title && (
-            <div className="review-title">
+            <div className="store-review-title">
               {reviews[currentIndex].title}
             </div>
           )}
 
-          <div className='review-meta'>
+          <div className='store-review-meta'>
             <span className='review-user'>
               {reviews[currentIndex].writerUserId.replace(/(?<=.{3})./g, '*')}
             </span>

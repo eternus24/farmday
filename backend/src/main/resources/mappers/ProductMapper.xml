@@ -131,6 +131,7 @@
         p.producer_id       AS producerId,
         p.main_image        AS mainImage,
         p.name              AS name,
+        p.summary           AS summary,
         d.price             AS price,
         d.stock_qty         AS stockQty,
         p.created_date      AS createdDate

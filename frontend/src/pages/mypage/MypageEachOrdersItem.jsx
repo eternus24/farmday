@@ -120,7 +120,7 @@ export default function MypageEachOrdersItem({item,moneyKRW,handleOpenCancelModa
           {(item.order_status === 'E1' || item.order_status === 'E2') && (
             
             <>
-              <div className="order-cancel-btn" style={{display:"flex",float:"left",marginRight:10}} tabIndex={0} onClick={()=>navigate(`/review/write/${item.order_item_id}`)}>
+              <div className="order-cancel-btn" style={{display:"flex",float:"left",marginRight:10}} tabIndex={0} onClick={()=>navigate(`/review/write/${item.order_item_id}`,{state:item})}>
                 리뷰 작성
               </div>
               <div className="order-cancel-btn" style={{display:"flex",float:"right"}}>
@@ -131,7 +131,7 @@ export default function MypageEachOrdersItem({item,moneyKRW,handleOpenCancelModa
           {(item.order_status === 'E3') && (
             
             <>
-              <div className="order-cancel-finished" style={{display:"flex",float:"left",marginRight:10}}>
+              <div className="order-cancel-btn" style={{display:"flex",float:"left",marginRight:10}}>
                 리뷰 작성 완료
               </div>
               <div className="order-cancel-btn" style={{display:"flex",float:"right"}}>

@@ -4,7 +4,7 @@ import { AuthContext } from "../../contexts/AuthContext";
 import { deleteQuestion } from "../../assets/js/api/QuestionApi";
 import QnaEdit from "./QnaEdit";
 
-const QnaList = ({ qnaList }) => {
+const QnaList = ({ qnaList,refreshQnaList }) => {
 
   const { auth } = useContext(AuthContext);
   const [openId, setOpenId] = useState(null);
@@ -27,8 +27,8 @@ const QnaList = ({ qnaList }) => {
     try {
       await deleteQuestion(id);
       alert("QnA 삭제 완료");
-      window.location.reload();
-    } catch(err) {
+      refreshQnaList();
+    } catch {
       alert("QnA 삭제 실패");
     }
   };
@@ -39,13 +39,18 @@ const QnaList = ({ qnaList }) => {
       {/* 테이블 헤더 */}
       <div className="qna-table-header">
         <div className="head-state">상태</div>
+        <div className="head-category">카테고리</div>
         <div className="head-title">제목</div>
         <div className="head-writer">작성자</div>
         <div className="head-date">작성일</div>
       </div>
 
-      {/* 리스트 */}
-      {qnaList.map((q) => {
+    {qnaList.length === 0? (
+      <div className="qna-empty">
+        현재 등록된 문의가 없습니다.
+      </div>
+      ):(
+      qnaList.map((q) => {
         const canView =
           !q.isPrivate ||
           String(q.writerUserId) === String(loginUserId) ||
@@ -68,6 +73,10 @@ const QnaList = ({ qnaList }) => {
                 ) : (
                   <span className="state-wait">미답변</span>
                 )}
+              </div>
+
+              <div className="qna-category-badge">
+                {q.qnaCategory}
               </div>
 
               <div className="qna-title-area">
@@ -141,16 +150,17 @@ const QnaList = ({ qnaList }) => {
             )}
           </div>
         );
-      })}
+      }))}
 
       {/* 수정 모달 */}
       {editModal && (
         <QnaEdit
           qna={editModal}
           onClose={() => setEditModal(null)}
-          refresh={() => window.location.reload()}
+          refresh={() => window.location.reload()} refreshQnaList={refreshQnaList}
         />
       )}
+
     </div>
   );
 };

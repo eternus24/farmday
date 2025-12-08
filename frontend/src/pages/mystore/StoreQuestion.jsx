@@ -3,7 +3,7 @@ import { getStoreList, writeAnswer } from '../../assets/js/api/QuestionApi';
 import '../../assets/css/storeDetail.css';
 import { useLocation, useParams } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
-import { getStoreInfo } from '../../assets/js/api/ShopApi';
+import { getStoreInfo } from '../../assets/js/api/MystoreApi';
 
 const StoreQuestion = () => {
 
@@ -37,7 +37,7 @@ const StoreQuestion = () => {
     const fetchStore = async () => {
       try {
         const res = await getStoreInfo(producerId);
-        setStore(res);
+        setStore(res.data);
       } catch (err) {
         console.error("스토어 정보 조회 실패", err);
       }

@@ -24,12 +24,6 @@ export const getTips = async(keyword) => {
     return res.data;
 }
 
-//생산자 스토어 추천
-export const getStoreRecommend = async(keyword) => {
-    const res = await api.post("/api/ai/storeRecommend", {keyword})
-    return res.data
-}
-
 //chatgpt 대화
 export const chatMessage = async(message) => {
     const res = await api.post("/api/ai/chat",{message})
@@ -39,6 +33,5 @@ export const chatMessage = async(message) => {
 export default {
     getRecipe,
     getTips,
-    getStoreRecommend,
     chatMessage
 }

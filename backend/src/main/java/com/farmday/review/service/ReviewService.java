@@ -8,7 +8,7 @@ import com.farmday.review.dto.ReviewDTO;
 public interface ReviewService {
 
     //리뷰 작성
-    public void writeReview(ReviewDTO dto);
+    public int writeReview(ReviewDTO dto) throws Exception;
 
     //리뷰 조회
     public List<ReviewDTO> getReviews(Long productId, String sort, String keyword, Long userNo);

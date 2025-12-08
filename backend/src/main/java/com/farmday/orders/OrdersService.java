@@ -92,4 +92,9 @@ public class OrdersService {
         return ordersMapper.chargeShippingFeeAfterCancel(order_id, shipping_fee);
     }
 
+    //민아 - 리뷰 작성 시 적립금 증가
+    public Long findUserNoByOrderItemId(int order_item_id) throws Exception {
+        return ordersMapper.findUserNoByOrderItemId(order_item_id);
+    }
+
 }

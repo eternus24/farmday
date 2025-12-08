@@ -46,7 +46,7 @@ const ShopFilter = ({filters,setFilters,setCurrentPage,setSortOption}) => {
             categories:[],
             price:0
         })
-        setSortOption('추천순');
+        setSortOption('신상품순');
         setCurrentPage(1)
     }
     

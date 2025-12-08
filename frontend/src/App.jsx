@@ -72,6 +72,7 @@ import StoreReviewManage from "./pages/mystore/StoreReviewManage";
 import StoreInfoPage from "./pages/mystore/StoreInfoPage";
 import ProducerGroupDealManagePage from "./pages/producer/ProducerGroupDealManagePage";
 import SellerDashboard from "./pages/producer/SellerDashboard";
+import ProducerListPage from "./pages/producer/ProducerListPage";
 
 // JWT 파싱 헬퍼
 function parseJwt(token) {
@@ -245,6 +246,8 @@ function App() {
                 <Route path="profile" element={<ProducerProfilePage />} />
                 <Route path="create" element={<StoreCreate />} />
               </Route>
+
+              <Route path="/card" element={<ProducerListPage/>}/>
 
               <Route path="/help" element={<HelpCenter/>}/>
 

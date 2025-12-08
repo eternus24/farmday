@@ -37,5 +37,11 @@ public class MystoreController {
         mystoreService.updateStore(dto);
         return ResponseEntity.ok("success");
     }
+
+    //전체 입점 상점 목록 조회
+    @GetMapping("/list")
+    public ResponseEntity<?> getAllStoreList(){
+        return ResponseEntity.ok(mystoreService.getAllStoreList());
+    }
     
 }

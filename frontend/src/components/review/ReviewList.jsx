@@ -1,8 +1,8 @@
 import React from 'react';
 import "../../assets/css/review.css";
-import { FaRegThumbsUp } from "react-icons/fa";
+import { FaRegThumbsUp, FaThumbsUp } from "react-icons/fa";
 
-const ReviewList = ({reviews}) => {//리뷰 전체 목록 렌더링
+const ReviewList = ({reviews,onLike}) => {//리뷰 전체 목록 렌더링
     
   return (
         <div className='review-wrapper'>
@@ -45,9 +45,13 @@ const ReviewList = ({reviews}) => {//리뷰 전체 목록 렌더링
           </div>
 
           {/* 좋아요 버튼 */}
-          <button className="btn btn-light btn-sm mt-3 like-btn">
-            <FaRegThumbsUp /> 도움이 돼요 {r.likeCount}
+          <button className={`btn btn-sm mt-3 like-btn ${r.liked ? "liked" : ""}`}
+          onClick={() => onLike(r.reviewId)} >
+          {Number(r.liked) === 1 ? <FaThumbsUp /> : <FaRegThumbsUp />}
+            {" "}
+            좋아요 ({r.likeCount ?? 0})
           </button>
+
 
           {/* 판매자 답글 표시 */}
           {r.reply && (

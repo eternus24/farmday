@@ -92,7 +92,7 @@ const ShopProductList = ({products, filters, sortOption, currentPage, setCurrent
 
             {/* 페이지 네비게이션 */}
             <nav>
-            <ul className="pagination justify-content-center mt-5 gap-2">
+            <ul className="pagination d-flex flex-row justify-content-center mt-5 gap-2">
 
                 {/* 이전 버튼 */}
                 <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>

@@ -13,7 +13,7 @@ public interface OrdersMapper {
 
 	UsersDTO findUserInfoForOrder(String user_id) throws Exception;
 
-  int findUserPoints(String user_id) throws Exception;
+  	int findUserPoints(String user_id) throws Exception;
 
 	String findUserMembershipInfo(String user_id) throws Exception;
 
@@ -63,5 +63,7 @@ public interface OrdersMapper {
 		@Param("shipping_fee")int shipping_fee
 	) throws Exception;
 
+	//민아 - 리뷰 작성 적립금
+	Long findUserNoByOrderItemId(int order_item_id);
 
 }

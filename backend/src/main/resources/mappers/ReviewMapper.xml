@@ -18,6 +18,7 @@
         content,
         image_url,
         product_tags,
+        is_visible,
         created_date
     ) VALUES (
         PRODUCT_REVIEW_SEQ.NEXTVAL,
@@ -30,9 +31,11 @@
         #{content},
         #{imageUrl},
         #{productTags},
+        'Y',
         SYSDATE
     )
-    </insert>
+</insert>
+
 
 <!-- 리뷰삭제 -->
     <delete id="deleteReview" parameterType="long">

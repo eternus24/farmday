@@ -1,111 +1,7 @@
 .review-manage-container {
-  padding: 30px 20px;
+  padding: 1px 10px;
   max-width: 1400px;
   margin: 0 auto;
-}
-
-/* 탭 네비게이션 */
-.review-tab-nav {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 30px;
-  padding-bottom: 16px;
-  border-bottom: 2px solid #f0f0f0;
-}
-
-.review-tab-nav button {
-  padding: 10px 24px;
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-  color: #666;
-  transition: all 0.2s;
-}
-
-.review-tab-nav button:hover {
-  border-color: #5f7161;
-  color: #5f7161;
-}
-
-.review-tab-nav button.active {
-  background: #5f7161;
-  color: #fff;
-  border-color: #5f7161;
-}
-
-/* 빈 상태 */
-.review-empty-state {
-  text-align: center;
-  padding: 80px 20px;
-  background: #fafafa;
-  border-radius: 12px;
-  margin-top: 20px;
-}
-
-.empty-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
-  opacity: 0.3;
-}
-
-.review-empty-state p {
-  font-size: 15px;
-  color: #999;
-  font-weight: 500;
-}
-
-/* 리뷰 그리드 레이아웃 */
-.review-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-  gap: 24px;
-  margin-top: 20px;
-}
-
-/* 리뷰 카드 */
-.review-card-modern {
-  background: #fff;
-  border: 1px solid #e5e5e5;
-  border-radius: 12px;
-  padding: 24px;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-}
-
-.review-card-modern:hover {
-  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-  transform: translateY(-2px);
-}
-
-/* 리뷰 헤더 */
-.review-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 16px;
-  gap: 12px;
-}
-
-.review-title-modern {
-  font-weight: 700;
-  font-size: 17px;
-  color: #222;
-  line-height: 1.4;
-  flex: 1;
-}
-
-.reply-status-badge {
-  padding: 4px 12px;
-  background: #5f7161;
-  color: #fff;
-  font-size: 12px;
-  font-weight: 600;
-  border-radius: 12px;
-  white-space: nowrap;
-  flex-shrink: 0;
 }
 
 /* 리뷰 내용 */
@@ -116,164 +12,124 @@
   color: #555;
 }
 
-/* 리뷰 이미지 */
-.review-image-wrapper {
+/* 리뷰 내용 */
+.review-content-modern {
   margin: 16px 0;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #555;
 }
-
-.review-image-modern {
-  width: 100%;
-  max-width: 200px;
-  height: auto;
-  border-radius: 8px;
-  border: 1px solid #e5e5e5;
-}
-
-/* 판매자 답글 표시 */
-.seller-reply-display {
-  background: linear-gradient(135deg, #f8f9fa 0%, #f1f3f5 100%);
-  padding: 16px;
-  margin-top: 20px;
-  border-radius: 8px;
-  border-left: 4px solid #5f7161;
-}
-
-.reply-header {
+/* ✅ 탭 */
+.review-tab-nav {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 10px;
+  gap: 10px;
+  margin-bottom: 20px;
 }
 
-.seller-badge-modern {
-  padding: 4px 10px;
+.review-tab-nav button {
+  padding: 8px 20px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background: #fff;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.review-tab-nav .active {
   background: #5f7161;
   color: #fff;
-  font-size: 11px;
-  font-weight: 700;
-  border-radius: 4px;
+  border-color: #5f7161;
 }
 
-.reply-label {
-  font-size: 13px;
-  font-weight: 600;
-  color: #333;
-}
-
-.reply-content {
-  font-size: 14px;
-  color: #444;
-  line-height: 1.6;
-  white-space: pre-wrap;
-}
-
-/* 답글 작성/수정 폼 */
-.reply-edit-form {
-  margin-top: 20px;
-  padding: 20px;
-  background: #f8f9fa;
-  border-radius: 8px;
-  border: 1px solid #e0e0e0;
-}
-
-.reply-form-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.reply-textarea-modern {
+/* ✅ 테이블 */
+.review-list-table {
   width: 100%;
-  padding: 14px;
-  border-radius: 8px;
-  border: 1px solid #ddd;
-  resize: vertical;
-  font-size: 14px;
-  line-height: 1.6;
-  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  transition: border-color 0.2s;
+  border-collapse: collapse;
   background: #fff;
 }
 
-.reply-textarea-modern:focus {
-  outline: none;
-  border-color: #5f7161;
-  box-shadow: 0 0 0 3px rgba(95, 113, 97, 0.1);
+.review-list-table th,
+.review-list-table td {
+  padding: 14px;
+  border-bottom: 1px solid #e5e5e5;
+  text-align: center;
+  font-size: 14px;
 }
 
-.reply-textarea-modern::placeholder {
-  color: #999;
+.review-title {
+  text-align: left;
+  font-weight: 600;
 }
 
-/* 답글 작성 버튼 그룹 */
-.reply-action-buttons {
+/* ✅ 상태 */
+.status-done {
+  background: #5f7161;
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.status-wait {
+  background: #aaa;
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+/* ✅ 버튼 */
+.reply-btn {
+  padding: 6px 14px;
+  background: #fff;
+  border: 1px solid #5f7161;
+  color: #5f7161;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.reply-btn:hover {
+  background: #5f7161;
+  color: #fff;
+}
+
+/* ✅ 답글 입력 영역 */
+.reply-row td {
+  background: #fafafa;
+}
+
+.reply-textarea {
+  width: 100%;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  margin-top: 10px;
+}
+
+.reply-actions {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  margin-top: 12px;
+  margin-top: 10px;
 }
 
-.reply-cancel-btn-modern,
-.reply-save-btn-modern {
-  padding: 10px 20px;
-  font-size: 14px;
-  font-weight: 600;
+.reply-actions button {
+  padding: 6px 16px;
   border-radius: 6px;
+  border: 1px solid #ccc;
   cursor: pointer;
-  transition: all 0.2s;
 }
 
-.reply-cancel-btn-modern {
-  background: #fff;
-  color: #666;
-  border: 1px solid #ddd;
-}
-
-.reply-cancel-btn-modern:hover {
-  background: #f5f5f5;
-  border-color: #999;
-}
-
-.reply-save-btn-modern {
+.reply-actions .save {
   background: #5f7161;
   color: #fff;
-  border: 1px solid #5f7161;
+  border-color: #5f7161;
 }
 
-.reply-save-btn-modern:hover {
-  background: #4a594b;
-  border-color: #4a594b;
-}
-
-/* 답글 작성 트리거 버튼 */
-.reply-write-btn-modern {
-  width: 100%;
-  margin-top: 16px;
-  padding: 12px;
-  background: #fff;
-  color: #5f7161;
-  border: 2px dashed #5f7161;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.reply-write-btn-modern:hover {
-  background: #5f7161;
-  color: #fff;
-  border-style: solid;
-}
-
-/* 반응형 */
-@media (max-width: 768px) {
-  .review-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .review-card-modern {
-    padding: 20px;
-  }
+/* ✅ 빈 상태 */
+.review-empty {
+  padding: 40px 0;
+  text-align: center;
+  color: #999;
 }

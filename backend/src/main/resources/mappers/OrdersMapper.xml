@@ -142,7 +142,13 @@
     where order_id=#{order_id}
   </update>
 
-
-
+  <!-- 민아 - 리뷰 작성 시 적립금 -->
+  <select id="findUserNoByOrderItemId" resultType="long">
+      SELECT u.user_no
+      FROM ORDERS o
+      JOIN ORDERS_ITEM oi ON o.order_id = oi.order_id
+      JOIN USERS u ON o.user_id = u.userId
+      WHERE oi.order_item_id = #{order_item_id}
+  </select>
 
 </mapper>

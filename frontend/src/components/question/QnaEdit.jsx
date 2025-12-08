@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { updateQuestion } from "../../assets/js/api/QuestionApi";
 
-const QnaEdit = ({qna,onClose,refresh}) => {//답변 수정
+const QnaEdit = ({qna,onClose,refreshQnaList}) => {//답변 수정
 
     const [title,setTitle] = useState(qna.title)
     const [content,setContent] = useState(qna.content)
@@ -20,7 +20,7 @@ const QnaEdit = ({qna,onClose,refresh}) => {//답변 수정
         try{
             await updateQuestion(data);
             alert("QnA 수정 완료!");
-            refresh();
+            refreshQnaList();
             onClose();
         }catch(err){
             console.error("QnA 수정 실패:", err);

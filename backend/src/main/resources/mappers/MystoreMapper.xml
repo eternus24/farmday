@@ -77,4 +77,23 @@
     WHERE producer_id = #{producerId}
 </update>
 
+<!-- 전체 상점 정보 조회 -->
+<select id="getAllStoreList" resultType="com.farmday.mystore.dto.MystoreDTO">
+  SELECT
+      s.store_id      AS storeId,
+      s.producer_id   AS producerId,
+      s.store_name    AS storeName,
+      s.phone         AS phone,
+      s.region_si     AS regionSi,
+      s.region_gun    AS regionGun,
+      s.description   AS description,
+      s.thumbnail_url AS thumbnailUrl
+  FROM store s
+  WHERE s.status = 'OPEN'
+    AND s.is_active = 'Y'
+  ORDER BY s.created_date DESC
+</select>
+
+
+
 </mapper>

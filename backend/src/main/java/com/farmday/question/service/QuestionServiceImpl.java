@@ -1,6 +1,5 @@
 package com.farmday.question.service;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -45,7 +44,7 @@ public class QuestionServiceImpl implements QuestionService{
     }
 
     @Override
-    public void insertAnswer(QuestionDTO dto) {
+    public void insertAnswer(QuestionDTO dto,String loginUserId) {
         mapper.insertAnswer(dto);
     }
     @Override

@@ -51,6 +51,112 @@
   color: #333;
 }
 
+.detail-frame {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.detail-section {
+  margin-bottom: 100px;
+}
+
+.detail-section.hero img,
+.detail-section.gallery img {
+  width: 100%;
+  border-radius: 16px;
+}
+
+.detail-section.gallery img {
+  margin-bottom: 30px;
+}
+
+/* 상세페이지 상품 그리드 카드 */
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+/* 카드 자체 – 배경 제거, 테두리만 */
+.detail-grid-card {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: 16px;
+  background: transparent;          /* ✅ 회색 배경 제거 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 이미지 – 너무 크지 않게, 딱 정갈하게 */
+.detail-grid-card img {
+  width: 85%;
+  height: 85%;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+/* ✅ 기본 이미지가 1개만 있을 때 중앙 정렬 */
+.gallery-grid:has(.default-card) {
+  grid-template-columns: 1fr;
+  justify-items: center;
+}
+
+/* 기본 상품 이미지 카드  */
+.default-card {
+  width: 50%;
+  max-width: 420px;     
+  aspect-ratio: 1 / 1;
+  margin: 5px 0;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+}
+
+/* 기본 이미지 자체 크기 */
+.default-card img {
+  width: 80%;           
+  height: auto;
+  object-fit: contain;
+}
+
+.gallery-grid.single-image {
+  grid-template-columns: 1fr;
+  justify-items: center;
+}
+
+/* ✅ 모바일 대응 */
+@media (max-width: 768px) {
+  .gallery-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-grid-card img {
+    width: 80%;
+    height: 80%;
+  }
+}
+
+/* ✅ 상품 설명 + 이미지 전용 흰색 배경 카드 */
+.detail-white-wrap {
+  background: #f8f7f7;
+  border-radius: 16px;
+  padding: 50px 40px;
+  margin-top: 40px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.06);
+}
+
+/* 모바일 대응 */
+@media (max-width: 768px) {
+  .detail-white-wrap {
+    padding: 30px 20px;
+    border-radius: 12px;
+  }
+}
+
 /* ========== 구매하기 버튼 + 장바구니 버튼 ========== */
 .btn-buy, .btn-price {
   padding: 14px 93px;   /* 기존 100px → 40px */

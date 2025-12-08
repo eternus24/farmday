@@ -52,31 +52,31 @@ public class QuestionController {
 
     //스토어 전체 QnA 조회 (생산자 페이지)
     @GetMapping("/store")
-public ResponseEntity<Map<String, Object>> getStoreQnaList(
-    @RequestParam long storeId,
-    @RequestParam(required = false) String qnaCategory,
-    @RequestParam(required = false) String status,
-    @RequestParam(required = false) String keyword
-) {
-    Map<String, Object> params = new HashMap<>();
-    params.put("storeId", storeId);
-    params.put("qnaCategory", qnaCategory);
-    params.put("status", status);
-    params.put("keyword", keyword);
+    public ResponseEntity<Map<String, Object>> getStoreQnaList(
+        @RequestParam long storeId,
+        @RequestParam(required = false) String qnaCategory,
+        @RequestParam(required = false) String status,
+        @RequestParam(required = false) String keyword
+    ) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("storeId", storeId);
+        params.put("qnaCategory", qnaCategory);
+        params.put("status", status);
+        params.put("keyword", keyword);
 
-    // 전체 리스트 조회 (페이징 없음)
-    List<QuestionDTO> qnaList = service.getStoreQnaList(params);
+        // 전체 리스트 조회 (페이징 없음)
+        List<QuestionDTO> qnaList = service.getStoreQnaList(params);
 
-    // 전체 개수
-    int totalCount = qnaList.size();
+        // 전체 개수
+        int totalCount = qnaList.size();
 
-    // 프론트가 기대하는 구조 그대로
-    Map<String, Object> response = new HashMap<>();
-    response.put("content", qnaList);
-    response.put("totalElements", totalCount);
+        // 프론트가 기대하는 구조 그대로
+        Map<String, Object> response = new HashMap<>();
+        response.put("content", qnaList);
+        response.put("totalElements", totalCount);
 
-    return ResponseEntity.ok(response);
-}
+        return ResponseEntity.ok(response);
+    }
 
 
     //수정 & 삭제
@@ -96,24 +96,19 @@ public ResponseEntity<Map<String, Object>> getStoreQnaList(
     // 답변 작성
     @PostMapping("/{qnaId}/answer")
     public ResponseEntity<String> insertAnswer(
-        @PathVariable Long qnaId,
-        @RequestBody QuestionDTO dto) {
+            @PathVariable Long qnaId,
+            @RequestBody QuestionDTO dto) {
 
-    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-    String loginUserId = (String) auth.getPrincipal();  // JWT 에서 userId 추출
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String loginUserId = auth.getName();   // 로그인한 사용자 ID
 
-    // qnaId 로 store_id 가져오기
-    Long storeOwnerId = service.getStoreOwnerIdByQnaId(qnaId);
+        dto.setQnaId(qnaId);
 
-    // 생산자 userId 와 요청자 userId 비교
-    if (!storeOwnerId.toString().equals(loginUserId)) {
-        return ResponseEntity.status(403).body("해당 스토어의 생산자만 답변할 수 있습니다.");
+        // ✔ 로그인한 유저 ID를 서비스로 같이 넘김
+        service.insertAnswer(dto, loginUserId);
+
+        return ResponseEntity.ok("답변 등록 완료");
     }
-
-    dto.setQnaId(qnaId);
-    service.insertAnswer(dto);
-    return ResponseEntity.ok("답변 등록 완료");
-}
 
 
     @DeleteMapping("/{qnaId}/answer")

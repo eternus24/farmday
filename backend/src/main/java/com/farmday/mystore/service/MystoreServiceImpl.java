@@ -1,5 +1,7 @@
 package com.farmday.mystore.service;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 
 import com.farmday.mystore.dto.MystoreDTO;
@@ -32,5 +34,10 @@ public class MystoreServiceImpl implements MystoreService {
         //producer 업데이트
         mystoreMapper.updateProducerInfo(dto);
 
+    }
+
+    //전체 상점
+    public List<MystoreDTO> getAllStoreList(){
+        return mystoreMapper.getAllStoreList();
     }
 }

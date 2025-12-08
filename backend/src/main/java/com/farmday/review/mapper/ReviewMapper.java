@@ -11,7 +11,7 @@ import com.farmday.review.dto.ReviewDTO;
 public interface ReviewMapper {
     
     //리뷰 등록
-    public void writeReview(ReviewDTO dto);
+    public int writeReview(ReviewDTO dto);
 
     // 리뷰 리스트 조회 (검색 + 정렬)
     public List<ReviewDTO> selectReviews(Map<String, Object> params);
@@ -28,7 +28,7 @@ public interface ReviewMapper {
     //전체 리뷰 조회
     public List<ReviewDTO> getStoreReviews(Long storeId);
 
-    //리뷰 데이터
+    //** 리뷰 데이터 ** 
     //이미 눌렀는지 체크
     public Integer checkLike(Map<String, Object> params);
     //저장

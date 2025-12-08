@@ -3,6 +3,8 @@
 // ==============================================
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";//민아 추가
+
 import "../../assets/css/mypage.css";
 import MypageLeftSideBar from "./MypageLeftSideBar";
 import MypageOrderList from "./MypageOrderList";
@@ -69,6 +71,15 @@ export default function MyPage() {
     points: 0,
     couponCount: 0,
   });
+
+  //민아 - 추가
+  const [searchParams] = useSearchParams();
+  const tabFromQuery = searchParams.get("tab");
+
+  useEffect(() => {
+  if (tabFromQuery) setShowContent(tabFromQuery);
+  }, [tabFromQuery]);
+  
   const [orders, setOrders] = useState([]);
   const [months, setMonths] = useState(3);
   const [query, setQuery] = useState("");

@@ -14,10 +14,10 @@ const DetailMenu2 = async ({ text, addMessage, setMenuStep }) => {
     }
 
     //요리 상세 요청 버튼
-    if(text.startsWith("recipeDetail:")){
-        const dishName = text.replace("recipeDetail:","");
+    if(text.startsWith("recipe-detail:")){
+        const dishName = text.replace("recipe-detail:","");
 
-        addMessage({from:"bot",text:`${dishName} 레시피를 불러오는 중입니다.⏳`});
+        addMessage({from:"bot",text:`AI가 ${dishName} 레시피를 불러오는 중입니다.⏳`});
         const data = await getRecipeDetail(dishName);
         addMessage({from:"bot",text:data.result});
         addMessage({
@@ -32,13 +32,13 @@ const DetailMenu2 = async ({ text, addMessage, setMenuStep }) => {
     }
 
     //다른 요리 추천
-    if(text === "recipeMore"){
+    if(text === "recipe-more"){
         const ingredients = localStorage.getItem("lastIngredients");
         const listData = await getRecipeList(ingredients);
 
         addMessage({
             from:"bot",
-            text:"새로운 요리들을 추천해드릴께요.",
+            text:"AI가 새로운 요리들을 추천해드릴께요.",
             buttons: [
                 ...listData.recipes.map(name => ({
                     label: name,
@@ -57,7 +57,7 @@ const DetailMenu2 = async ({ text, addMessage, setMenuStep }) => {
     if(isDishName){
         addMessage({
             from:"bot",
-            text:`${text} 레시피를 검색 중입니다...⏳`
+            text:`AI가 ${text} 레시피를 검색 중입니다...⏳`
         })
 
         const data = await getRecipeDetail(text);
@@ -77,7 +77,7 @@ const DetailMenu2 = async ({ text, addMessage, setMenuStep }) => {
 
     addMessage({
         from: "bot",
-        text: `입력하신 재료 '${ingredients}'로 만들 수 있는 요리를 추천해드릴게요! ⏳`
+        text: `AI가 입력하신 재료 '${ingredients}'로 만들 수 있는 요리를 추천해드릴게요! ⏳`
     });
 
     localStorage.setItem("lastIngredients", ingredients);
@@ -86,7 +86,7 @@ const DetailMenu2 = async ({ text, addMessage, setMenuStep }) => {
 
     addMessage({
         from: "bot",
-        text: "다음 요리들을 추천합니다!",
+        text: "AI가 다음 요리들을 추천합니다!",
         buttons: [
             ...listData.recipes.map(name => ({
                 label: name,

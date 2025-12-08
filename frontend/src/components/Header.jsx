@@ -119,6 +119,11 @@ export default function Header() {
                   시세정보
                 </NavLink>
 
+                {/* 추가 */}
+                <NavLink to="/card" className="nav-item nav-link">
+                  입점 생산자
+                </NavLink>
+
                 <NavLink to="/help" className="nav-item nav-link">
                   고객센터
                 </NavLink>
