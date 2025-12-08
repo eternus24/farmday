@@ -261,6 +261,29 @@
     </insert>
 
 
+    <!-- 생산자별 공동구매 목록 조회 -->
+    <select id="selectGroupDealListByProducer" resultMap="GroupDealListMap">
+        SELECT
+            gd.group_deal_id,
+            gd.title,
+            gd.sub_title,
+            gd.origin_price,
+            gd.deal_price,
+            gd.discount_rate,
+            gd.current_quantity,
+            gd.min_member_count,
+            gd.status,
+            gd.end_at,
+            gi.image_url AS thumbnail_image_url
+        FROM GROUP_DEAL gd
+        LEFT JOIN GROUP_DEAL_IMAGE gi
+            ON gd.group_deal_id = gi.group_deal_id
+           AND gi.sort_order = 1
+        WHERE gd.is_active = 'Y'
+          AND gd.created_by = #{createdBy}
+        ORDER BY gd.created_date DESC
+    </select>
+
     <!-- =========================
          UPDATE 쿼리
          ========================= -->
@@ -271,5 +294,54 @@
         SET current_quantity = current_quantity + #{quantity}
         WHERE group_deal_id = #{groupDealId}
     </update>
+
+    <!-- 공동구매 수정 -->
+    <update id="updateGroupDeal" parameterType="com.farmday.groupdeal.dto.GroupDealCreateRequestDto">
+        UPDATE GROUP_DEAL
+        SET
+            product_id = #{productId},
+            title = #{title},
+            sub_title = #{subTitle},
+            group_deal_detail = #{detail},
+            origin_price = #{originPrice},
+            deal_price = #{dealPrice},
+            discount_rate = #{discountRate},
+            min_member_count = #{minMemberCount},
+            max_member_count = #{maxMemberCount},
+            per_user_limit_qty = #{perUserLimitQty},
+            start_at = #{startAt},
+            end_at = #{endAt},
+            shipping_start_date = #{shippingStartDate},
+            shipping_end_date = #{shippingEndDate},
+            updated_date = SYSDATE
+        WHERE group_deal_id = #{groupDealId}
+          AND created_by = #{createdBy}
+          AND is_active = 'Y'
+    </update>
+
+    <!-- 공동구매 중단 (status 변경) -->
+    <update id="stopGroupDeal">
+        UPDATE GROUP_DEAL
+        SET
+            status = #{status},
+            updated_date = SYSDATE
+        WHERE group_deal_id = #{groupDealId}
+          AND is_active = 'Y'
+    </update>
+
+    <!-- 공동구매 삭제 (is_active = 'N') -->
+    <update id="deleteGroupDeal">
+        UPDATE GROUP_DEAL
+        SET
+            is_active = 'N',
+            updated_date = SYSDATE
+        WHERE group_deal_id = #{groupDealId}
+    </update>
+
+    <!-- 공동구매 이미지 삭제 -->
+    <delete id="deleteGroupDealImages">
+        DELETE FROM GROUP_DEAL_IMAGE
+        WHERE group_deal_id = #{groupDealId}
+    </delete>
 
 </mapper>

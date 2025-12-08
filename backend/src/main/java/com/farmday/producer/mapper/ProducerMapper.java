@@ -37,12 +37,15 @@ public interface ProducerMapper {
     List<LowStockProductDto> findLowStockProducts(@Param("producerId") Long producerId);
 
     // 판매관리 - 주문 목록
-    List<ProducerOrderItemDto> findActiveOrderItemsByProducerId(@Param("producerId") Long producerId);
+    List<ProducerOrderItemDto> findActiveOrderItemsByProducerId(
+        @Param("producerId") Long producerId,
+        @Param("loginUserId") String loginUserId
+    );
 
-    List<ProducerOrderItemDto> findCompletedOrderItemsByProducerId(@Param("producerId") Long producerId);
-
-    // 배송 상태 변경
-    int updateDeliveryStatusByOrderItemId(@Param("producerId") Long producerId, @Param("orderItemId") Long orderItemId, @Param("deliveryStatus") String deliveryStatus);
+    List<ProducerOrderItemDto> findCompletedOrderItemsByProducerId(
+            @Param("producerId") Long producerId,
+            @Param("loginUserId") String loginUserId
+    );
 
     // 매출 현황
     List<DailySalesDto> findMonthlyDailySalesByProducerId(@Param("producerId") Long producerId);
@@ -64,11 +67,18 @@ public interface ProducerMapper {
     
     int updateDeliveryStatusByOrderItemId(Map<String, Object> param);
     
-    List<ProducerOrderItemDto> findOrderItemsByProducerIdAndOrderId( @Param("producerId") Long producerId, @Param("orderId") Long orderId);
+    List<ProducerOrderItemDto> findOrderItemsByProducerIdAndOrderId(
+        @Param("producerId") Long producerId,
+        @Param("loginUserId") String loginUserId,
+        @Param("orderId") Long orderId
+    );
 
     void updateDeliveryInfoByOrderItemId(@Param("producerId") Long producerId, @Param("orderItemId") Long orderItemId, @Param("carrierName") String carrierName, @Param("trackingNumber") String trackingNumber);
 
-    List<ProducerOrderItemDto> findRefundOrderItemsByProducerId(Long producerId);
+    List<ProducerOrderItemDto> findRefundOrderItemsByProducerId(
+            @Param("producerId") Long producerId,
+            @Param("loginUserId") String loginUserId
+    );
 
     // =======================
     // 상품관리 - 시퀀스

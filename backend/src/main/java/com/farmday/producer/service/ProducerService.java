@@ -35,12 +35,17 @@ public interface ProducerService {
     List<LowStockProductDto> getLowStockProducts(Long producerId);
 
     // 판매관리 - 주문 목록
-    List<ProducerOrderSummaryDto> getActiveOrders(Long producerId);
+    List<ProducerOrderSummaryDto> getActiveOrders(Long producerId, String loginUserId);
 
-    List<ProducerOrderSummaryDto> getCompletedOrders(Long producerId);
+    List<ProducerOrderSummaryDto> getCompletedOrders(Long producerId, String loginUserId);
 
     // 배송 상태 변경
-    void changeDeliveryStatus(Long producerId, Long orderItemId, String deliveryStatus);
+    void changeDeliveryStatus(
+            Long producerId,
+            String loginUserId,
+            Long orderItemId,
+            String deliveryStatus
+    );
 
     // 매출 현황
     List<DailySalesDto> getMonthlyDailySales(Long producerId);
@@ -55,12 +60,12 @@ public interface ProducerService {
     // 상품관리 - 옵션 수정
     void updateMyProductDetail(Long producerId, Long detailId, String unitName, Integer price, Integer stockQty);
 
-    List<ProducerOrderItemDto> getOrderItems(Long producerId, Long orderId);
+    List<ProducerOrderItemDto> getOrderItems(Long producerId, String loginUserId, Long orderId);
 
     void updateDeliveryInfo(Long producerId, Long orderItemId, String carrierName, String trackingNumber);
 
     // 🔥 새로 추가: 환불 내역 조회
-    List<ProducerOrderSummaryDto> getRefundOrders(Long producerId);
+    List<ProducerOrderSummaryDto> getRefundOrders(Long producerId, String loginUserId);
 
     // ⭐ 상품 등록 (URL 기반)
     ProducerProductItemDto createProduct(Long producerId, ProducerProductSaveRequest request);

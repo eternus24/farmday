@@ -49,4 +49,19 @@ public interface GroupDealMapper {
     List<GroupDealDashboardResponse.Participant> selectGroupDealParticipants(
             @Param("groupDealId") Long groupDealId
     );
+
+    // 생산자별 공동구매 목록 조회
+    List<GroupDealListResponseDto> selectGroupDealListByProducer(@Param("createdBy") String createdBy);
+
+    // 공동구매 수정
+    int updateGroupDeal(GroupDealCreateRequestDto dto);
+
+    // 공동구매 중단 (status 변경)
+    int stopGroupDeal(@Param("groupDealId") Long groupDealId, @Param("status") String status);
+
+    // 공동구매 삭제 (is_active = 'N')
+    int deleteGroupDeal(@Param("groupDealId") Long groupDealId);
+
+    // 공동구매 이미지 삭제
+    int deleteGroupDealImages(@Param("groupDealId") Long groupDealId);
 }

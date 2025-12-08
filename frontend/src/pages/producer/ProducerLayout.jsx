@@ -53,7 +53,35 @@ export default function ProducerLayout() {
         setStoreExists(!!data.hasStore)
       } catch (err) {
         console.error('생산자 정보 조회 에러:', err)
-        setError('생산자 정보를 불러오는 중 오류가 발생했습니다.')
+        const status = err.response?.status
+        if (status === 401) {
+          setError('로그인이 필요합니다. 다시 로그인해주세요.')
+        } else if (status === 403) {
+          setError('생산자로 등록되지 않은 사용자입니다. 생산자 등록을 먼저 진행해주세요.')
+        } else if (status === 404) {
+          // 개발용: 생산자 정보 없을 때 더미 데이터 사용
+          setProducer({
+            producerId: 1,
+            userId: auth?.userId || 'aaa123',
+            name: auth?.name || '테스트 생산자',
+            email: auth?.email || '',
+            phone: auth?.phone || '',
+            photoUrl: auth?.photo || null,
+            addr: auth?.addr || '',
+            farmName: '테스트 농장',
+            bizNo: '',
+            farmAddr: '',
+            farmPhone: '',
+            bankName: '',
+            bankAccountNo: '',
+            accountHolder: '',
+            isVerified: 'Y',
+            hasStore: false
+          })
+          setStoreExists(false)
+        } else {
+          setError('생산자 정보를 불러오는 중 오류가 발생했습니다.')
+        }
       } finally {
         setLoading(false)
       }
@@ -90,6 +118,12 @@ export default function ProducerLayout() {
                 <NavLink to="/producer" end>
                   대시보드
                 </NavLink>
+              </li>
+              <li>
+                <NavLink to="/producer/seller-dashboard">공동구매 대시보드</NavLink>
+              </li>
+              <li>
+                <NavLink to="/producer/groupdeals">생산자 마이페이지</NavLink>
               </li>
               <li>
                 <NavLink to="/producer/orders">판매 관리</NavLink>

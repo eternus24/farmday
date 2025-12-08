@@ -142,24 +142,23 @@ public class ProducerServiceImpl implements ProducerService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ProducerOrderSummaryDto> getActiveOrders(Long producerId) {
+    public List<ProducerOrderSummaryDto> getActiveOrders(Long producerId, String loginUserId) {
         List<ProducerOrderItemDto> items =
-                producerMapper.findActiveOrderItemsByProducerId(producerId);
+            producerMapper.findActiveOrderItemsByProducerId(producerId, loginUserId);
+        return toOrderSummary(items);
+    }
+
+    @Override
+    public List<ProducerOrderSummaryDto> getCompletedOrders(Long producerId, String loginUserId) {
+        List<ProducerOrderItemDto> items =
+                producerMapper.findCompletedOrderItemsByProducerId(producerId, loginUserId);
         return toOrderSummary(items);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<ProducerOrderSummaryDto> getCompletedOrders(Long producerId) {
-        List<ProducerOrderItemDto> items =
-                producerMapper.findCompletedOrderItemsByProducerId(producerId);
-        return toOrderSummary(items);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<ProducerOrderItemDto> getOrderItems(Long producerId, Long orderId) {
-        return producerMapper.findOrderItemsByProducerIdAndOrderId(producerId, orderId);
+    public List<ProducerOrderItemDto> getOrderItems(Long producerId, String loginUserId, Long orderId) {
+        return producerMapper.findOrderItemsByProducerIdAndOrderId(producerId, loginUserId, orderId);
     }
 
     // =========================
@@ -167,20 +166,29 @@ public class ProducerServiceImpl implements ProducerService {
     // =========================
     @Override
     @Transactional
-    public void changeDeliveryStatus(Long producerId, Long orderItemId, String deliveryStatus) {
-        int updated = producerMapper.updateDeliveryStatusByOrderItemId(
-                producerId, orderItemId, deliveryStatus
-        );
+    public void changeDeliveryStatus(Long producerId,
+                                    String loginUserId,
+                                    Long orderItemId,
+                                    String deliveryStatus) {
+
+        // 🔹 Mapper로 보낼 파라미터 맵
+        Map<String, Object> param = new LinkedHashMap<>();
+        param.put("producerId", producerId);
+        param.put("loginUserId", loginUserId);
+        param.put("orderItemId", orderItemId);
+        param.put("deliveryStatus", deliveryStatus);
+
+        int updated = producerMapper.updateDeliveryStatusByOrderItemId(param);
         if (updated == 0) {
             throw new IllegalStateException("배송 상태를 변경할 수 없습니다.");
         }
 
-        // 🔸 실제 상태값에 맞추기 (예: '배송완료')
+        // 🔸 배송완료 아닐 땐 멤버십 적립 로직 스킵
         if (!"배송완료".equals(deliveryStatus)) {
             return;
         }
 
-        // 1) 이 orderItem이 속한 주문/유저/결제금액 조회
+        // 1) 주문/유저/결제금액 조회
         OrderMembershipInfo info =
                 producerMapper.findOrderMembershipInfoByOrderItemId(orderItemId);
 
@@ -192,7 +200,7 @@ public class ProducerServiceImpl implements ProducerService {
         Long userNo    = info.getUserNo();
         Long payAmount = info.getPayAmount();
 
-        // 2) 같은 주문 중 아직 배송완료 아닌 아이템이 있으면 적립 보류
+        // 2) 같은 주문 중 아직 배송완료 아닌 아이템 있으면 적립 보류
         int notDeliveredCount = producerMapper.countUndeliveredItemsByOrderId(orderId);
         if (notDeliveredCount > 0) {
             return;
@@ -255,13 +263,9 @@ public class ProducerServiceImpl implements ProducerService {
 
     // 🔥 환불 내역
     @Override
-    @Transactional(readOnly = true)
-    public List<ProducerOrderSummaryDto> getRefundOrders(Long producerId) {
-        // 1) 환불 아이템들 조회 (B1, R1)
+    public List<ProducerOrderSummaryDto> getRefundOrders(Long producerId, String loginUserId) {
         List<ProducerOrderItemDto> items =
-                producerMapper.findRefundOrderItemsByProducerId(producerId);
-
-        // 2) 이미 잘 쓰던 toOrderSummary 재사용
+                producerMapper.findRefundOrderItemsByProducerId(producerId, loginUserId);
         return toOrderSummary(items);
     }
 

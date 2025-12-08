@@ -70,6 +70,8 @@ import HelpCenter from "./pages/help/HelpCenter";
 import StoreEditPage from "./pages/mystore/StoreEditPage";
 import StoreReviewManage from "./pages/mystore/StoreReviewManage";
 import StoreInfoPage from "./pages/mystore/StoreInfoPage";
+import ProducerGroupDealManagePage from "./pages/producer/ProducerGroupDealManagePage";
+import SellerDashboard from "./pages/producer/SellerDashboard";
 
 // JWT 파싱 헬퍼
 function parseJwt(token) {
@@ -218,11 +220,15 @@ function App() {
                 element={<ProducerGroupDealCreatePage />}
               />
               <Route
+                path="/groupdeal/:groupDealId/edit"
+                element={<ProducerGroupDealCreatePage />}
+              />
+              <Route
                 path="/groupdeal/:groupDealId"
                 element={<GroupDealDetailPage />}
               />
               <Route
-                path="/producer/groupdeal/:groupDealId/manage"
+                path="/groupdeal/:groupDealId/manage"
                 element={<GroupDealManagePage />}
               />
 
@@ -231,7 +237,9 @@ function App() {
               {/* 생산자 마이페이지 */}
               <Route path="/producer" element={<ProducerLayout />}>
                 <Route index element={<ProducerDashboard />} />
+                <Route path="seller-dashboard" element={<SellerDashboard />} />
                 <Route path="orders" element={<ProducerOrdersPage />} />
+                <Route path="groupdeals" element={<ProducerGroupDealManagePage />} />
                 <Route path="orders/:orderId" element={<ProducerOrderDetailPage />} />
                 <Route path="products" element={<ProducerProductsPage />} />
                 <Route path="profile" element={<ProducerProfilePage />} />

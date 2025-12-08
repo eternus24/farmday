@@ -21,5 +21,15 @@ public interface GroupDealService {
     // 공동구매 등록 (생산자)
     Long createGroupDeal(String sellerUserId, GroupDealCreateRequestDto dto);
 
-    // ❌ 여기에는 더 이상 대시보드 메서드 없음
+    // 생산자별 공동구매 목록 조회
+    List<GroupDealListResponseDto> getGroupDealListByProducer(String createdBy);
+
+    // 공동구매 수정 (생산자)
+    void updateGroupDeal(String sellerUserId, Long groupDealId, GroupDealCreateRequestDto dto);
+
+    // 공동구매 중단 (생산자)
+    void stopGroupDeal(String sellerUserId, Long groupDealId, String status);
+
+    // 공동구매 삭제 (생산자)
+    void deleteGroupDeal(String sellerUserId, Long groupDealId);
 }

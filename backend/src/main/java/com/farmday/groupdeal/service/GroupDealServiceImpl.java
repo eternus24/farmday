@@ -76,4 +76,76 @@ public class GroupDealServiceImpl implements GroupDealService {
 
         return groupDealId;
     }
+
+    @Override
+    public List<GroupDealListResponseDto> getGroupDealListByProducer(String createdBy) {
+        return groupDealMapper.selectGroupDealListByProducer(createdBy);
+    }
+
+    @Override
+    @Transactional
+    public void updateGroupDeal(String sellerUserId, Long groupDealId, GroupDealCreateRequestDto dto) {
+        // 작성자 확인
+        GroupDealDetailResponseDto existing = groupDealMapper.selectGroupDealDetail(groupDealId);
+        if (existing == null) {
+            throw new IllegalArgumentException("공동구매를 찾을 수 없습니다.");
+        }
+
+        // 권한 체크는 컨트롤러에서 처리하므로 여기서는 dto에 groupDealId와 createdBy만 설정
+        dto.setGroupDealId(groupDealId);
+        dto.setCreatedBy(sellerUserId);
+
+        // GROUP_DEAL UPDATE
+        int updated = groupDealMapper.updateGroupDeal(dto);
+        if (updated == 0) {
+            throw new IllegalStateException("공동구매를 수정할 수 없습니다. 권한을 확인해주세요.");
+        }
+
+        // 이미지 재등록: 기존 이미지 삭제 후 새로 등록
+        groupDealMapper.deleteGroupDealImages(groupDealId);
+
+        if (dto.getImageUrls() != null && !dto.getImageUrls().isEmpty()) {
+            int sortOrder = 1;
+            for (String imageUrl : dto.getImageUrls()) {
+                GroupDealImageDto img = new GroupDealImageDto();
+                img.setGroupDealId(groupDealId);
+                img.setImageUrl(imageUrl);
+                img.setSortOrder(sortOrder);
+                groupDealMapper.insertGroupDealImage(img);
+                sortOrder++;
+            }
+        }
+    }
+
+    @Override
+    @Transactional
+    public void stopGroupDeal(String sellerUserId, Long groupDealId, String status) {
+        // 작성자 확인
+        GroupDealDetailResponseDto existing = groupDealMapper.selectGroupDealDetail(groupDealId);
+        if (existing == null) {
+            throw new IllegalArgumentException("공동구매를 찾을 수 없습니다.");
+        }
+
+        // 권한 체크는 컨트롤러에서 처리
+        int updated = groupDealMapper.stopGroupDeal(groupDealId, status);
+        if (updated == 0) {
+            throw new IllegalStateException("공동구매 상태를 변경할 수 없습니다.");
+        }
+    }
+
+    @Override
+    @Transactional
+    public void deleteGroupDeal(String sellerUserId, Long groupDealId) {
+        // 작성자 확인
+        GroupDealDetailResponseDto existing = groupDealMapper.selectGroupDealDetail(groupDealId);
+        if (existing == null) {
+            throw new IllegalArgumentException("공동구매를 찾을 수 없습니다.");
+        }
+
+        // 권한 체크는 컨트롤러에서 처리
+        int deleted = groupDealMapper.deleteGroupDeal(groupDealId);
+        if (deleted == 0) {
+            throw new IllegalStateException("공동구매를 삭제할 수 없습니다.");
+        }
+    }
 }

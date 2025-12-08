@@ -1,9 +1,25 @@
-/* src/pages/producer/ProducerGroupDealCreatePage.css */
+/* =========================================
+   ProducerGroupDealCreatePage.css (통합본)
+   - 플랫 흑백 + 딥그린 포인트 최소
+   - 큰 라운드 회색 박스 제거 (버튼만 라운드)
+   ========================================= */
 
+:root {
+  --pg-deep-green: #0f3d2e;
+  --pg-border: #e5e7eb;
+  --pg-muted: #6b7280;
+  --pg-text: #111827;
+}
+
+/* 페이지 전체 레이아웃 */
 .producer-groupdeal-page {
-  max-width: 1100px;
-  margin-top: 140px;
-  margin-bottom: 80px;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px 16px 40px;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  color: var(--pg-text);
+  background-color: #ffffff;
 }
 
 /* 상단 헤더 */
@@ -12,85 +28,124 @@
   flex-direction: column;
   gap: 12px;
   margin-bottom: 24px;
+  border-bottom: 2px solid #000000;
+  padding-bottom: 16px;
 }
 
 .pg-title {
-  font-size: 1.6rem;
+  font-size: 28px;
   font-weight: 800;
+  letter-spacing: 0.02em;
 }
 
 .pg-subtitle {
-  font-size: 0.95rem;
-  color: #6b7280;
-  margin-bottom: 0;
+  margin-top: 4px;
+  font-size: 14px;
+  color: var(--pg-muted);
 }
 
 .pg-required-mark {
+  color: #ef4444;
   font-weight: 700;
-  color: #dc2626;
 }
 
-/* 단계 표시 */
+/* 상단 스텝 작은 칩 */
 .pg-steps {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-top: 4px;
 }
 
 .pg-step {
-  font-size: 0.8rem;
-  padding: 4px 10px;
+  font-size: 11px;
+  border: 1px solid #000000;
   border-radius: 999px;
-  background-color: #f3f4f6;
-  color: #4b5563;
+  padding: 3px 9px;
+  text-transform: uppercase;
 }
 
-/* 섹션 카드 공통 */
+/* =========================================
+   섹션 공통 (1~5 큰 구분선 + 타이틀 강조)
+   ========================================= */
+
 .pg-section-card {
-  background-color: #ffffff;
-  border-radius: 18px;
-  padding: 20px 22px;
-  margin-bottom: 18px;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
-  border: 1px solid #e5e7eb;
+  padding: 22px 0 18px;
+  margin-bottom: 6px;
+  border-top: 2px solid #111111;
 }
 
 .pg-section-title {
-  font-size: 1.05rem;
-  font-weight: 700;
-  margin-bottom: 14px;
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 10px;
+  margin-bottom: 14px;
 }
 
 .pg-section-badge {
-  width: 28px;
-  height: 28px;
-  border-radius: 999px;
-  background-color: #bbf7d0;
-  color: #166534;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.9rem;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.pg-section-title span:last-child {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+/* 라벨 / 인풋 공통 */
+.pg-label {
+  display: block;
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.pg-input-lg {
+  width: 100%;
+  border-radius: 4px;
+  border: 1px solid var(--pg-border);
+  padding: 9px 11px;
+  font-size: 15px;
+}
+
+.pg-input {
+  width: 100%;
+  border-radius: 4px;
+  border: 1px solid var(--pg-border);
+  padding: 8px 10px;
+  font-size: 14px;
+}
+
+.pg-input-lg:focus,
+.pg-input:focus,
+.pg-textarea:focus {
+  outline: none;
+  border-color: #111111;
+}
+
+/* 힌트 텍스트 */
+.pg-hint {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--pg-muted);
+}
+
+.pg-hint-small {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--pg-muted);
 }
 
 /* 파일 업로드 */
 .pg-file-label {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 10px 18px;
+  display: inline-block;
+  padding: 9px 14px;
   border-radius: 999px;
-  border: 1px dashed #16a34a;
-  background-color: #ecfdf3;
-  color: #166534;
-  font-weight: 600;
+  background-color: #000000;
+  color: #ffffff;
+  font-size: 14px;
   cursor: pointer;
-  font-size: 0.95rem;
-  margin-bottom: 4px;
 }
 
 .pg-file-input {
@@ -98,138 +153,422 @@
 }
 
 .pg-uploading-text {
-  font-size: 0.9rem;
+  font-size: 13px;
 }
 
 /* 이미지 썸네일 */
 .pg-image-card {
-  border-radius: 12px;
+  border-radius: 4px;
   overflow: hidden;
-  background-color: #f9fafb;
+  background-color: #ffffff;
+  border: 1px solid var(--pg-border);
 }
 
 .pg-image-thumb {
   width: 100%;
-  height: 120px;
+  height: 150px;
   object-fit: cover;
   display: block;
 }
 
 .pg-image-main-badge {
   position: absolute;
-  left: 8px;
   top: 8px;
-  background-color: #15803d;
+  left: 8px;
+  background-color: #000000;
   color: #ffffff;
+  font-size: 11px;
   border-radius: 999px;
   padding: 4px 8px;
-  font-size: 0.75rem;
 }
 
 .pg-image-remove-btn {
   position: absolute;
-  right: 8px;
   top: 8px;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  padding: 2px 10px;
+  right: 8px;
+  font-size: 11px;
+  padding: 3px 8px;
 }
 
-/* pill 버튼 (예시 제목 등) */
-.pg-pill-button {
-  border-radius: 999px;
-  border: 1px solid #d1d5db;
-  background-color: #f9fafb;
-  font-size: 0.8rem;
-  padding: 6px 12px;
-  color: #374151;
+/* 추천 제목 */
+.pg-suggest-box {
+  margin-bottom: 8px;
+  border-top: 1px solid var(--pg-border);
+  border-bottom: 1px solid var(--pg-border);
+  padding: 8px 0;
 }
 
-.pg-pill-button:hover {
-  background-color: #ecfdf3;
-  border-color: #16a34a;
-  color: #14532d;
-}
-
-/* 큰 텍스트 영역 */
-.pg-textarea {
-  resize: vertical;
-  max-height: 220px;
-}
-
-/* 빠른 선택 버튼 공통 */
-.pg-quick-button-row {
+.pg-suggest-list {
+  margin-top: 6px;
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
 }
 
+.pg-suggest-btn {
+  border-radius: 999px;
+  border: 1px solid var(--pg-border);
+  background-color: #ffffff;
+  font-size: 12px;
+  padding: 4px 9px;
+  cursor: pointer;
+}
+
+.pg-suggest-btn:hover {
+  border-color: #000000;
+}
+
+/* 문장 도우미 박스 – 플랫 */
+.pg-helper-box {
+  border-top: 1px dashed var(--pg-border);
+  border-bottom: 1px dashed var(--pg-border);
+  padding: 8px 0 10px;
+  margin-bottom: 12px;
+}
+
+.pg-helper-title {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pg-helper-badge {
+  font-size: 11px;
+  border-radius: 999px;
+  border: 1px solid var(--pg-border);
+  padding: 2px 8px;
+}
+
+.pg-tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pg-tag-btn {
+  border-radius: 999px;
+  border: 1px solid var(--pg-border);
+  background-color: #ffffff;
+  font-size: 12px;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.pg-tag-btn:hover {
+  border-color: #000000;
+  background-color: #f9fafb;
+}
+
+.pg-helper-sub {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--pg-muted);
+}
+
+/* 상품 설명 + 음성입력 */
+.pg-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.pg-voice-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  border-radius: 999px;
+  border: 1px solid var(--pg-border);
+  background-color: #ffffff;
+  padding: 4px 9px;
+  cursor: pointer;
+}
+
+.pg-voice-btn-icon {
+  font-size: 14px;
+}
+
+.pg-voice-status {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--pg-muted);
+}
+
+.pg-textarea {
+  width: 100%;
+  margin-top: 4px;
+  border-radius: 4px;
+  border: 1px solid var(--pg-border);
+  padding: 10px 12px;
+  font-size: 14px;
+  resize: vertical;
+}
+
+/* 설명 미리보기 – 회색 배경 제거 */
+.pg-detail-preview-box {
+  margin-top: 10px;
+  border-top: 1px solid var(--pg-border);
+  padding-top: 8px;
+  font-size: 13px;
+}
+
+.pg-detail-preview-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+  font-size: 13px;
+}
+
+/* 가격 선택 버튼 */
+.pg-price-choice-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pg-price-option {
+  border-radius: 999px;
+  border: 1px solid var(--pg-border);
+  padding: 5px 10px;
+  font-size: 13px;
+  background-color: #ffffff;
+  cursor: pointer;
+}
+
+.pg-price-option:hover {
+  border-color: #000000;
+}
+
+/* 시세 헬퍼 */
+.pg-price-helper-row {
+  display: flex;
+  gap: 8px;
+}
+
+.pg-price-helper {
+  border-radius: 999px;
+  border: 1px solid var(--pg-border);
+  background-color: #ffffff;
+  font-size: 12px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.pg-price-helper:hover {
+  border-color: #000000;
+}
+
+/* 가격 가이드 박스 – 라운드 없이 */
+.pg-guide-box {
+  margin-top: 8px;
+  border-top: 1px dashed var(--pg-border);
+  padding-top: 6px;
+}
+
+.pg-guide-title {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.pg-guide-text {
+  font-size: 13px;
+}
+
+/* =========================================
+   4. 수량 설정 – 플랫 / 무신사 느낌
+   ========================================= */
+
+.pg-quantity-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+/* 큰 회색 라운드 박스 제거 → 플랫 영역 */
+.pg-quantity-box {
+  padding: 0;
+  border: none;
+}
+
+.pg-quantity-title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin-bottom: 8px;
+}
+
+/* 빠른 선택 버튼 라인 */
+.pg-quick-button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+/* 칩 스타일 버튼만 라운드 */
 .pg-quick-button {
   border-radius: 999px;
   border: 1px solid #d1d5db;
-  background-color: #f9fafb;
-  font-size: 0.8rem;
-  padding: 6px 10px;
-  min-width: 90px;
+  background-color: #ffffff;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background-color 0.12s ease-out, color 0.12s ease-out,
+    border-color 0.12s ease-out, transform 0.08s ease-out;
 }
 
 .pg-quick-button:hover {
-  background-color: #ecfdf3;
-  border-color: #16a34a;
-  color: #14532d;
+  border-color: #111827;
+  background-color: #111827;
+  color: #ffffff;
+  transform: translateY(-1px);
 }
 
-/* 가이드 박스 */
-.pg-guide-box {
-  border-radius: 12px;
-  padding: 10px 12px;
-  background-color: #f9fafb;
-  border: 1px solid #e5e7eb;
-  font-size: 0.85rem;
+.pg-quantity-help {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--pg-muted);
 }
 
-/* 제출 영역 */
+/* 푸터 / 제출 버튼 */
 .pg-footer {
-  border-top: 1px solid #e5e7eb;
-  padding-top: 18px;
-  margin-top: 10px;
+  margin-top: 22px;
+  border-top: 1px solid var(--pg-border);
+  padding-top: 14px;
 }
 
 .pg-submit-button {
-  border-radius: 999px;
-  background-color: #14532d;
-  border: none;
-  padding: 10px 28px;
+  background-color: #000000;
   color: #ffffff;
-  font-weight: 700;
-  font-size: 0.95rem;
+  border-radius: 999px;
+  padding: 10px 20px;
+  font-weight: 600;
+  border: none;
 }
 
 .pg-submit-button:disabled {
   opacity: 0.7;
 }
 
-/* 반응형 */
-@media (min-width: 768px) {
-  .pg-header {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-  }
+/* =========================================
+   ☎ 전화 안내 – 박스/초록색 제거
+   (pg-call-banner / pg-call-button를 쓰는 JSX용)
+   ========================================= */
+
+.pg-call-banner {
+  margin-top: 20px;
+  margin-bottom: 10px;
+  padding: 10px 0;
+  border-top: 1px solid var(--pg-border);
+  border-bottom: 1px solid var(--pg-border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--pg-text);
+  background-color: #ffffff;
 }
 
-@media (max-width: 576px) {
-  .producer-groupdeal-page {
-    margin-top: 100px;
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
-  }
+.pg-call-text {
+  flex: 1;
+}
 
-  .pg-section-card {
-    padding: 16px 14px;
+.pg-call-tag {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 2px;
+  border: 1px solid #000000;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pg-call-title {
+  margin: 6px 0 2px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.pg-call-desc {
+  margin: 0;
+  font-size: 12px;
+  color: var(--pg-muted);
+}
+
+/* 전화 링크 – 박스 없이 텍스트 형태 */
+.pg-call-button {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  text-decoration: none;
+}
+
+.pg-call-button:hover {
+  text-decoration: underline;
+}
+
+.pg-call-icon {
+  font-size: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  animation: pg-phone-wiggle 1.4s ease-in-out infinite;
+}
+
+.pg-call-label small {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--pg-muted);
+}
+
+/* 살짝 흔들리는 애니메이션만 유지 */
+@keyframes pg-phone-wiggle {
+  0% { transform: rotate(0deg); }
+  10% { transform: rotate(-12deg); }
+  20% { transform: rotate(10deg); }
+  30% { transform: rotate(-8deg); }
+  40% { transform: rotate(5deg); }
+  50% { transform: rotate(0deg); }
+  100% { transform: rotate(0deg); }
+}
+
+/* =========================================
+   반응형
+   ========================================= */
+
+@media (max-width: 768px) {
+  .pg-header {
+    padding-bottom: 12px;
   }
 
   .pg-title {
-    font-size: 1.4rem;
+    font-size: 24px;
+  }
+
+  .pg-section-title span:last-child {
+    font-size: 16px;
+  }
+
+  .pg-section-card {
+    padding: 18px 0 14px;
+  }
+
+  .pg-quantity-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pg-call-banner {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }

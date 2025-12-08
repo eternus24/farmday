@@ -204,13 +204,11 @@ public class ProducerController {
             @AuthenticationPrincipal String loginUserId,
             @RequestParam(name = "type", defaultValue = "ACTIVE") String type
     ) {
-        // 1) 로그인 유저 검증
         User user = userService.findByUserId(loginUserId);
         if (user == null) {
             return ResponseEntity.status(401).build();
         }
 
-        // 2) 생산자 검증
         Producer producer = producerService.findByUserNo(user.getUserNo());
         if (producer == null) {
             return ResponseEntity.status(403).build();
@@ -218,18 +216,23 @@ public class ProducerController {
 
         Long producerId = producer.getProducerId();
 
-        // 3) 타입에 따라 분기
         if ("COMPLETED".equalsIgnoreCase(type)) {
             // 완료된 판매 내역
-            return ResponseEntity.ok(producerService.getCompletedOrders(producerId));
+            return ResponseEntity.ok(
+                    producerService.getCompletedOrders(producerId, loginUserId)
+            );
 
         } else if ("REFUNDS".equalsIgnoreCase(type)) {
-            // ✅ 환불 내역 탭용
-            return ResponseEntity.ok(producerService.getRefundOrders(producerId));
+            // 환불 내역 탭
+            return ResponseEntity.ok(
+                    producerService.getRefundOrders(producerId, loginUserId)
+            );
 
         } else {
             // 기본: ACTIVE (신규/진행 중)
-            return ResponseEntity.ok(producerService.getActiveOrders(producerId));
+            return ResponseEntity.ok(
+                    producerService.getActiveOrders(producerId, loginUserId)
+            );
         }
     }
 
@@ -239,13 +242,11 @@ public class ProducerController {
             @AuthenticationPrincipal String loginUserId,
             @PathVariable Long orderId
     ) {
-        // 1) 로그인 유저 확인
         User user = userService.findByUserId(loginUserId);
         if (user == null) {
             return ResponseEntity.status(401).build();
         }
 
-        // 2) 생산자 확인
         Producer producer = producerService.findByUserNo(user.getUserNo());
         if (producer == null) {
             return ResponseEntity.status(403).build();
@@ -253,12 +254,11 @@ public class ProducerController {
 
         Long producerId = producer.getProducerId();
 
-        // 3) 주문 상세 조회 (본인 상품인지까지 Mapper에서 검증)
+        // 🔥 loginUserId 같이 넘겨주기
         List<ProducerOrderItemDto> items =
-                producerService.getOrderItems(producerId, orderId);
+                producerService.getOrderItems(producerId, loginUserId, orderId);
 
         if (items.isEmpty()) {
-            // 이 생산자의 주문이 아니거나 존재하지 않는 주문
             return ResponseEntity.notFound().build();
         }
 
@@ -288,8 +288,13 @@ public class ProducerController {
 
         Long producerId = producer.getProducerId();
 
-        // 3) 배송 상태 변경
-        producerService.changeDeliveryStatus(producerId, orderItemId, deliveryStatus);
+        // ✅ loginUserId 같이 넘기기!
+        producerService.changeDeliveryStatus(
+                producerId,
+                loginUserId,
+                orderItemId,
+                deliveryStatus
+        );
 
         return ResponseEntity.ok().build();
     }

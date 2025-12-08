@@ -173,3 +173,51 @@ export async function getProducerGroupDealDashboard(groupDealId) {
     }
   );
 }
+
+/* --------------------------------------------------------------------- */
+/*  생산자: 내가 작성한 모집글 관리                                      */
+/* --------------------------------------------------------------------- */
+
+/**
+ * 생산자가 작성한 공동구매 목록 조회
+ * - GET /api/seller/group-deals/my
+ */
+export async function getMyGroupDeals() {
+  return request(`${API_BASE_URL}/api/seller/group-deals/my`, {
+    method: "GET",
+  });
+}
+
+/**
+ * 공동구매 수정
+ * - PUT /api/seller/group-deals/{groupDealId}
+ */
+export async function updateGroupDeal(groupDealId, updateDto) {
+  return request(`${API_BASE_URL}/api/seller/group-deals/${groupDealId}`, {
+    method: "PUT",
+    body: JSON.stringify(updateDto),
+  });
+}
+
+/**
+ * 공동구매 중단
+ * - PATCH /api/seller/group-deals/{groupDealId}/stop?status=STOPPED
+ */
+export async function stopGroupDeal(groupDealId, status = "STOPPED") {
+  return request(
+    `${API_BASE_URL}/api/seller/group-deals/${groupDealId}/stop?status=${status}`,
+    {
+      method: "PATCH",
+    }
+  );
+}
+
+/**
+ * 공동구매 삭제
+ * - DELETE /api/seller/group-deals/{groupDealId}
+ */
+export async function deleteGroupDeal(groupDealId) {
+  return request(`${API_BASE_URL}/api/seller/group-deals/${groupDealId}`, {
+    method: "DELETE",
+  });
+}

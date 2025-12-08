@@ -63,6 +63,7 @@ public class SecurityConfig {
                 .antMatchers("/api/order/**").authenticated()
                 .antMatchers("/api/products/**").permitAll()
                 .antMatchers("/api/shop/**").permitAll()
+                .antMatchers("/api/group-deal-qna/**").authenticated()
                 // 나머지는 인증 필요
                 .anyRequest().permitAll()
             .and()
