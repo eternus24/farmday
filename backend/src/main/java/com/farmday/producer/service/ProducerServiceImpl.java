@@ -210,6 +210,44 @@ public class ProducerServiceImpl implements ProducerService {
         membershipService.applyPaidOrder(userNo, payAmount);
     }
 
+        // =========================
+    // 배송 상태 일괄 변경 (주문 단위)
+    // =========================
+    @Override
+    @Transactional
+    public void changeDeliveryStatusBulk(Long producerId,
+                                         String loginUserId,
+                                         Long orderId,
+                                         String deliveryStatus) {
+
+        // 1) 이 생산자/공동구매 작성자의 해당 주문 아이템 전체 조회
+        List<ProducerOrderItemDto> items =
+                producerMapper.findOrderItemsByProducerIdAndOrderId(producerId, loginUserId, orderId);
+
+        if (items == null || items.isEmpty()) {
+            throw new IllegalStateException("해당 주문에 대한 주문 상품이 없습니다.");
+        }
+
+        for (ProducerOrderItemDto item : items) {
+            Long orderItemId = item.getOrderItemId();
+
+            // 이미 최종 상태인 애들은 스킵 (환불완료/불가 등)
+            String status = item.getOrderStatus();
+            if ("R1".equals(status) || "E1".equals(status) || "E2".equals(status) || "E3".equals(status)) {
+                continue;
+            }
+
+            // 이미 배송완료인 경우도 스킵
+            String delivery = item.getDeliveryStatus();
+            if ("배송완료".equals(delivery)) {
+                continue;
+            }
+
+            // 🔁 기존 단건 로직 재사용
+            changeDeliveryStatus(producerId, loginUserId, orderItemId, deliveryStatus);
+        }
+    }
+
     // =========================
     // 매출 현황
     // =========================

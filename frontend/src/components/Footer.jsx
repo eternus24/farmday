@@ -1,163 +1,105 @@
-// src/components/Footer.jsx
+import logoImg from "../assets/img/FarmDay.png";
+import ChatbotMain from "./aichat/ChatbotMain";
+
 export default function Footer() {
-  const scrollTop = (e) => {
-    e.preventDefault();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
 
   return (
     <>
-      {/* Footer Start */}
-      <div className="container-fluid bg-dark text-white-50 footer pt-5">
-        <div className="container py-5">
-          <div className="pb-4 mb-4" style={{ borderBottom: "1px solid rgba(226, 175, 24, 0.5)" }}>
-            <div className="row g-4">
-              <div className="col-lg-3">
-                <a href="#">
-                  <h1 className="text-primary mb-0">Fruitables</h1>
-                  <p className="text-secondary mb-0">Fresh products</p>
-                </a>
-              </div>
-              <div className="col-lg-6">
-                <div className="position-relative mx-auto">
-                  <input
-                    className="form-control border-0 w-100 py-3 px-4 rounded-pill"
-                    type="number"
-                    placeholder="Your Email"
-                  />
-                  <button
-                    type="submit"
-                    className="btn btn-primary border-0 border-secondary py-3 px-4 position-absolute rounded-pill text-white"
-                    style={{ top: 0, right: 0 }}
-                  >
-                    Subscribe Now
-                  </button>
-                </div>
-              </div>
-              <div className="col-lg-3">
-                <div className="d-flex justify-content-end pt-3">
-                  <a className="btn  btn-outline-secondary me-2 btn-md-square rounded-circle" href="">
-                    <i className="fab fa-twitter"></i>
-                  </a>
-                  <a className="btn btn-outline-secondary me-2 btn-md-square rounded-circle" href="">
-                    <i className="fab fa-facebook-f"></i>
-                  </a>
-                  <a className="btn btn-outline-secondary me-2 btn-md-square rounded-circle" href="">
-                    <i className="fab fa-youtube"></i>
-                  </a>
-                  <a className="btn btn-outline-secondary btn-md-square rounded-circle" href="">
-                    <i className="fab fa-linkedin-in"></i>
-                  </a>
-                </div>
-              </div>
+      <footer className="container-fluid pt-4 border-top mt-5" style={{ backgroundColor: "#ffffffff" }} >
+
+
+        {/* ✅ 상단 정책 링크 */}
+        <div className="container mb-3">
+        <div className="d-flex gap-4 small align-items-center"
+                style={{ 
+                  color: "#553b20ff",
+                  whiteSpace: "nowrap",     
+                  overflowX: "auto" 
+                }}
+              >
+            <a href="/help" className="text-decoration-none" style={{ color: "#553b20ff" }}>회사 소개</a>
+            <a href="/shop" className="text-decoration-none" style={{ color: "#553b20ff" }}>대표 상품</a>
+            <a href="/price" className="text-decoration-none" style={{ color: "#553b20ff" }}>오늘의 시세정보</a>
+            <button type="button" className="text-decoration-none"
+              style={{ color: "#3660d3ff", background: "none", border: "none" , padding:0}}
+              onClick={() => {
+                window.dispatchEvent(new Event("open-chatbot"));
+              }}> AI 서비스
+            </button>
+
+            <button type="button"
+                style={{ color: "#3660d3ff", background: "none", border: "none", padding: 0 }}
+                onClick={() => {
+                  if (!window.ChannelIO) {
+                    alert("관리자 상담을 준비 중입니다. 잠시 후 다시 시도해 주세요.");
+                    return;
+                  }
+                  window.ChannelIO("show");
+                  window.ChannelIO("open");
+                }}>실시간 문의
+              </button>
             </div>
           </div>
 
-          <div className="row g-5">
-            <div className="col-lg-3 col-md-6">
-              <div className="d-flex flex-column text-start footer-item">
-                <h4 className="text-light mb-3">Why People Like us!</h4>
-                <p className="mb-4">
-                  typesetting, remaining essentially unchanged. It was popularised in the 1960s with the like Aldus
-                  PageMaker including of Lorem Ipsum.
-                </p>
-                <a href="" className="btn border-secondary py-2 px-4 rounded-pill text-primary">
-                  Read More
-                </a>
+        {/* 본문 영역 */}
+        <div className="container pt-4 pb-4 border-top">
+          <div className="row align-items-start">
+
+            {/* 좌측 로고 + 회사정보 */}
+            <div className="col-md-7 small" style={{ color: "#6b4e2e" }}>
+              <div className="d-flex align-items-center mb-3">
+                <img
+                  src={logoImg}
+                  alt="FarmDay"
+                  style={{ height: "46px", marginRight: "14px" }}
+                />
+                <strong style={{ color: "#4a3822" }}>(주)FarmDay</strong>
+              </div>
+
+              <div>대표자 : 차현탁</div>
+              <div>사업자등록번호 : 123-45-67890</div>
+              <div>주소 : 서울특별시 강남구 테헤란로 123</div>
+              <div>이메일 : support@farmday.com</div>
+              <div className="mt-2">
+                FarmDay는 생산자와 소비자를 직접 연결하는 신선 직거래 플랫폼입니다.
               </div>
             </div>
-            <div className="col-lg-3 col-md-6">
-              <div className="d-flex flex-column text-start footer-item">
-                <h4 className="text-light mb-3">Shop Info</h4>
-                <a className="btn-link" href="">
-                  About Us
-                </a>
-                <a className="btn-link" href="">
-                  Contact Us
-                </a>
-                <a className="btn-link" href="">
-                  Privacy Policy
-                </a>
-                <a className="btn-link" href="">
-                  Terms & Condition
-                </a>
-                <a className="btn-link" href="">
-                  Return Policy
-                </a>
-                <a className="btn-link" href="">
-                  FAQs & Help
-                </a>
+
+            {/* 우측 고객센터 */}
+            <div className="col-md-5 text-md-end mt-4 mt-md-0" style={{ color: "#6b4e2e" }}>
+              <div
+                className="fw-bold fs-6 mb-1"
+                style={{ color: "#4a3822" }}
+              >
+                고객센터
+              </div>
+
+              <div
+                className="fw-bold fs-3 mb-2"
+                style={{ color: "#4a3822" }}
+              >
+                070-5217-9477
+              </div>
+
+              <div className="small">
+                평일 09:00 ~ 18:00<br />
+                점심시간 12:00 ~ 13:00<br />
+                주말·공휴일 휴무
               </div>
             </div>
-            <div className="col-lg-3 col-md-6">
-              <div className="d-flex flex-column text-start footer-item">
-                <h4 className="text-light mb-3">Account</h4>
-                <a className="btn-link" href="">
-                  My Account
-                </a>
-                <a className="btn-link" href="">
-                  Shop details
-                </a>
-                <a className="btn-link" href="">
-                  Shopping Cart
-                </a>
-                <a className="btn-link" href="">
-                  Wishlist
-                </a>
-                <a className="btn-link" href="">
-                  Order History
-                </a>
-                <a className="btn-link" href="">
-                  International Orders
-                </a>
-              </div>
-            </div>
-            <div className="col-lg-3 col-md-6">
-              <div className="footer-item">
-                <h4 className="text-light mb-3">Contact</h4>
-                <p>Address: 1429 Netus Rd, NY 48247</p>
-                <p>Email: Example@gmail.com</p>
-                <p>Phone: +0123 4567 8910</p>
-                <p>Payment Accepted</p>
-                <img src="img/payment.png" className="img-fluid" alt="" />
-              </div>
-            </div>
+
           </div>
         </div>
-      </div>
-      {/* Footer End */}
 
-      {/* Copyright Start */}
-      <div className="container-fluid copyright bg-dark py-4">
-        <div className="container">
-          <div className="row">
-            <div className="col-md-6 text-center text-md-start mb-3 mb-md-0">
-              <span className="text-light">
-                <a href="#">
-                  <i className="fas fa-copyright text-light me-2"></i>Your Site Name
-                </a>
-                , All right reserved.
-              </span>
-            </div>
-            <div className="col-md-6 my-auto text-center text-md-end text-white">
-              Designed By{" "}
-              <a className="border-bottom" href="https://htmlcodex.com">
-                HTML Codex
-              </a>{" "}
-              Distributed By{" "}
-              <a className="border-bottom" href="https://themewagon.com">
-                ThemeWagon
-              </a>
-            </div>
-          </div>
+        {/* 하단 카피라이트 */}
+        <div
+          className="container-fluid border-top py-3 text-center small"
+          style={{ color: "#6b4e2e" }}
+        >
+          © 2025 FarmDay. All Rights Reserved.
         </div>
-      </div>
-      {/* Copyright End */}
 
-      {/* Back to Top (한 번만) */}
-      <a href="#" onClick={scrollTop} className="btn btn-primary border-3 border-primary rounded-circle back-to-top">
-        <i className="fa fa-arrow-up"></i>
-      </a>
+      </footer>
     </>
   );
 }

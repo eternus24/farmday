@@ -2,35 +2,72 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../contexts/AuthContext";
-import defaultAvatarImg from "../assets/img/user-default1.png";
 import { CartContext } from "../contexts/CartContext";
 import logoImg from "../assets/img/FarmDay.png";
-import ChatbotMain from "./aichat/ChatbotMain"; //민아 - 추가
+import ChatbotMain from "./aichat/ChatbotMain";
+
+// ⭐ 기본 아바타 5개 임포트
+import userDefault1 from "../assets/img/user-default1.png";
+import userDefault2 from "../assets/img/user-default2.png";
+import userDefault3 from "../assets/img/user-default3.png";
+import userDefault4 from "../assets/img/user-default4.png";
+import userDefault5 from "../assets/img/user-default5.png";
+
+// 배열로 묶어두기
+const DEFAULT_AVATARS = [
+  userDefault1,
+  userDefault2,
+  userDefault3,
+  userDefault4,
+  userDefault5,
+];
+
+// 완전 기본 폴백
+const FALLBACK_AVATAR = userDefault1;
 
 export default function Header() {
   const navigate = useNavigate();
   const { auth, setAuth } = useContext(AuthContext);
-  const defaultAvatar = defaultAvatarImg;
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
   const [producerMenuOpen, setProducerMenuOpen] = useState(false);
+
+  // 🔹 랜덤 아바타 상태 (기본값 하나로 시작)
+  const [randomAvatar, setRandomAvatar] = useState(FALLBACK_AVATAR);
+
+  // 🔹 로그인/사진 유무에 따라 랜덤 아바타 선택
+  useEffect(() => {
+    const rawPhoto = auth?.photo;
+    const hasPhoto =
+      rawPhoto && rawPhoto !== "null" && rawPhoto !== "undefined";
+
+    // 로그인 + 프로필사진 없음 -> 매번 랜덤 뽑기
+    if (auth?.loggedIn && !hasPhoto) {
+      const idx = Math.floor(Math.random() * DEFAULT_AVATARS.length);
+      setRandomAvatar(DEFAULT_AVATARS[idx]);
+    }
+
+    // 로그아웃 -> 기본 아바타로
+    if (!auth?.loggedIn) {
+      setRandomAvatar(FALLBACK_AVATAR);
+    }
+  }, [auth?.loggedIn, auth?.photo]);
 
   const rawPhoto = auth?.photo;
 
   const profileSrc =
     !rawPhoto || rawPhoto === "null" || rawPhoto === "undefined"
-      ? defaultAvatar
+      ? randomAvatar // ▷ 사진 없으면 랜덤 아바타
       : rawPhoto.startsWith("http")
       ? rawPhoto
       : rawPhoto.startsWith("/")
       ? `${API_BASE}${rawPhoto}`
-      : defaultAvatar;
+      : randomAvatar;
 
-  const { cartAmount, setCartAmount, findCartAmount } =
-    useContext(CartContext);
+  const { cartAmount, findCartAmount } = useContext(CartContext);
 
   useEffect(() => {
     findCartAmount();
-  }, []);
+  }, [findCartAmount]);
 
   const isLoggedIn = auth?.loggedIn;
   const role = auth?.role || "";
@@ -64,7 +101,6 @@ export default function Header() {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("loginUser");
-    localStorage.removeItem("loginAvatar");
 
     setAuth({
       loggedIn: false,
@@ -114,16 +150,12 @@ export default function Header() {
                 <NavLink to="/groupdeal" className="nav-item nav-link">
                   공동구매
                 </NavLink>
-
                 <NavLink to="/price" className="nav-item nav-link">
                   시세정보
                 </NavLink>
-
-                {/* 추가 */}
                 <NavLink to="/card" className="nav-item nav-link">
                   입점 생산자
                 </NavLink>
-
                 <NavLink to="/help" className="nav-item nav-link">
                   고객센터
                 </NavLink>
@@ -151,14 +183,12 @@ export default function Header() {
 
                 {/* 로그인 / 로그아웃 + 프로필 */}
                 <div className="d-flex align-items-center my-auto">
-                  {/* 🔸 생산자: 예전 네비 드롭다운이랑 비슷한 디자인 */}
                   {isLoggedIn && isProducer ? (
-                    // ⭐ 우리가 직접 제어하는 커스텀 드롭다운
+                    // 🔸 생산자: 드롭다운
                     <div
                       className="position-relative"
                       style={{ marginRight: "0.25rem" }}
                     >
-                      {/* 토글 영역 */}
                       <div
                         className="d-flex align-items-center"
                         style={{ cursor: "pointer" }}
@@ -169,7 +199,7 @@ export default function Header() {
                           alt="프로필"
                           onError={(e) => {
                             e.target.onerror = null;
-                            e.target.src = defaultAvatar;
+                            e.target.src = FALLBACK_AVATAR;
                           }}
                           style={{
                             width: 32,
@@ -177,60 +207,64 @@ export default function Header() {
                             borderRadius: "50%",
                             objectFit: "cover",
                             marginRight: 8,
+                            backgroundColor: "#eee",
+                            border: "1px solid #ccc",
                           }}
                         />
-                        <span style={{ fontSize: "14px", fontWeight: 600, marginRight: 4 }}>
+                        <span
+                          style={{
+                            fontSize: "14px",
+                            fontWeight: 600,
+                            marginRight: 4,
+                          }}
+                        >
                           {auth.name}님
                         </span>
-                        {/* 작은 화살표 아이콘 느낌 */}
                         <span style={{ fontSize: "10px" }}>▼</span>
                       </div>
 
-                      {/* 드롭다운 메뉴 */}
                       {producerMenuOpen && (
-                      <div
-                        className="bg-white border rounded shadow-sm"
-                        style={{
-                          position: "absolute",
-                          top: "100%",
-                          left: "0",            // ← 프로필 바로 아래 정렬
-                          marginTop: "6px",
-                          width: "110px",       // ← 딱 적당한 폭
-                          zIndex: 1050,
-                          fontSize: "13px",
-                          overflow: "hidden",
-                          // ⭐ 메뉴글씨 가운데
-                          textAlign: "center",
-                        }}
-                      >
-                        <button
-                          type="button"
-                          className="dropdown-item"
-                          style={{ padding: "6px 10px" }}
-                          onClick={() => {
-                            setProducerMenuOpen(false);
-                            navigate("/mypage");
+                        <div
+                          className="bg-white border rounded shadow-sm"
+                          style={{
+                            position: "absolute",
+                            top: "100%",
+                            left: "0",
+                            marginTop: "6px",
+                            width: "110px",
+                            zIndex: 1050,
+                            fontSize: "13px",
+                            overflow: "hidden",
+                            textAlign: "center",
                           }}
                         >
-                          마이페이지
-                        </button>
-
-                        <button
-                          type="button"
-                          className="dropdown-item"
-                          style={{ padding: "6px 10px" }}
-                          onClick={() => {
-                            setProducerMenuOpen(false);
-                            navigate("/producer");
-                          }}
-                        >
-                          생산자 센터
-                        </button>
-                      </div>
-                    )}
+                          <button
+                            type="button"
+                            className="dropdown-item"
+                            style={{ padding: "6px 10px" }}
+                            onClick={() => {
+                              setProducerMenuOpen(false);
+                              navigate("/mypage");
+                            }}
+                          >
+                            마이페이지
+                          </button>
+                          <button
+                            type="button"
+                            className="dropdown-item"
+                            style={{ padding: "6px 10px" }}
+                            onClick={() => {
+                              setProducerMenuOpen(false);
+                              navigate("/producer");
+                            }}
+                          >
+                            생산자 센터
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ) : (
-                    // 🔸 비로그인/일반 소비자: 클릭 시 로그인 or 일반 마이페이지
+                    // 🔸 비로그인/일반 유저
                     <div
                       onClick={handleProfileClick}
                       style={{ cursor: "pointer" }}
@@ -241,7 +275,7 @@ export default function Header() {
                         alt="프로필"
                         onError={(e) => {
                           e.target.onerror = null;
-                          e.target.src = defaultAvatar;
+                          e.target.src = FALLBACK_AVATAR;
                         }}
                         style={{
                           width: 32,
@@ -249,6 +283,8 @@ export default function Header() {
                           borderRadius: "50%",
                           objectFit: "cover",
                           marginRight: 8,
+                          backgroundColor: "#eee",
+                          border: "1px solid #ccc",
                         }}
                       />
                       <span style={{ fontSize: "14px", fontWeight: 600 }}>

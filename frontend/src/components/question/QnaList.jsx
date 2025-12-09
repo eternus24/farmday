@@ -51,11 +51,22 @@ const QnaList = ({ qnaList,refreshQnaList }) => {
       </div>
       ):(
       qnaList.map((q) => {
+        const isPrivate = q.isPrivate === "Y";  // 비밀글 여부
+        const isWriter =
+          String(q.writerUserId) === String(loginUserId);
+
+        const isAdmin =
+          auth.role === "ADMIN";
+
+        const isMyStoreProducer =
+          auth.role === "PRODUCER" &&
+          String(q.storeId) === String(auth.storeId);
+
         const canView =
-          !q.isPrivate ||
-          String(q.writerUserId) === String(loginUserId) ||
-          auth.role === "ADMIN" ||
-          auth.role === "PRODUCER";
+          !isPrivate ||        // 일반글 → 전체 공개
+          isWriter ||          // 작성자는 항상 가능
+          isAdmin ||           // ADMIN은 모든 비밀글 열람 가능
+          isMyStoreProducer;  // PRODUCER는 내 스토어 비밀글만 가능
 
         const isOpen = openId === q.qnaId;
 

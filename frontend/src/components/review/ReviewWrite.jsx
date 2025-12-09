@@ -80,7 +80,7 @@ export default function ReviewWrite() {
       const res = await writeReview(reviewData);
 
       if(res?.data?.earnPoint){
-        alert(`✅ 리뷰가 등록되었습니다!\n\n🎁 적립 포인트: ${res.data.earnPoint.toLocaleString()}P`)
+        alert(`✅ 리뷰가 등록되었습니다!\n\n🎁 적립 포인트: ${res.data.earnPoint.toLocaleString()}P \n\n 한번 작성한 리뷰는 삭제가 불가능합니다.(수정 가능)`)
       }else {
         alert("리뷰가 등록되었습니다.")
       }

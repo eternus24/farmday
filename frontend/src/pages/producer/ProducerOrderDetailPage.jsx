@@ -17,6 +17,15 @@ const CARRIER_OPTIONS = [
   '경동택배',
 ]
 
+const DELIVERY_STATUS_OPTIONS = [
+  '배송준비',
+  '출고완료',
+  '배송중',
+  '배송완료',
+  '환불요청',
+  '배송취소',
+]
+
 export default function ProducerOrderDetailPage() {
   const { orderId } = useParams()
   const navigate = useNavigate()
@@ -31,20 +40,69 @@ export default function ProducerOrderDetailPage() {
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
 
-  // 택배사 / 송장번호 임시 입력값
+  // 개별 택배사 / 송장번호 임시 입력값
   const [deliveryEdits, setDeliveryEdits] = useState({})
 
-  // 기타 선택 시 사용할 모달 상태
+  // ✅ 일괄 배송정보 입력값 (헤더에서 사용하는 값)
+  const [bulkDeliveryInfo, setBulkDeliveryInfo] = useState({
+    carrierName: '',
+    trackingNumber: '',
+  })
+
+  // 개별 항목용 "기타 택배사" 모달
   const [customCarrierModal, setCustomCarrierModal] = useState({
     open: false,
     orderItemId: null,
     tempValue: '',
   })
 
-  // 셀렉트에서 택배사 변경 처리 (기타 선택 포함)
+  // ✅ 헤더(일괄 처리용) "기타 택배사" 모달
+  const [bulkCarrierModal, setBulkCarrierModal] = useState({
+    open: false,
+    tempValue: '',
+  })
+
+  // =========================
+  // 공통 헬퍼
+  // =========================
+
+  function getDisplayDeliveryStatus(item) {
+    // 주문 상태 코드에 따른 강제 표시 우선
+    if (item.orderStatus === 'B1') return '환불요청'
+    if (item.orderStatus === 'R1') return '환불완료'
+    if (item.orderStatus === 'E2') return '환불불가'
+    if (item.orderStatus === 'A2') return '배송완료'
+
+    // DB에 저장된 배송상태가 있으면 그대로 사용
+    if (item.deliveryStatus && item.deliveryStatus.trim() !== '') {
+      return item.deliveryStatus.trim()
+    }
+
+    // 아무것도 없을 때만 기본값
+    return '배송준비'
+  }
+
+  function isTemplateStatus(status) {
+    return DELIVERY_STATUS_OPTIONS.includes(status)
+  }
+
+  function isDeliverySelectDisabled(item) {
+    if (saving) return true
+    const s = item.orderStatus
+    if (s === 'A2' || s === 'B1' || s === 'R1' || s === 'E2') return true
+    return false
+  }
+
+  function isInTransit(item) {
+    return getDisplayDeliveryStatus(item) === '배송중'
+  }
+
+  // =========================
+  // 개별 택배사 셀렉트 (기타 포함)
+  // =========================
   const handleChangeCarrierSelect = (orderItemId, value) => {
     if (value === '__OTHER__') {
-      // 기타 선택 → 모달 오픈
+      // 기타 선택 → 개별 모달 오픈
       setCustomCarrierModal({
         open: true,
         orderItemId,
@@ -56,7 +114,6 @@ export default function ProducerOrderDetailPage() {
     }
   }
 
-  // 모달에서 확인 눌렀을 때
   const handleConfirmCustomCarrier = () => {
     const name = customCarrierModal.tempValue.trim()
     if (!name) {
@@ -73,13 +130,171 @@ export default function ProducerOrderDetailPage() {
     })
   }
 
-  // 모달 닫기
   const handleCloseCustomCarrierModal = () => {
     setCustomCarrierModal({
       open: false,
       orderItemId: null,
       tempValue: '',
     })
+  }
+
+  // =========================
+  // ✅ 헤더 쪽 "일괄 택배사" 셀렉트 (기타 포함)
+  // =========================
+  const handleChangeBulkCarrierSelect = (value) => {
+    if (value === '__OTHER__') {
+      setBulkCarrierModal({
+        open: true,
+        tempValue: '',
+      })
+    } else {
+      setBulkDeliveryInfo((prev) => ({
+        ...prev,
+        carrierName: value,
+      }))
+    }
+  }
+
+  const handleConfirmBulkCarrier = () => {
+    const name = bulkCarrierModal.tempValue.trim()
+    if (!name) {
+      alert('택배사 이름을 입력해 주세요.')
+      return
+    }
+
+    setBulkDeliveryInfo((prev) => ({
+      ...prev,
+      carrierName: name,
+    }))
+
+    setBulkCarrierModal({
+      open: false,
+      tempValue: '',
+    })
+  }
+
+  const handleCloseBulkCarrierModal = () => {
+    setBulkCarrierModal({
+      open: false,
+      tempValue: '',
+    })
+  }
+
+  // =========================
+  // 주문 전체 배송 상태 일괄 변경
+  // (단계형: 배송준비 → 출고완료 → 배송중(+택배/송장) → 배송완료)
+  // =========================
+  const handleBulkDeliveryStatus = async (nextStatus) => {
+    if (!order) return
+
+    const token =
+      auth?.accessToken ||
+      auth?.token ||
+      localStorage.getItem('accessToken')
+
+    if (!token) {
+      alert('로그인이 필요합니다.')
+      return
+    }
+
+    const isSetDeliveryInfo = nextStatus === '배송중'
+    const carrierName = bulkDeliveryInfo.carrierName.trim()
+    const trackingNumber = bulkDeliveryInfo.trackingNumber.trim()
+
+    // 배송중으로 일괄 변경할 땐 택배사/송장 필수
+    if (isSetDeliveryInfo && (!carrierName || !trackingNumber)) {
+      alert('일괄 배송중 처리 시 택배사와 송장번호를 모두 입력해 주세요.')
+      return
+    }
+
+    if (!window.confirm(`이 주문의 모든 상품을 '${nextStatus}'로 처리하시겠습니까?`)) {
+      return
+    }
+
+    try {
+      setSaving(true)
+
+      // 1) 상태 일괄 변경 (백엔드 bulk API)
+      await axios.patch(
+        `${API_BASE}/api/producer/orders/${order.orderId}/delivery-status/bulk`,
+        null,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: token.startsWith('Bearer ')
+              ? token
+              : `Bearer ${token}`,
+          },
+          params: {
+            deliveryStatus: nextStatus, // '출고완료' / '배송중' / '배송완료'
+          },
+        },
+      )
+
+      // 2) 프론트 상태 업데이트
+      setOrder((prev) => {
+        if (!prev) return prev
+
+        const updatedItems = (prev.items || []).map((item) => {
+          const displayStatus = getDisplayDeliveryStatus(item)
+
+          // 환불 관련 상태는 일괄 변경에서 제외
+          if (['환불요청', '환불완료', '환불불가'].includes(displayStatus)) {
+            return item
+          }
+
+          return {
+            ...item,
+            deliveryStatus: nextStatus,
+            orderStatus: nextStatus === '배송완료' ? 'A2' : item.orderStatus,
+            // 배송중 + 일괄 배송정보 입력 시, 같이 세팅
+            ...(isSetDeliveryInfo
+              ? {
+                  carrierName,
+                  trackingNumber,
+                }
+              : {}),
+          }
+        })
+
+        return {
+          ...prev,
+          items: updatedItems,
+        }
+      })
+
+      // 3) 배송중 + 배송정보 같이 저장해야 하면 (개별 delivery-info API 호출)
+      if (isSetDeliveryInfo) {
+        const targetItems = (order.items || []).filter((item) => {
+          const s = getDisplayDeliveryStatus(item)
+          return !['환불요청', '환불완료', '환불불가'].includes(s)
+        })
+
+        await Promise.all(
+          targetItems.map((item) =>
+            axios.patch(
+              `${API_BASE}/api/producer/orders/${item.orderItemId}/delivery-info`,
+              { carrierName, trackingNumber },
+              {
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: token.startsWith('Bearer ')
+                    ? token
+                    : `Bearer ${token}`,
+                },
+              },
+            ),
+          ),
+        )
+      }
+
+      alert(`해당 주문의 모든 상품을 '${nextStatus}'로 처리했습니다.`)
+    } catch (err) {
+      console.error('주문 일괄 배송 상태 변경 에러:', err)
+      alert('주문 전체 배송 상태를 변경하는 중 오류가 발생했습니다.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   // =========================
@@ -179,7 +394,7 @@ export default function ProducerOrderDetailPage() {
   }, [orderId, auth])
 
   // =========================
-  // 배송 상태 변경 (일반 주문 모드에서만 사용)
+  // 배송 상태 변경 (단건)
   // =========================
   const handleChangeDeliveryStatus = async (orderItemId, nextStatus) => {
     if (!order) return
@@ -252,7 +467,6 @@ export default function ProducerOrderDetailPage() {
     try {
       setSaving(true)
 
-      // ⚠️ 백엔드 엔드포인트/파라미터 이름은 실제 구현에 맞게 조정 필요
       await axios.patch(
         `${API_BASE}/api/producer/orders/${orderItemId}/refund-status`,
         null,
@@ -288,7 +502,7 @@ export default function ProducerOrderDetailPage() {
   }
 
   // =========================
-  // 택배사 / 송장번호 입력 관리 & 저장
+  // 택배사 / 송장번호 입력 관리 & 저장 (단건)
   // =========================
   const handleChangeDeliveryField = (orderItemId, field, value) => {
     setDeliveryEdits((prev) => ({
@@ -368,49 +582,38 @@ export default function ProducerOrderDetailPage() {
   const deliveryFee = order.deliveryFee ?? 0
   const totalAmount = order.orderTotalAmount ?? itemsTotal + deliveryFee
 
-  const DELIVERY_STATUS_OPTIONS = [
-    '배송준비',
-    '출고완료',
-    '배송중',
-    '배송완료',
-    '환불요청',
-    '배송취소', // 필요 없다면 제거해도 됨
-  ]
+  // 🔹 환불 관련 아닌 애들만 대상으로 단계 계산
+  const activeItems = items.filter((item) => {
+    const s = getDisplayDeliveryStatus(item)
+    return !['환불요청', '환불완료', '환불불가'].includes(s)
+  })
 
-  const getDisplayDeliveryStatus = (item) => {
-    // 주문 상태 코드에 따른 강제 표시 우선
-    if (item.orderStatus === 'B1') {
-      return '환불요청'
-    }
-    if (item.orderStatus === 'R1') {
-      return '환불완료'
-    }
-    if (item.orderStatus === 'E2') {
-      return '환불불가'
-    }
-    if (item.orderStatus === 'A2') {
-      return '배송완료'
-    }
+  let bulkNextStatus = null
+  let bulkButtonLabel = ''
+  let showBulkInputs = false
 
-    // DB에 저장된 배송상태가 있으면 그대로 사용
-    if (item.deliveryStatus && item.deliveryStatus.trim() !== '') {
-      return item.deliveryStatus.trim()
-    }
+  if (!isRefundMode && activeItems.length > 0) {
+    const statuses = activeItems.map((item) => getDisplayDeliveryStatus(item))
 
-    // 아무것도 없을 때만 기본값
-    return '배송준비'
+    if (statuses.some((s) => s === '배송준비')) {
+      // 1단계: 배송준비 → 전체 출고완료
+      bulkNextStatus = '출고완료'
+      bulkButtonLabel = '전체 출고완료'
+      showBulkInputs = false
+    } else if (statuses.some((s) => s === '출고완료')) {
+      // 2단계: 출고완료 → 전체 배송중 + 일괄 택배/송장 입력
+      bulkNextStatus = '배송중'
+      bulkButtonLabel = '전체 배송중'
+      showBulkInputs = true
+    } else if (statuses.some((s) => s === '배송중')) {
+      // 3단계: 배송중 → 전체 배송완료
+      bulkNextStatus = '배송완료'
+      bulkButtonLabel = '전체 배송완료'
+      showBulkInputs = false
+    } else {
+      bulkNextStatus = null
+    }
   }
-
-  const isTemplateStatus = (status) => DELIVERY_STATUS_OPTIONS.includes(status)
-
-  const isDeliverySelectDisabled = (item) => {
-    if (saving) return true
-    const s = item.orderStatus
-    if (s === 'A2' || s === 'B1' || s === 'R1' || s === 'E2') return true
-    return false
-  }
-
-  const isInTransit = (item) => getDisplayDeliveryStatus(item) === '배송중'
 
   return (
     <Page>
@@ -432,6 +635,64 @@ export default function ProducerOrderDetailPage() {
               {isRefundMode && <MetaItem>모드: 환불 내역</MetaItem>}
             </MetaRow>
           </div>
+
+          {/* 환불 모드 아님 + 단계 있을 때만 전체 변경 영역 노출 */}
+          {!isRefundMode && bulkNextStatus && (
+            <HeaderActions>
+              {/* 2단계(배송중)일 때만 일괄 택배/송장 입력 노출 */}
+              {showBulkInputs && (
+                <BulkInfoGroup>
+                  <BulkLabel>일괄 배송정보</BulkLabel>
+
+                  {/* ✅ 택배사 셀렉트 (기존 방식 복원) */}
+                  <BulkCarrierSelect
+                    value={
+                      bulkDeliveryInfo.carrierName &&
+                      !CARRIER_OPTIONS.includes(bulkDeliveryInfo.carrierName)
+                        ? bulkDeliveryInfo.carrierName
+                        : bulkDeliveryInfo.carrierName || ''
+                    }
+                    onChange={(e) => handleChangeBulkCarrierSelect(e.target.value)}
+                  >
+                    <option value="">택배사 선택</option>
+                    {bulkDeliveryInfo.carrierName &&
+                      !CARRIER_OPTIONS.includes(bulkDeliveryInfo.carrierName) && (
+                        <option value={bulkDeliveryInfo.carrierName}>
+                          {bulkDeliveryInfo.carrierName}
+                        </option>
+                      )}
+                    {CARRIER_OPTIONS.map((opt) => (
+                      <option key={opt} value={opt}>
+                        {opt}
+                      </option>
+                    ))}
+                    <option value="__OTHER__">기타(직접 입력)</option>
+                  </BulkCarrierSelect>
+
+                  {/* 송장번호 입력 */}
+                  <BulkInput
+                    type="text"
+                    placeholder="송장번호"
+                    value={bulkDeliveryInfo.trackingNumber}
+                    onChange={(e) =>
+                      setBulkDeliveryInfo((prev) => ({
+                        ...prev,
+                        trackingNumber: e.target.value,
+                      }))
+                    }
+                  />
+                </BulkInfoGroup>
+              )}
+
+              <BulkStatusButton
+                type="button"
+                disabled={saving}
+                onClick={() => handleBulkDeliveryStatus(bulkNextStatus)}
+              >
+                {bulkButtonLabel}
+              </BulkStatusButton>
+            </HeaderActions>
+          )}
         </HeaderRow>
 
         <Card>
@@ -514,9 +775,9 @@ export default function ProducerOrderDetailPage() {
                       edit.carrierName ?? item.carrierName ?? ''
                     const trackingValue =
                       edit.trackingNumber ?? item.trackingNumber ?? ''
-                    
-                      // 🔽 여기 추가
-                    const isRefundRequested = item.orderStatus === 'B1' || displayStatus === '환불요청'
+
+                    const isRefundRequested =
+                      item.orderStatus === 'B1' || displayStatus === '환불요청'
                     const isRefundCompleted = item.orderStatus === 'R1'
 
                     return (
@@ -543,10 +804,8 @@ export default function ProducerOrderDetailPage() {
                         {/* 배송 상태 */}
                         <td className="col-status">
                           {isRefundMode ? (
-                            // 환불내역 모드: 항상 텍스트만
                             <span>{displayStatus}</span>
                           ) : (
-                            // 일반 주문 모드
                             (['배송완료', '환불요청', '환불완료', '환불불가'].includes(
                               displayStatus,
                             ) ||
@@ -575,16 +834,17 @@ export default function ProducerOrderDetailPage() {
 
                         {/* 환불 모드 / 일반 모드에 따라 다른 칼럼 */}
                         {isRefundMode ? (
-                          // 🔁 환불 내역 모드일 때 환불 처리 영역
                           <td className="col-refund">
                             {isRefundRequested ? (
-                              // 1) 환불요청일 때만 버튼 두 개 활성
                               <RefundActionGroup>
                                 <RefundButton
                                   type="button"
                                   disabled={saving}
                                   onClick={() =>
-                                    handleChangeRefundStatus(item.orderItemId, 'R1')
+                                    handleChangeRefundStatus(
+                                      item.orderItemId,
+                                      'R1',
+                                    )
                                   }
                                 >
                                   환불완료
@@ -594,30 +854,32 @@ export default function ProducerOrderDetailPage() {
                                   $danger
                                   disabled={saving}
                                   onClick={() =>
-                                    handleChangeRefundStatus(item.orderItemId, 'E2')
+                                    handleChangeRefundStatus(
+                                      item.orderItemId,
+                                      'E2',
+                                    )
                                   }
                                 >
                                   환불불가
                                 </RefundButton>
                               </RefundActionGroup>
                             ) : isRefundCompleted ? (
-                              // 2) 환불완료인 상품은 확인용으로 "환불완료" 버튼만 표시 (비활성)
                               <RefundActionGroup>
                                 <RefundButton type="button" disabled>
                                   환불완료
                                 </RefundButton>
                               </RefundActionGroup>
                             ) : null}
-                            {/* 3) 그 외 상태는 아무것도 표시하지 않음 */}
                           </td>
                         ) : (
                           <>
-                            {/* 택배사 / 송장번호 기존 코드 그대로 */}
+                            {/* 개별 택배사 / 송장번호 */}
                             <td className="col-carrier">
                               {isInTransit(item) ? (
                                 <CarrierSelect
                                   value={
-                                    carrierValue && !CARRIER_OPTIONS.includes(carrierValue)
+                                    carrierValue &&
+                                    !CARRIER_OPTIONS.includes(carrierValue)
                                       ? carrierValue
                                       : carrierValue || ''
                                   }
@@ -631,14 +893,18 @@ export default function ProducerOrderDetailPage() {
                                   <option value="">택배사 선택</option>
                                   {carrierValue &&
                                     !CARRIER_OPTIONS.includes(carrierValue) && (
-                                      <option value={carrierValue}>{carrierValue}</option>
+                                      <option value={carrierValue}>
+                                        {carrierValue}
+                                      </option>
                                     )}
                                   {CARRIER_OPTIONS.map((opt) => (
                                     <option key={opt} value={opt}>
                                       {opt}
                                     </option>
                                   ))}
-                                  <option value="__OTHER__">기타(직접 입력)</option>
+                                  <option value="__OTHER__">
+                                    기타(직접 입력)
+                                  </option>
                                 </CarrierSelect>
                               ) : (
                                 item.carrierName || '-'
@@ -684,6 +950,7 @@ export default function ProducerOrderDetailPage() {
           </ItemsColumn>
         </Card>
 
+        {/* 개별 항목용 기타 택배사 모달 */}
         {customCarrierModal.open && !isRefundMode && (
           <ModalOverlay onClick={handleCloseCustomCarrierModal}>
             <ModalBox onClick={(e) => e.stopPropagation()}>
@@ -703,12 +970,52 @@ export default function ProducerOrderDetailPage() {
                 />
               </ModalBody>
               <ModalActions>
-                <ModalButton type="button" onClick={handleCloseCustomCarrierModal}>
+                <ModalButton
+                  type="button"
+                  onClick={handleCloseCustomCarrierModal}
+                >
                   취소
                 </ModalButton>
                 <ModalButtonPrimary
                   type="button"
                   onClick={handleConfirmCustomCarrier}
+                >
+                  적용
+                </ModalButtonPrimary>
+              </ModalActions>
+            </ModalBox>
+          </ModalOverlay>
+        )}
+
+        {/* ✅ 헤더 일괄용 기타 택배사 모달 */}
+        {bulkCarrierModal.open && !isRefundMode && (
+          <ModalOverlay onClick={handleCloseBulkCarrierModal}>
+            <ModalBox onClick={(e) => e.stopPropagation()}>
+              <ModalTitle>직접 택배사 입력</ModalTitle>
+              <ModalBody>
+                <ModalLabel>택배사 이름</ModalLabel>
+                <ModalInput
+                  type="text"
+                  value={bulkCarrierModal.tempValue}
+                  onChange={(e) =>
+                    setBulkCarrierModal((prev) => ({
+                      ...prev,
+                      tempValue: e.target.value,
+                    }))
+                  }
+                  placeholder="예: OO물류, 동네택배 등"
+                />
+              </ModalBody>
+              <ModalActions>
+                <ModalButton
+                  type="button"
+                  onClick={handleCloseBulkCarrierModal}
+                >
+                  취소
+                </ModalButton>
+                <ModalButtonPrimary
+                  type="button"
+                  onClick={handleConfirmBulkCarrier}
                 >
                   적용
                 </ModalButtonPrimary>
@@ -732,7 +1039,6 @@ const Page = styled.div`
   padding: 32px 16px 40px;
 `
 
-/** 실제 내용 폭 */
 const Inner = styled.div`
   width: 100%;
   max-width: 830px;
@@ -754,13 +1060,6 @@ const BackButton = styled.button`
     opacity: 0.5;
     cursor: default;
   }
-`
-
-const HeaderRow = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 18px;
 `
 
 const Title = styled.h2`
@@ -878,14 +1177,33 @@ const ItemsTable = styled.table`
     white-space: nowrap;
   }
 
-  .col-product { width: 100px; }
-  .col-qty { width: 50px; text-align: center; }
-  .col-price { width: 80px; text-align: right; }
-  .col-amount { width: 80px; text-align: right; }
-  .col-status { width: 90px; }
-  .col-carrier { width: 110px; }
-  .col-tracking { width: 130px; }
-  .col-refund { width: 150px; }
+  .col-product {
+    width: 100px;
+  }
+  .col-qty {
+    width: 50px;
+    text-align: center;
+  }
+  .col-price {
+    width: 80px;
+    text-align: right;
+  }
+  .col-amount {
+    width: 80px;
+    text-align: right;
+  }
+  .col-status {
+    width: 90px;
+  }
+  .col-carrier {
+    width: 110px;
+  }
+  .col-tracking {
+    width: 130px;
+  }
+  .col-refund {
+    width: 150px;
+  }
 `
 
 const ProductName = styled.div`
@@ -1031,4 +1349,68 @@ const ModalButtonPrimary = styled.button`
   background: #10b981;
   color: #ffffff;
   cursor: pointer;
+`
+
+const HeaderRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 18px;
+`
+
+const HeaderActions = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`
+
+const BulkStatusButton = styled.button`
+  padding: 8px 14px;
+  font-size: 13px;
+  border-radius: 999px;
+  border: none;
+  background: #10b981;
+  color: #ffffff;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.25);
+
+  &:hover {
+    background: #059669;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+    box-shadow: none;
+  }
+`
+
+const BulkInfoGroup = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 8px;
+`
+
+const BulkLabel = styled.span`
+  font-size: 12px;
+  color: #6b7280;
+  white-space: nowrap;
+`
+
+const BulkCarrierSelect = styled.select`
+  width: 150px;
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+`
+
+const BulkInput = styled.input`
+  width: 130px;
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
 `

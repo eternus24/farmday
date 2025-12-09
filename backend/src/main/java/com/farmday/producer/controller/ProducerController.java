@@ -299,6 +299,51 @@ public class ProducerController {
         return ResponseEntity.ok().build();
     }
 
+        // =========================
+    // 배송 상태 일괄 변경 (한 주문의 모든 아이템)
+    // =========================
+    @PatchMapping("/orders/{orderId}/delivery-status/bulk")
+    public ResponseEntity<Void> updateDeliveryStatusBulk(
+            @AuthenticationPrincipal String loginUserId,
+            @PathVariable Long orderId,
+            @RequestParam String deliveryStatus
+    ) {
+
+        // 1) 로그인 유저 검증
+        User user = userService.findByUserId(loginUserId);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        // 2) 생산자 검증
+        Producer producer = producerService.findByUserNo(user.getUserNo());
+        if (producer == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        Long producerId = producer.getProducerId();
+
+        // 3) 이 생산자의 해당 주문 아이템들 조회
+        List<ProducerOrderItemDto> items =
+                producerService.getOrderItems(producerId, loginUserId, orderId);
+
+        if (items == null || items.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // 4) 각 주문 아이템에 대해 기존 단건 변경 로직 재사용
+        for (ProducerOrderItemDto item : items) {
+            producerService.changeDeliveryStatus(
+                    producerId,
+                    loginUserId,
+                    item.getOrderItemId(),
+                    deliveryStatus
+            );
+        }
+
+        return ResponseEntity.noContent().build();
+    }
+
     // =========================
     // 송장 정보 수정
     // =========================

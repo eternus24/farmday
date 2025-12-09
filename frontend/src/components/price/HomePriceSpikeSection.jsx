@@ -39,8 +39,7 @@ function RankRow({ index, item, type }) {
             width: 22,
             height: 22,
             borderRadius: "999px",
-            background:
-              index === 0 ? "#ff8c1a" : "rgba(255,140,26,0.12)",
+            background: index === 0 ? "#ff8c1a" : "rgba(255,140,26,0.12)",
             color: index === 0 ? "#fff" : "#ff8c1a",
             fontSize: 12,
             fontWeight: 700,
@@ -69,26 +68,30 @@ function RankRow({ index, item, type }) {
   );
 }
 
-export default function HomePriceSpikeSection() {
+export default function HomePriceSpikeSection({
+  notices = [],
+  loadingNotices = false,
+  onNoticeClick, // 🔥 부모에서 내려주는 콜백
+}) {
   const [summary, setSummary] = useState(null);
   const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loadingSummary, setLoadingSummary] = useState(true);
 
   useEffect(() => {
     let mounted = true;
-    setLoading(true);
+    setLoadingSummary(true);
 
     fetchTodaySummary()
       .then((data) => {
         if (!mounted) return;
         setSummary(data);
-        setLoading(false);
+        setLoadingSummary(false);
       })
       .catch((e) => {
         console.error(e);
         if (!mounted) return;
         setError("시세 정보를 불러오지 못했습니다.");
-        setLoading(false);
+        setLoadingSummary(false);
       });
 
     return () => {
@@ -101,24 +104,8 @@ export default function HomePriceSpikeSection() {
   const fallingRank = falling.slice(0, 3);
   const risingRank = rising.slice(0, 3);
 
-  // 공지 더미 (나중에 API로 빼도 됨)
-  const notices = [
-    {
-      id: 1,
-      title: "12/10(화) 물류센터 점검으로 일부 상품 배송 지연 안내",
-      date: "2025-12-10",
-    },
-    {
-      id: 2,
-      title: "겨울 김장 채소 특가 행사 안내",
-      date: "2025-12-08",
-    },
-    {
-      id: 3,
-      title: "FarmDay 서비스 정기 점검 (12/15 새벽 2시~4시)",
-      date: "2025-12-05",
-    },
-  ];
+  // 공지 상단 박스에서 보여줄 개수 (예: 3개만)
+  const topNotices = (notices || []).slice(0, 3);
 
   if (error) return null;
 
@@ -161,44 +148,61 @@ export default function HomePriceSpikeSection() {
           <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 8 }}>
             배송·서비스 관련 안내를 확인해 주세요.
           </div>
-          <ul
-            style={{
-              listStyle: "none",
-              padding: 0,
-              margin: 0,
-              fontSize: 13,
-            }}
-          >
-            {notices.map((n) => (
-              <li
-                key={n.id}
-                style={{
-                  padding: "6px 0",
-                  borderBottom: "1px solid rgba(0,0,0,0.04)",
-                  cursor: "pointer",
-                }}
-              >
-                <div
+
+          {loadingNotices ? (
+            <div style={{ fontSize: 12, opacity: 0.8 }}>
+              공지사항을 불러오는 중입니다...
+            </div>
+          ) : topNotices.length === 0 ? (
+            <div style={{ fontSize: 13, opacity: 0.75 }}>
+              등록된 공지사항이 없습니다.
+            </div>
+          ) : (
+            <ul
+              style={{
+                listStyle: "none",
+                padding: 0,
+                margin: 0,
+                fontSize: 13,
+              }}
+            >
+              {topNotices.map((n) => (
+                <li
+                  key={n.noticeId || n.id}
                   style={{
-                    fontSize: 12,
-                    opacity: 0.7,
-                    marginBottom: 2,
+                    padding: "6px 0",
+                    borderBottom: "1px solid rgba(0,0,0,0.04)",
+                    cursor: "pointer",
+                  }}
+                  onClick={() => {
+                    // 🔥 페이지 이동 대신 부모 콜백 호출
+                    if (onNoticeClick) {
+                      onNoticeClick(n);
+                    }
                   }}
                 >
-                  {n.date}
-                </div>
-                <div
-                  style={{
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  }}
-                >
-                  {n.title}
-                </div>
-              </li>
-            ))}
-          </ul>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      opacity: 0.7,
+                      marginBottom: 2,
+                    }}
+                  >
+                    {(n.createdDate || n.regDate || "").slice(0, 10)}
+                  </div>
+                  <div
+                    style={{
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {n.title}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         {/* ───────── 오른쪽: 급락·급등 카드 ───────── */}
@@ -234,7 +238,7 @@ export default function HomePriceSpikeSection() {
               </span>
               <span>오늘 급락·급등 품목이 있나요?</span>
             </div>
-            {!loading && (
+            {!loadingSummary && (
               <div
                 style={{
                   fontSize: 12,
@@ -276,7 +280,7 @@ export default function HomePriceSpikeSection() {
                 </span>
                 <span>오늘 갑자기 싸진 품목</span>
               </div>
-              {loading ? (
+              {loadingSummary ? (
                 <div style={{ fontSize: 12, opacity: 0.8 }}>
                   시세 불러오는 중입니다...
                 </div>
@@ -313,7 +317,7 @@ export default function HomePriceSpikeSection() {
                 </span>
                 <span>오늘은 조금 아쉬운 품목</span>
               </div>
-              {loading ? (
+              {loadingSummary ? (
                 <div style={{ fontSize: 12, opacity: 0.8 }}>
                   시세 불러오는 중입니다...
                 </div>

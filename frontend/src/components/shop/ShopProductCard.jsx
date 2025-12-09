@@ -15,7 +15,22 @@ const ShopProductCard = ({product}) => {//상품 카드(이미지/가격/찜 버
     //장바구니 등록 기능 (2025-11-24 14:53 추가) ======================
     const { protocol, hostname } = window.location;
     const API_BASE = `${protocol}//${hostname}:8080`;
-    const user_id = JSON.parse(window.localStorage.getItem('loginUser')).userId;
+    // ✅ loginUser 안전하게 파싱 (에러 방지)
+    let user_id = null;
+    try {
+        const loginUserStr = window.localStorage.getItem("loginUser");
+        if (
+        loginUserStr &&
+        loginUserStr !== "null" &&
+        loginUserStr !== "undefined"
+        ) {
+        const loginUser = JSON.parse(loginUserStr);
+        user_id = loginUser?.userId ?? null;
+        }
+    } catch (e) {
+        console.error("[ShopProductCard] loginUser 파싱 실패:", e);
+    }
+
     const { findCartAmount } = useContext(CartContext);
 
     async function insertCart(product_id,product_name) {

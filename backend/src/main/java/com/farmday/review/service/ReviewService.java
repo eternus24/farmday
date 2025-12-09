@@ -10,12 +10,13 @@ public interface ReviewService {
     //리뷰 작성
     public int writeReview(ReviewDTO dto) throws Exception;
 
+    //리뷰 수정
+    public void updateReview(ReviewDTO dto);
+    public ReviewDTO findByReviewId(Long reviewId);
+
     //리뷰 조회
     public List<ReviewDTO> getReviews(Long productId, String sort, String keyword, Long userNo);
 
-    //리뷰 삭제
-    public void deleteReview(Long reviewId);
-    
     //판매자 답글
     public void updateReply(ReviewDTO dto);
 

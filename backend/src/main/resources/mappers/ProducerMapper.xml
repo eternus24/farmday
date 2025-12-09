@@ -28,7 +28,7 @@
           created_date,
           updated_date
       ) VALUES (
-          #{producerId},
+          PRODUCER_SEQ.NEXTVAL,
           #{userNo},
           #{bizNo},
           #{bizName},
@@ -1051,7 +1051,7 @@
     JOIN ORDERS o
       ON oi.order_id = o.order_id
     JOIN USERS u
-      ON o.user_id = u.user_id   -- 🔥 여기 수정!
+      ON o.user_id = u.userid   -- ✅ 여기 이렇게!
     WHERE oi.order_item_id = #{orderItemId}
     ]]>
   </select>

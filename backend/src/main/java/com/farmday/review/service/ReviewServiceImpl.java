@@ -56,6 +56,28 @@ public class ReviewServiceImpl implements ReviewService {
         return earnPoint;   // ✅ 프론트로 내려줄 포인트
     }
 
+    //리뷰 수정
+    @Override
+    public void updateReview(ReviewDTO dto) {
+
+        //기존 리뷰 먼저 조회
+        ReviewDTO origin = reviewMapper.findByReviewId(dto.getReviewId());
+
+        if (origin == null) {
+            throw new IllegalArgumentException("리뷰가 존재하지 않습니다.");
+        }
+
+        // 수정값만 덮어쓰기
+        origin.setTitle(dto.getTitle());
+        origin.setContent(dto.getContent());
+
+        reviewMapper.updateReview(origin);
+    }
+
+    @Override
+    public ReviewDTO findByReviewId(Long reviewId){
+        return reviewMapper.findByReviewId(reviewId);
+    }
 
     // 리뷰 조회
     @Override
@@ -68,12 +90,6 @@ public class ReviewServiceImpl implements ReviewService {
 
     return reviewMapper.selectReviews(params);
 }
-
-    // 리뷰 삭제
-    @Override
-    public void deleteReview(Long reviewId) {
-        reviewMapper.deleteReview(reviewId);
-    }
 
     //판매자 답글
     @Override

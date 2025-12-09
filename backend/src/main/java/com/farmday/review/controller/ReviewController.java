@@ -16,6 +16,7 @@ import com.farmday.review.service.ReviewService;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,7 +25,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/reviews/")
+@RequestMapping("/api/reviews")
 @CrossOrigin("*")
 public class ReviewController {
 
@@ -59,6 +60,16 @@ public class ReviewController {
         }
     }
 
+    //리뷰 수정
+    @PutMapping("/{reviewId}")
+    public ResponseEntity<String> updateReview(
+            @PathVariable Long reviewId,
+            @RequestBody ReviewDTO dto
+    ) {
+        dto.setReviewId(reviewId);
+        reviewService.updateReview(dto);
+        return ResponseEntity.ok("수정 완료");
+    }
 
     //리뷰 조회
     @GetMapping("/{productId}")
@@ -76,17 +87,6 @@ public class ReviewController {
         }
     }
 
-    
-    // 리뷰 삭제
-    @DeleteMapping("/{reviewId}")
-    public ResponseEntity<?> deleteReview(@PathVariable Long reviewId) {
-        try{
-            reviewService.deleteReview(reviewId);
-            return ResponseEntity.ok("리뷰 삭제 완료");
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("리뷰 삭제 실패" + e.getMessage());
-        }
-    }
 
     //판매자 리뷰
     @PatchMapping("/{reviewId}/reply")

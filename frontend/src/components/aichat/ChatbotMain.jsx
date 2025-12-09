@@ -13,6 +13,16 @@ import { useNavigate } from "react-router-dom";
 
 const ChatbotMain = () => {
 
+    //헤더에서 ai서비스 실행
+    useEffect(() => {
+        const openHandler = () => setIsOpen(true);
+        window.addEventListener("open-chatbot", openHandler);
+
+        return () => {
+            window.removeEventListener("open-chatbot", openHandler);
+        };
+        }, []);
+
     const navigate = useNavigate();
 
     /* 문의하기(일반 상담) */

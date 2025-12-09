@@ -13,10 +13,11 @@ public class ReviewDTO {
     private Long storeId; //가게 id
     private Long orderItemId;
     private String writerUserId; //작성자 id
-    private int rating; //별점
+    private Integer rating; //별점
     private String title; //리뷰 제목
     private String content; //리뷰 내용
     private String imageUrl; //리뷰 이미지
+
     private boolean isVisible;//노출 여부
     private LocalDateTime createdDate;//작성일
     private LocalDateTime updatedDate;//수정일
@@ -26,5 +27,8 @@ public class ReviewDTO {
 
     private int liked;//0,1 값
     private int likeCount; //집계값
+
+    //프로필 사진 받기 위한 용
+    private String userPhoto;
 
 }

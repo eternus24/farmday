@@ -84,10 +84,34 @@ const StoreQuestion = () => {
   }
 
   const handleRowClick = (qna) => {
+
+    const isPrivate = qna.isPrivate === "Y";
+
+    const isWriter =
+      String(qna.writerUserId) === String(loginUserId);
+
+    const isAdmin =
+      auth?.role === "ADMIN";
+
+    // 이미 StoreMyPage에서 검증된 값 → 가장 안전함
+    const isMyStoreProducer = isOwner;
+
+    const canView =
+      !isPrivate ||
+      isWriter ||
+      isAdmin ||
+      isMyStoreProducer;
+
+    if (!canView) {
+      alert("비밀글은 작성자와 해당 상점 관리자만 확인할 수 있습니다.");
+      return;
+    }
+
     setSelectedQna(qna);
     setAnswerText(qna.answerContent || "");
-    setShowModal(true)
-  }
+    setShowModal(true);
+  };
+
 
   const handleAnswerSubmit = async () => {
     if (!selectedQna) return
@@ -186,7 +210,27 @@ const StoreQuestion = () => {
                   </td>
 
                   <td>{q.qnaCategory}</td>
-                  <td className="qna-title-cell">{q.title}</td>
+                  <td className="qna-title-cell">
+                    {(() => {
+                      const isPrivate = q.isPrivate === "Y";
+
+                      const isWriter =
+                        String(q.writerUserId) === String(loginUserId);
+
+                      const isAdmin =
+                        auth?.role === "ADMIN";
+
+                      const isMyStoreProducer = isOwner;
+
+                      const canView =
+                        !isPrivate ||
+                        isWriter ||
+                        isAdmin ||
+                        isMyStoreProducer;
+
+                      return canView ? q.title : "🔒 비밀글입니다";
+                    })()}
+                  </td>
                   <td>{q.writerUserId?.replace(/(?<=.{2})./g, "*")}</td>
                   <td>{q.createdDate?.slice(0, 10)}</td>
                 </tr>

@@ -6,6 +6,14 @@ const api = axios.create({
   baseURL: API_BASE_URL, 
 });
 
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("accessToken");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 // 리뷰 목록
 export const fetchReviews = (productId, sort = "latest", keyword = "",userNo) =>
   api.get(`/api/reviews/${productId}`, {
@@ -16,9 +24,9 @@ export const fetchReviews = (productId, sort = "latest", keyword = "",userNo) =>
 export const writeReview = (reviewData) =>
   api.post(`/api/reviews/write`, reviewData);
 
-// 리뷰 삭제
-export const deleteReview = (reviewId) =>
-  api.delete(`/api/reviews/${reviewId}`);
+//리뷰 수정
+export const updateReview = (reviewData) => 
+  api.put(`/api/reviews/${reviewData.reviewId}`,reviewData);
 
 //해당 스토어 전체 리뷰 조회
 export const getStoreReviews = (storeId) =>

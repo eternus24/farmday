@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import ReviewStats from '../../components/review/ReviewStats';
 import ReviewList from '../../components/review/ReviewList';
 import "../../assets/css/review.css"
-import { fetchReviews, likeReview } from '../../assets/js/api/ReviewApi';
+import { fetchReviews, likeReview, updateReview } from '../../assets/js/api/ReviewApi';
 import {useNavigate} from 'react-router-dom'
 
 const StoreReviewPage = ({productId}) => {
@@ -13,51 +13,67 @@ const StoreReviewPage = ({productId}) => {
     const [sort, setSort] = useState("latest")
     const [keyword, setKeyword] = useState("")
 
+    const loginUser = JSON.parse(localStorage.getItem("loginUser"));
+    const loginUserNo = loginUser?.userNo;  
+    const loginUserId = loginUser?.userId;
+
     const loadReviews = async () => {
         try {
-            const response = await fetchReviews(productId, sort, keyword, loginUserNo);
+        const response = await fetchReviews(productId, sort, keyword, loginUserNo);
 
-            // 여기서 liked(0/1 → true/false) 정규화
-            const fixedReviews = response.data.map(r => ({
-                ...r,
-                liked: r.liked === 1, 
-            }));
+        const fixedReviews = response.data.map(r => ({
+            ...r,
+            liked: r.liked === 1,
+        }));
 
-            setReviews(fixedReviews);
+        setReviews(fixedReviews);
 
         } catch (err) {
-            console.error("리뷰 로딩 실패:", err);
+        console.error("리뷰 로딩 실패:", err);
         }
     };
 
-    const loginUser = JSON.parse(localStorage.getItem("loginUser"))
-    const loginUserNo = loginUser?.userNo;
-
     const handleLike = async (reviewId) => {
         try {
-            const res = await likeReview(reviewId, loginUserNo);
-            const { liked, likeCount, message } = res.data;
+        const res = await likeReview(reviewId, loginUserNo);
+        const { liked, likeCount, message } = res.data;
 
-            alert(message);
+        alert(message);
 
-            setReviews((prev) =>
+        setReviews((prev) =>
             prev.map((r) =>
-                r.reviewId === reviewId
+            r.reviewId === reviewId
                 ? { ...r, liked, likeCount }
                 : r
             )
-            );
+        );
 
         } catch (err) {
-            console.error("좋아요 실패: ", err);
+        console.error("좋아요 실패: ", err);
         }
-        };
+    };
 
     useEffect(() => {
         if (!productId) return;
         loadReviews();
     }, [productId, sort, keyword]);
 
+
+    const handleUpdate = async (reviewId, data) => {
+        try {
+            await updateReview({
+            reviewId: Number(reviewId),
+            title: String(data.title),
+            content: String(data.content)
+            });
+
+            alert("리뷰가 수정되었습니다.");
+            loadReviews();
+        } catch (err) {
+            console.error(err);
+            alert("리뷰 수정 실패");
+        }
+        };
 
     return (
         <div className='review-page-container'>
@@ -82,7 +98,7 @@ const StoreReviewPage = ({productId}) => {
                     현재 등록된 리뷰가 없습니다.
                 </div>
             ):(    
-                <ReviewList reviews={reviews} onLike={handleLike} />
+                <ReviewList reviews={reviews} onLike={handleLike} onUpdate={handleUpdate} />
             )}
         </div>
     );

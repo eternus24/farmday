@@ -7,161 +7,189 @@
 
     <!-- 리뷰 등록 -->
     <insert id="writeReview" parameterType="com.farmday.review.dto.ReviewDTO">
-    INSERT INTO PRODUCT_REVIEW (
-        review_id,
-        product_id,
-        store_id,
-        order_item_id,
-        writer_user_id,
-        rating,
-        title,
-        content,
-        image_url,
-        product_tags,
-        is_visible,
-        created_date
-    ) VALUES (
-        PRODUCT_REVIEW_SEQ.NEXTVAL,
-        #{productId},
-        #{storeId},
-        #{orderItemId},
-        #{writerUserId},
-        #{rating},
-        #{title},
-        #{content},
-        #{imageUrl},
-        #{productTags},
-        'Y',
-        SYSDATE
-    )
-</insert>
+        INSERT INTO PRODUCT_REVIEW (
+            review_id,
+            product_id,
+            store_id,
+            order_item_id,
+            writer_user_id,
+            rating,
+            title,
+            content,
+            image_url,
+            product_tags,
+            is_visible,
+            created_date
+        ) VALUES (
+            PRODUCT_REVIEW_SEQ.NEXTVAL,
+            #{productId},
+            #{storeId},
+            #{orderItemId},
+            #{writerUserId},
+            #{rating},
+            #{title},
+            #{content},
+            #{imageUrl},
+            #{productTags},
+            'Y',
+            SYSDATE
+        )
+    </insert>
 
-
-<!-- 리뷰삭제 -->
-    <delete id="deleteReview" parameterType="long">
-    DELETE FROM product_review WHERE review_id = #{reviewId}
-    </delete>
-
-<!-- 리뷰 조회 -->
-<select id="selectReviews" parameterType="map"
-        resultType="com.farmday.review.dto.ReviewDTO">
-
-SELECT
-    r.review_id AS reviewId,
-    r.product_id AS productId,
-    r.store_id AS storeId,
-    r.order_item_id AS orderItemId,
-    r.writer_user_id AS writerUserId,
-    r.rating,
-    r.title,
-    r.content,
-    r.image_url AS imageUrl,
-    r.is_visible AS isVisible,
-    r.created_date AS createdDate,
-    r.updated_date AS updatedDate,
-    r.reply,
-    r.product_tags AS productTags,
-
-    CASE 
-        WHEN rl.user_no IS NULL THEN 0
-        ELSE 1
-    END AS liked,
-
-    (SELECT COUNT(*) 
-     FROM review_like 
-     WHERE review_id = r.review_id
-    ) AS likeCount
-
-FROM product_review r
-
-LEFT JOIN review_like rl 
-    ON r.review_id = rl.review_id
-    AND rl.user_no = #{userNo}  
-
-WHERE r.product_id = #{productId}
-  AND r.is_visible = 'Y'
-
-<if test="keyword != null and keyword != ''">
-    AND (r.title LIKE '%' || #{keyword} || '%' 
-        OR r.content LIKE '%' || #{keyword} || '%')
-</if>
-
-ORDER BY 
-<choose>
-    <when test="sort == 'latest'"> r.created_date DESC </when>
-    <when test="sort == 'rating'"> r.rating DESC </when>
-    <otherwise> r.review_id DESC </otherwise>
-</choose>
-
-</select>
-
-
-<!-- 생산자 답글 -->
-    <update id="updateReply" parameterType="com.farmday.review.dto.ReviewDTO">
-    UPDATE product_review
-    SET reply = #{reply},
-        updated_date = SYSDATE
-    WHERE review_id = #{reviewId}
+    <!-- 리뷰 수정 -->
+    <update id="updateReview" parameterType="com.farmday.review.dto.ReviewDTO">
+        UPDATE product_review
+        SET
+            title = #{title},
+            content = #{content},
+            updated_date = SYSDATE
+        WHERE review_id = #{reviewId}
     </update>
 
-    <select id="findStoreIdByProductId" parameterType="long" resultType="long">
-       SELECT 
-        s.store_id
-    FROM 
-        product p
-        JOIN store s ON p.producer_id = s.producer_id
-    WHERE
-        p.product_id = #{productId}
+    <!-- 리뷰 단건 조회 -->
+    <select id="findByReviewId" parameterType="long"
+            resultType="com.farmday.review.dto.ReviewDTO">
+        SELECT
+            review_id      AS reviewId,
+            product_id     AS productId,
+            store_id       AS storeId,
+            order_item_id  AS orderItemId,
+            writer_user_id AS writerUserId,
+            rating         AS rating,
+            title          AS title,
+            content        AS content,
+            image_url      AS imageUrl,
+            is_visible     AS isVisible,
+            created_date   AS createdDate,
+            updated_date   AS updatedDate,
+            reply          AS reply,
+            product_tags   AS productTags
+        FROM product_review
+        WHERE review_id = #{reviewId}
     </select>
 
-<!-- 스토어 전체 리뷰 조회 -->
-    <select id="getStoreReviews" parameterType="long" resultType="com.farmday.review.dto.ReviewDTO">
-    SELECT
-        r.review_id       AS reviewId,
-        r.product_id      AS productId,
-        r.store_id        AS storeId,
-        r.order_item_id   AS orderItemId,
-        r.writer_user_id  AS writerUserId,
-        r.rating          AS rating,
-        r.title           AS title,
-        r.content         AS content,
-        r.image_url       AS imageUrl,
-        r.is_visible      AS isVisible,
-        r.created_date    AS createdDate,
-        r.updated_date    AS updatedDate,
-        r.reply           AS reply,
-        r.product_tags    AS productTags
-    FROM product_review r
-    WHERE r.store_id = #{storeId}
-    ORDER BY r.created_date DESC
-</select>
+    <!-- 리뷰 목록 (프로필 사진 포함) -->
+    <select id="selectReviews" parameterType="map"
+            resultType="com.farmday.review.dto.ReviewDTO">
 
-<!-- 1) 이미 좋아요 눌렀는지 체크 -->
-<select id="checkLike" parameterType="map" resultType="Integer">
-    SELECT 1
-    FROM review_like
-    WHERE review_id = #{reviewId}
-      AND user_no = #{userNo}
-</select>
+        SELECT
+            r.review_id        AS reviewId,
+            r.product_id       AS productId,
+            r.store_id         AS storeId,
+            r.order_item_id    AS orderItemId,
+            r.writer_user_id  AS writerUserId,
+            u.photo            AS userPhoto,
+            r.rating,
+            r.title,
+            r.content,
+            r.image_url        AS imageUrl,
+            r.is_visible       AS isVisible,
+            r.created_date     AS createdDate,
+            r.updated_date     AS updatedDate,
+            r.reply,
+            r.product_tags     AS productTags,
 
-<!-- 2) 좋아요 기록 저장 -->
-<insert id="saveLike" parameterType="map">
-    INSERT INTO review_like(review_id, user_no)
-    VALUES (#{reviewId}, #{userNo})
-</insert>
+            CASE 
+                WHEN rl.user_no IS NULL THEN 0
+                ELSE 1
+            END               AS liked,
 
-<!-- 4) 좋아요 취소 -->
-<delete id="deleteLike" parameterType="map">
-    DELETE FROM review_like
-    WHERE review_id = #{reviewId}
-      AND user_no = #{userNo}
-</delete>
+            (SELECT COUNT(*) 
+             FROM review_like 
+             WHERE review_id = r.review_id
+            ) AS likeCount
 
-<!-- 5) 리뷰 수 조회 -->
-<select id="countLike" parameterType="long" resultType="int">
-    SELECT COUNT(*)
-    FROM review_like
-    WHERE review_id = #{reviewId}
-</select>
+        FROM product_review r
+
+        LEFT JOIN users u
+            ON r.writer_user_id = u.USERID
+
+        LEFT JOIN review_like rl 
+            ON r.review_id = rl.review_id
+            AND rl.user_no = #{userNo}
+
+        WHERE r.product_id = #{productId}
+          AND r.is_visible = 'Y'
+
+        <if test="keyword != null and keyword != ''">
+            AND (r.title LIKE '%' || #{keyword} || '%' 
+                OR r.content LIKE '%' || #{keyword} || '%')
+        </if>
+
+        ORDER BY 
+        <choose>
+            <when test="sort == 'latest'"> r.created_date DESC </when>
+            <when test="sort == 'rating'"> r.rating DESC </when>
+            <otherwise> r.review_id DESC </otherwise>
+        </choose>
+
+    </select>
+
+    <!-- 판매자 답글 -->
+    <update id="updateReply" parameterType="com.farmday.review.dto.ReviewDTO">
+        UPDATE product_review
+        SET reply = #{reply},
+            updated_date = SYSDATE
+        WHERE review_id = #{reviewId}
+    </update>
+
+    <!-- product → store 조회 -->
+    <select id="findStoreIdByProductId" parameterType="long" resultType="long">
+        SELECT s.store_id
+        FROM product p
+        JOIN store s ON p.producer_id = s.producer_id
+        WHERE p.product_id = #{productId}
+    </select>
+
+    <!-- 스토어 전체 리뷰 -->
+    <select id="getStoreReviews" parameterType="long"
+            resultType="com.farmday.review.dto.ReviewDTO">
+        SELECT
+            r.review_id      AS reviewId,
+            r.product_id     AS productId,
+            r.store_id       AS storeId,
+            r.order_item_id  AS orderItemId,
+            r.writer_user_id AS writerUserId,
+            u.photo          AS userPhoto,
+            r.rating         AS rating,
+            r.title          AS title,
+            r.content        AS content,
+            r.image_url      AS imageUrl,
+            r.is_visible     AS isVisible,
+            r.created_date   AS createdDate,
+            r.updated_date   AS updatedDate,
+            r.reply          AS reply,
+            r.product_tags   AS productTags
+        FROM product_review r
+        LEFT JOIN users u
+            ON r.writer_user_id = u.USERID
+        WHERE r.store_id = #{storeId}
+        ORDER BY r.created_date DESC
+    </select>
+
+    <!-- 좋아요 체크 -->
+    <select id="checkLike" parameterType="map" resultType="Integer">
+        SELECT 1
+        FROM review_like
+        WHERE review_id = #{reviewId}
+          AND user_no = #{userNo}
+    </select>
+
+    <insert id="saveLike" parameterType="map">
+        INSERT INTO review_like(review_id, user_no)
+        VALUES (#{reviewId}, #{userNo})
+    </insert>
+
+    <delete id="deleteLike" parameterType="map">
+        DELETE FROM review_like
+        WHERE review_id = #{reviewId}
+          AND user_no = #{userNo}
+    </delete>
+
+    <select id="countLike" parameterType="long" resultType="int">
+        SELECT COUNT(*)
+        FROM review_like
+        WHERE review_id = #{reviewId}
+    </select>
 
 </mapper>

@@ -47,6 +47,14 @@ public interface ProducerService {
             String deliveryStatus
     );
 
+    // 🔥 배송 상태 일괄 변경 (주문 단위)
+    void changeDeliveryStatusBulk(
+            Long producerId,
+            String loginUserId,
+            Long orderId,
+            String deliveryStatus
+    );
+
     // 매출 현황
     List<DailySalesDto> getMonthlyDailySales(Long producerId);
 
