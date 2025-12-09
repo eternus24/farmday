@@ -117,6 +117,22 @@
   </select>
 
 
+  <select id="findGroupDealDeliveryInfo" parameterType="int" resultType="com.farmday.orders.DeliveryDTO">
+    select 
+      d.*,
+      o.toss_orderid,o.receiver_name,o.receiver_phone,o.receiver_addr,o.delivery_message,
+      i.price_at_order,i.quantity,i.order_status,i.created_date order_created_date,
+      g.title, g.sub_title,
+      u.userid user_id,u.name user_name
+    from 
+      delivery d,orders_item i,orders o,users u, group_deal g
+    where 
+      d.order_item_id=#{order_item_id}
+      and d.order_item_id=i.order_item_id
+      and i.group_deal_id=g.group_deal_id
+      and i.order_id=o.order_id
+      and o.user_id=u.userid
+  </select>
 
 
 

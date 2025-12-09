@@ -1,0 +1,46 @@
+.popup-container {
+   width: 400; 
+   height: 510;
+   font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+}
+
+
+.popup-image {
+  width:450px;
+}
+
+.popup-banner-btn {
+  position: absolute;
+  left: 23%;
+  top: 34%;
+  width: 55%;
+  height: 30%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+
+.popup-label {
+  font-size: 15px;
+  margin-top: 4px;
+  margin-left: 4px;
+}
+
+.popup-checkbox {
+  margin-left: 4px;
+  margin-right: 4px;
+}
+
+.close-btn {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  text-align: "right";
+  border: 1px solid #ccc;
+  background-color: #f8f8f8;
+  font-size: 14px;
+  border-radius: 6px;
+  color: #333333;
+  font-weight: 400;
+}

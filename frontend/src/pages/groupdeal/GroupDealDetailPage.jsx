@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   getGroupDealDetail,
-  joinGroupDeal,
 } from "../../api/groupDealApi";
 import BarProgress from "./components/BarProgress";
 import GroupDealDetailTabs from "../../layouts/GroupDealDetailTabs";
@@ -94,7 +93,8 @@ const GroupDealDetailPage = () => {
     setQuantity(n);
   };
 
-  const handleJoinAndGoCart = async () => {
+   const handleJoinAndGoCart = async () => {
+
     if (!deal) return;
     if (joining) return;
     if (quantity <= 0) {
@@ -102,26 +102,18 @@ const GroupDealDetailPage = () => {
       return;
     }
 
-    try {
-      setJoining(true);
-      await joinGroupDeal(deal.groupDealId, quantity);
+    const shipping = deal.dealPrice*quantity>=40000 ? 0 : 3000;
 
-      window.alert("공동구매에 참여되었습니다. 장바구니/결제 페이지로 이동합니다.");
+    navigate(`/group-deals/orders/${groupDealId}`, {
+      state: {
+        fromGroupDeal: true,
+        shipping: shipping,
+        quantity: quantity
+      }
+    });
 
-      navigate("/cart", {
-        state: {
-          fromGroupDeal: true,
-          groupDealId: deal.groupDealId,
-          quantity,
-        },
-      });
-    } catch (e) {
-      console.error(e);
-      window.alert(e.message || "공동구매 참여 중 오류가 발생했습니다.");
-    } finally {
-      setJoining(false);
-    }
-  };
+
+  }
 
   if (loading) {
     return (

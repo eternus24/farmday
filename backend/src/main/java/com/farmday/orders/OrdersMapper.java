@@ -13,7 +13,7 @@ public interface OrdersMapper {
 
 	UsersDTO findUserInfoForOrder(String user_id) throws Exception;
 
-  	int findUserPoints(String user_id) throws Exception;
+  int findUserPoints(String user_id) throws Exception;
 
 	String findUserMembershipInfo(String user_id) throws Exception;
 
@@ -37,12 +37,27 @@ public interface OrdersMapper {
 		@Param("points")int points
 	) throws Exception;
 
+	int findProductStockQty(int product_id) throws Exception;
+
+	int updateProductAmount(
+		@Param("product_id")int product_id,
+		@Param("stock_qty")int stock_qty
+	) throws Exception;	
+
+
+
 
 	List<OrdersDTO> findAllOrdersByUserId(String user_id) throws Exception;
 	
+	List<OrdersDTO> findAllGroupDealOrdersByUserId(String user_id) throws Exception;
+
 	List<OrdersItemDTO> findOrdersItemByOrderId(int order_id) throws Exception;
 
+	int findOrderItemIdOfGroupDealOrder(int order_id) throws Exception;
 
+	OrdersItemDTO findGroupDealItemByOrderId(int order_id) throws Exception;
+
+	
 
 	int insertOrdersItemIntoCancel(OrdersCanceledDTO dto) throws Exception;
 
@@ -63,7 +78,9 @@ public interface OrdersMapper {
 		@Param("shipping_fee")int shipping_fee
 	) throws Exception;
 
+	List<OrdersImgListDTO> findOrdersImgListByOrderId(int order_id) throws Exception;
+
 	//민아 - 리뷰 작성 적립금
 	Long findUserNoByOrderItemId(int order_item_id);
-
+	
 }

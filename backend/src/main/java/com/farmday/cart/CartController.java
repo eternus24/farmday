@@ -7,6 +7,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.farmday.orders.OrdersService;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -15,7 +17,12 @@ import java.util.Set;
 public class CartController {
 
     private final CartService cartService;
-    public CartController(CartService cartService) { this.cartService = cartService; }
+    private final OrdersService ordersService;
+
+    public CartController(CartService cartService, OrdersService ordersService) { 
+        this.cartService = cartService; 
+        this.ordersService = ordersService;
+    }
 
     // 사용자ID로 장바구니 데이터 가져오기
     @GetMapping("/cart/findCartByUserId")
@@ -85,7 +92,13 @@ public class CartController {
         for (CartDTO it : items) {
             if (it == null) continue;
             int product_id = it.getProduct_id();
+            int stock_qty = ordersService.findProductStockQty(product_id);
             int quantity = Math.max(1, Math.min(999, it.getQuantity()));
+
+            if (quantity > stock_qty) {
+                quantity = stock_qty;
+            }
+
             cartService.updateCartQuantity(user_id, product_id, quantity);
         }
         return ResponseEntity.noContent().build(); // 204

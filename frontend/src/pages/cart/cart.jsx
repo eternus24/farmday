@@ -6,6 +6,8 @@ import { NavLink, useNavigate } from "react-router-dom";
 import "../../assets/css/cart.css";
 import Swal from "sweetalert2";
 import { CartContext } from "../../contexts/CartContext";
+import { AuthContext } from "../../contexts/AuthContext";
+import axios from "axios";
 
 function money(n) {
   const num = Number(n);
@@ -17,7 +19,7 @@ function money(n) {
 
 export default function Cart() {
   const [items, setItems] = useState([]);
-  const [coupon, setCoupon] = useState("");
+  const [coupon, setCoupon] = useState([]);
   const [discount, setDiscount] = useState(0);
   const [status, setStatus] = useState("loading");
   const [saving, setSaving] = useState(false);
@@ -54,6 +56,7 @@ export default function Cart() {
             qty,
             price: row.price,
             img: row.main_image,
+            stockQty: row.stock_qty
           };
         })
         .filter(Boolean);
@@ -83,6 +86,12 @@ export default function Cart() {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
   }
 
+
+
+
+
+
+
   useEffect(() => {
     const ac = new AbortController(); // 왜: StrictMode 2회 마운트 대비
     reloadCart(ac.signal);
@@ -97,11 +106,48 @@ export default function Cart() {
 
   function updateQty(id, nextQty) {
     const n = clamp(Number(nextQty));
-    setItems((prev) => prev.map((it) => (it.id === id ? { ...it, qty: n } : it)));
+    // setItems((prev) => prev.map((it) => (it.id === id ? { ...it, qty: n } : it)));
+    setItems((prev) =>
+      prev.map((it) => {
+        if (it.id !== id) return it; // 🔧 기존 삼항을 if/return 구조로 변경
+
+        const stock = Number.isFinite(Number(it.stockQty)) && Number(it.stockQty) > 0
+          ? Number(it.stockQty)
+          : 999; // 🔧 재고 정보가 없거나 0 이하면 일반 상한값(999) 사용
+
+        if (n > stock) {
+          alert(`해당 상품의 최대 구매 가능 수량은 ${stock}개입니다.`); // 🔔 재고 초과 시 알림
+          return { ...it, qty: stock }; // 🔧 장바구니 수량을 재고 수량으로 고정
+        }
+
+        return { ...it, qty: n };
+      })
+    );
   }
 
   function inc(id) {
-    setItems((prev) => prev.map((it) => (it.id === id ? { ...it, qty: clamp(it.qty + 1) } : it)));
+    // setItems((prev) => prev.map((it) => (it.id === id ? { 
+    //     ...it, 
+    //     qty: clamp(it.qty + 1)
+    //   } : it)
+    // ));
+    setItems((prev) =>
+      prev.map((it) => {
+        if (it.id !== id) return it; // 🔧 기존 삼항을 if/return 구조로 변경
+
+        const stock = Number.isFinite(Number(it.stockQty)) && Number(it.stockQty) > 0
+          ? Number(it.stockQty)
+          : 999; // 🔧 재고 정보가 없거나 0 이하면 일반 상한값(999) 사용
+
+        const next = clamp(it.qty + 1); // 🔧 다음 수량 계산
+        if (next > stock) {
+          alert(`해당 상품의 최대 구매 가능 수량은 ${stock}개입니다.`); // 🔔 재고 초과 시 알림
+          return { ...it, qty: stock }; // 🔧 장바구니 수량을 재고 수량으로 고정
+        }
+
+        return { ...it, qty: next };
+      })
+    );
   }
 
   function dec(id) {
@@ -166,7 +212,7 @@ export default function Cart() {
     setSaving(true);
     try {
       await persistCart(items);
-      navigate("/orders", { state: { ok: true, updated: items.length, total, shipping }, replace: false });
+      navigate("/orders", { state: { ok: true, updated: items.length, total, shipping}, replace: false });
     } catch (e) {
       console.error("checkout failed:", e);
       navigate("/orders", { state: { ok: false, error: e?.message || "Unknown error", total }, replace: true });
@@ -189,15 +235,15 @@ export default function Cart() {
   }
 
   return (
-    <div style={{fontFamily: "'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', Pretendard-Regular, ui-sans-serif, system-ui, -apple-system, 'Segoe UI`, Roboto,  sans-serif"}}>
+    <div className="cart">
     {/* <div> */}
       <div className="container-fluid page-header py-5" style={{ marginTop: 120 }}>
-        <h1 className="text-center text-white display-6">Cart</h1>
-        <ol className="breadcrumb justify-content-center mb-0">
+        <h1 className="text-center text-white display-6">장바구니</h1>
+        {/* <ol className="breadcrumb justify-content-center mb-0">
           <li className="breadcrumb-item"><a href="#">Home</a></li>
           <li className="breadcrumb-item"><a href="#">Pages</a></li>
           <li className="breadcrumb-item active text-white">Cart</li>
-        </ol>
+        </ol> */}
       </div>
 
       <div className="container-fluid py-5">
@@ -207,47 +253,54 @@ export default function Cart() {
             <div className="table-responsive">
               <table className="table">
                 <thead>
-                  <tr>
-                    <th>Products</th><th>Name</th><th>Price</th><th>Quantity</th><th>Total</th><th>Handle</th>
+                  <tr style={{textAlign:'center'}}>
+                    <th style={{width:'140px'}}>제품</th>
+                    <th style={{textAlign:'left',textIndent:'30px'}}>제품명</th>
+                    <th style={{width:'140px'}}>가격</th>
+                    <th>수량</th>
+                    <th style={{width:'140px'}}>총 금액</th>
+                    <th style={{width:'70px'}}>삭제</th>
                   </tr>
                 </thead>
                 <tbody>
                   {items.map((it) => (
                     <tr key={it._key}>
                       <th scope="row">
-                        <div className="d-flex align-items-center">
+                        <div className="align-items-center" style={{textAlign:'center'}}>
                           {it.img ? (
-                            <img src={it.img} className="img-fluid me-5" style={{ width: 80, height: 80 , borderRadius:10}} alt={it.name} />
+                            <img src={it.img} className="img-fluid" style={{ width: 80, height: 80 , borderRadius:10}} alt={it.name} />
                           ) : (
                             <div className="me-5 rounded-circle bg-light" style={{ width: 80, height: 80 }} aria-label={`${it.name} no image`} />
                           )}
                         </div>
                       </th>
-                      <td><p className="mb-0 mt-4">{it.name}</p></td>
-                      <td><p className="mb-0 mt-4">{money(it.price)}</p></td>
+                      <td style={{textAlign:'left',textIndent:'30px'}}><p className="mb-0 mt-4">{it.name}</p></td>
+                      <td style={{textAlign:'center'}}><p className="mb-0 mt-4">{money(it.price)}</p></td>
                       <td style={{ width: 200 }}>
-                        <div className="input-group quantity mt-4" style={{ width: 130 }}>
-                          <div className="input-group-btn">
-                            <button className="btn btn-sm btn-minus rounded-circle bg-light border" onClick={() => dec(it.id)} disabled={saving}><i className="fa fa-minus" /></button>
+                        <div className="input-group quantity" style={{ width: 130, marginLeft:'25px' }}>
+                          <div className="input-group-btn mt-4">
+                            <button className="btn btn-sm btn-minus rounded-circle bg-light border" onClick={() => dec(it.id)} disabled={saving}>
+                              <i className="fa fa-minus"/>
+                            </button>
                           </div>
                           <input
                             type="number"
-                            className="form-control form-control-sm text-center border-0 numberInput"
+                            className="form-control form-control-sm text-center border-0 numberInput mt-3"
                             value={it.qty}
                             min={1}
                             max={999}
                             onChange={(e) => updateQty(it.id, parseInt(e.target.value, 10))}
                             disabled={saving}
                           />
-                          <div className="input-group-btn">
+                          <div className="input-group-btn mt-4">
                             <button className="btn btn-sm btn-plus rounded-circle bg-light border" onClick={() => inc(it.id)} disabled={saving}><i className="fa fa-plus" /></button>
                           </div>
                         </div>
                       </td>
-                      <td style={{ width: 100 }}><p className="mb-0 mt-4">{money(it.price * it.qty)}</p></td>
+                      <td style={{ width: 100, textAlign:'center' }}><p className="mb-0 mt-4">{money(it.price * it.qty)}</p></td>
                       <td>
                         <button
-                          className="btn btn-md rounded-circle bg-light border mt-4"
+                          className="btn btn-md rounded-circle bg-light border mt-3"
                           onClick={() => it.cartId && removeItem(it.cartId)}
                           aria-label={`remove ${it.name}`}
                           disabled={saving}
@@ -289,7 +342,7 @@ export default function Cart() {
               placeholder="Coupon Code" value={coupon} onChange={(e) => setCoupon(e.target.value)} disabled={saving} />
               <button className="btn btn-outline-secondary ms-2" onClick={applyCoupon} disabled={saving}>Apply</button> */}
             <button className="btn border-secondary rounded-pill px-4 py-3 text-primary" type="button" onClick={updateCart} disabled={saving}>
-              현재 옵션 저장
+              현재 수량 저장
             </button>
           </div>
 
@@ -298,12 +351,12 @@ export default function Cart() {
             <div className="col-sm-8 col-md-7 col-lg-6 col-xl-4">
               <div className="bg-light rounded">
                 <div className="p-4">
-                  <h1 className="display-6 mb-4">Cart <span className="fw-normal">Total</span></h1>
-                  <div className="d-flex justify-content-between mb-4"><h5 className="mb-0 me-4">Subtotal:</h5><p className="mb-0">{money(subtotal)}</p></div>
-                  <div className="d-flex justify-content-between"><h5 className="mb-0 me-4">Shipping</h5><div><p className="mb-0">{money(shipping)}</p></div></div>
+                  <h1 className="display-6 mb-4">결제 금액 <span className="fw-normal"></span></h1>
+                  <div className="d-flex justify-content-between mb-4"><h5 className="mb-0 me-4">주문 금액</h5><p className="mb-0">{money(subtotal)}</p></div>
+                  <div className="d-flex justify-content-between"><h5 className="mb-0 me-4">배송비</h5><div><p className="mb-0">{money(shipping)}</p></div></div>
                 </div>
                 <div className="py-4 mb-4 border-top border-bottom d-flex justify-content-between">
-                  <h5 className="mb-0 ps-4 me-4">Total</h5><p className="mb-0 pe-4">{money(total)}</p></div>
+                  <h5 className="mb-0 ps-4 me-4">합 계</h5><p className="mb-0 pe-4">{money(total)}</p></div>
                 <div className="p-4 d-grid">
                   <button type="button" className="btn btn-primary rounded-pill py-3"
                           onClick={handleCheckout} disabled={saving || !items.length}>
@@ -311,7 +364,7 @@ export default function Cart() {
                   </button>
                 </div>
               </div>
-              <div className="text-muted small mt-2 px-2">구매 시 현재 수량이 서버에 저장됩니다.</div>
+              <div className="text-muted small mt-2 px-2">※ 40,000원 이상 구매 시 배송비 무료</div>
             </div>
           </div>
 

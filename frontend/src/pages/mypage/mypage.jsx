@@ -1,10 +1,8 @@
 // ==============================================
 // frontend/src/pages/mypage/mypage.jsx
 // ==============================================
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { useSearchParams } from "react-router-dom";//민아 추가
-
 import "../../assets/css/mypage.css";
 import MypageLeftSideBar from "./MypageLeftSideBar";
 import MypageOrderList from "./MypageOrderList";
@@ -17,6 +15,8 @@ import delivery3 from "../../assets/img/delivery3.png";
 import MypageWishlist from "./MypageWishlist";
 import Membership from "./Membership";
 import MyInfo from "./MyInfo";
+import MypageGroupDeal from "./MypageGroupDeal";
+import { AuthContext } from "../../contexts/AuthContext";
 
 function moneyKRW(n) {
   const v = Math.max(0, Math.round(Number(n) || 0));
@@ -71,15 +71,6 @@ export default function MyPage() {
     points: 0,
     couponCount: 0,
   });
-
-  //민아 - 추가
-  const [searchParams] = useSearchParams();
-  const tabFromQuery = searchParams.get("tab");
-
-  useEffect(() => {
-  if (tabFromQuery) setShowContent(tabFromQuery);
-  }, [tabFromQuery]);
-  
   const [orders, setOrders] = useState([]);
   const [months, setMonths] = useState(3);
   const [query, setQuery] = useState("");
@@ -90,6 +81,7 @@ export default function MyPage() {
   const userInfoFromLocal = JSON.parse(window.localStorage.getItem("loginUser"));
   const user_Id = userInfoFromLocal.userId;
   const user_name = userInfoFromLocal.name;
+  const { auth } = useContext(AuthContext);
 
   const navigate = useNavigate();
   const [userInfo, setUserInfo] = useState([]);
@@ -98,6 +90,8 @@ export default function MyPage() {
   const [myReview, setMyReview] = useState([]);
   const [canceledOrder, setCanceledOrder] = useState([]);
   const [wishlist, setWishlist] = useState([]);
+  const [groupDeal, setGroupDeal] = useState([]);
+  const [couponAmount, setCouponAmount] = useState("");
 
   // ⭐ 어떤 주문의 상세가 열려 있는지 저장
   const [openOrderId, setOpenOrderId] = useState(null);
@@ -115,6 +109,12 @@ export default function MyPage() {
   const [deliveryInfo, setDeliveryInfo] = useState(null);
 
   const MAX_CANCEL_REASON_LEN = 60;
+
+  const [showCancelDetail, setShowCancelDetail] = useState(false);
+  const [cancelDetail, setCancelDetail] = useState(null);
+
+  const [showOrderDetail, setShowOrderDetail] = useState(false);
+  const [orderDetail, setOrderDetail] = useState(null);
 
   // 취소 사유 목록 (요청 5종 + 기타)
   const cancelReasons = [
@@ -157,6 +157,25 @@ export default function MyPage() {
       if (e.name === "AbortError") return;
       console.error("load orders failed:", e);
       setUserOrders([]);
+      setStatus("error");
+    }
+  }
+
+  async function getUserGroupDeal() {
+    setStatus("loading");
+    try {
+      const res = await fetch(
+        `${API_BASE}/orders/findAllGroupDealOrdersByUserId?user_id=${user_Id}`,
+        { credentials: "include", cache: "no-store" }
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setGroupDeal(data);
+      setStatus("ready");
+    } catch (e) {
+      if (e.name === "AbortError") return;
+      console.error("load orders failed:", e);
+      setGroupDeal([]);
       setStatus("error");
     }
   }
@@ -223,6 +242,39 @@ export default function MyPage() {
   }
 
 
+  async function getGroupDealDeliveryInfo(order_item_id) {
+    try {
+      const res = await fetch(
+        `${API_BASE}/mypage/findGroupDealDeliveryInfo?order_item_id=${order_item_id}`,
+        { credentials: "include", cache: "no-store" }
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+
+      setDeliveryInfo({
+        productName: data.title,
+        status: data.delivery_status,
+        carrier: data.carrier_name,
+        trackingNo: data.tracking_number,
+        receiver: data.user_name,
+        address: data.receiver_addr,
+        created_date: data.created_date,
+        shipped_at: data.shipped_at,
+        delivered_at: data.delivered_at,
+        order_status: data.order_status
+      });
+
+    } catch (e) {
+      if (e.name === "AbortError") return;
+      console.error("load deliveryInfo failed:", e);
+      setDeliveryInfo([]);
+    }
+  }
+
+
+
+
+
   async function getCanceledOrder() {
     try {
       const res = await fetch(
@@ -256,8 +308,44 @@ export default function MyPage() {
     }
   }
 
+  const token =
+    auth?.accessToken ||
+    auth?.token ||
+    localStorage.getItem("accessToken");
+
+  const userNo = auth.userNo;
+
+  async function getCoupons() {
+    try {
+      const res = await fetch(
+        `${API_BASE}/api/mypage/coupon/my-coupons?userNo=${userNo}`,
+          {
+            method: "GET",
+            credentials: "include",
+            cache: "no-store",
+            headers: {
+              "Content-Type": "application/json",
+              ...(token
+                ? {
+                    Authorization: token.startsWith("Bearer ")
+                      ? token
+                      : `Bearer ${token}`,
+                  }
+                : {}),
+            },
+          }
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      console.log("쿠폰 응답:", data);
+      const count = Array.isArray(data) ? data.length : 0;
+      setCouponAmount(count);
+    } catch (err) {
+      console.error("쿠폰 조회 실패:", err);
+    }
 
 
+  };
 
   // ⭐ 주문 상세 토글 핸들러 (주문 상세 버튼 클릭 시 호출)
   async function handleToggleOrderDetails(order_id) {
@@ -298,6 +386,43 @@ export default function MyPage() {
   const handleCloseDeliveryModal = () => {
     setShowDeliveryModal(false);
     setDeliveryInfo(null);
+  };
+
+  
+
+  // 🚚 배송 현황 모달 열기 (하드코딩 예시)
+  const handleOpenGroupDealDeliveryModal = (order_item_id) => {
+
+    // TODO: 실제 연동 시 orderItem으로 상품명/상태 등 주입
+    getGroupDealDeliveryInfo(order_item_id);
+    setShowDeliveryModal(true);
+  };
+
+
+  // 🧾🆕 상세 모달 열기
+  const handleOpenCancelDetail = (row) => {
+    setCancelDetail(row ?? null);
+    setShowCancelDetail(true);
+  };
+
+  // 🧾🆕 상세 모달 닫기
+  const handleCloseCancelDetail = () => {
+    setShowCancelDetail(false);
+    setCancelDetail(null);
+  };
+
+
+
+  // 🧾🆕 구매 상세 모달 열기
+  const handleOpenOrderDetail = (row) => {
+    setOrderDetail(row ?? null);
+    setShowOrderDetail(true);
+  };
+
+  // 🧾🆕 구매 상세 모달 닫기
+  const handleCloseOrderDetail = () => {
+    setShowOrderDetail(false);
+    setOrderDetail(null);
   };
 
 
@@ -366,13 +491,16 @@ export default function MyPage() {
     getMyReview();
     getCanceledOrder();
     getWishlist();
+    getUserGroupDeal();
+    getCoupons();
   }, []);
 
   function openContent(content) {
     if (content === 'orderList') getUserOrders();
     if (content === 'myReview') getMyReview();
     if (content === 'canceledOrder') getCanceledOrder();
-    if (content === 'wishlist') getCanceledOrder();
+    if (content === 'wishlist') getWishlist();
+    if (content === 'groupDeal') getUserGroupDeal();
 
     setShowContent(content);
   }
@@ -489,12 +617,12 @@ export default function MyPage() {
           <div className="row g-4">
 
             <MypageLeftSideBar
-              user_name={user_name} overview={overview} moneyKRW={moneyKRW} userInfo={userInfo} showContent={showContent} setShowContent={setShowContent} myReview={myReview} setMyReview={setMyReview} getMyReview={getMyReview} openContent={openContent}
+              user_name={user_name} overview={overview} moneyKRW={moneyKRW} userInfo={userInfo} showContent={showContent} setShowContent={setShowContent} myReview={myReview} setMyReview={setMyReview} getMyReview={getMyReview} openContent={openContent} couponAmount={couponAmount}
             />
 
             {showContent === 'orderList' && (
               <MypageOrderList
-                months={months} setMonths={setMonths} searchInput={searchInput} setSearchInput={setSearchInput} setQuery={setQuery} status={status} userOrders={userOrders} getUserOrders={getUserOrders} emptyText={emptyText} formatKoreanDateTime={formatKoreanDateTime} handleToggleOrderDetails={handleToggleOrderDetails} openOrderId={openOrderId} moneyKRW={moneyKRW} handleOpenCancelModal={handleOpenCancelModal} ordersItem={ordersItem} confirmOrder={confirmOrder} refundRequest={refundRequest} handleOpenDeliveryModal={handleOpenDeliveryModal}
+                months={months} setMonths={setMonths} searchInput={searchInput} setSearchInput={setSearchInput} setQuery={setQuery} status={status} userOrders={userOrders} getUserOrders={getUserOrders} emptyText={emptyText} formatKoreanDateTime={formatKoreanDateTime} handleToggleOrderDetails={handleToggleOrderDetails} openOrderId={openOrderId} moneyKRW={moneyKRW} handleOpenCancelModal={handleOpenCancelModal} ordersItem={ordersItem} confirmOrder={confirmOrder} refundRequest={refundRequest} handleOpenDeliveryModal={handleOpenDeliveryModal} handleOpenOrderDetail={handleOpenOrderDetail}
               />
             )}
 
@@ -506,7 +634,7 @@ export default function MyPage() {
 
             {showContent === 'canceledOrder' && (
               <MypageCanceledOrder
-                canceledOrder={canceledOrder} setCanceledOrder={setCanceledOrder} formatKoreanDateTime={formatKoreanDateTime} moneyKRW={moneyKRW}
+                canceledOrder={canceledOrder} setCanceledOrder={setCanceledOrder} formatKoreanDateTime={formatKoreanDateTime} moneyKRW={moneyKRW} handleOpenCancelDetail={handleOpenCancelDetail}
               />
             )}
 
@@ -524,6 +652,12 @@ export default function MyPage() {
 
             {showContent === 'myInfo' && (
               <MyInfo API_BASE={API_BASE} userId={user_Id} />
+            )}
+
+            {showContent === 'groupDeal' && (
+              <MypageGroupDeal 
+                months={months} setMonths={setMonths} searchInput={searchInput} setSearchInput={setSearchInput} setQuery={setQuery} status={status} userOrders={groupDeal} getUserOrders={getUserGroupDeal} emptyText={emptyText} formatKoreanDateTime={formatKoreanDateTime} handleToggleOrderDetails={handleToggleOrderDetails} openOrderId={openOrderId} moneyKRW={moneyKRW} handleOpenCancelModal={handleOpenCancelModal} ordersItem={ordersItem} confirmOrder={confirmOrder} refundRequest={refundRequest} handleOpenGroupDealDeliveryModal={handleOpenGroupDealDeliveryModal} API_BASE={API_BASE}
+              />
             )}
               
           </div>
@@ -652,9 +786,9 @@ export default function MyPage() {
                 {deliveryInfo?.productName ?? "상품명(예시)"}
               </div>
               <div className="small text-muted">
-                {(deliveryInfo?.carrier ?? "CJ대한통운") +
+                {(deliveryInfo?.carrier ?? "배송을 준비중입니다.") +
                   " · " +
-                  (deliveryInfo?.trackingNo ?? "1234-5678-9012")}
+                  (deliveryInfo?.trackingNo ?? "")}
               </div>
             </div>
             
@@ -787,6 +921,331 @@ export default function MyPage() {
           </div>
         </div>
       )}
+
+
+
+      {/* 🧾🆕 취소/환불 상세(영수증) 모달 */}
+      {showCancelDetail && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.35)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1050,
+          }}
+          aria-modal="true"
+          role="dialog"
+        >
+          <div
+            className="bg-white rounded-3 p-4"
+            style={{
+              width: "min(520px, 94%)",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+            }}
+          >
+            {/* 헤더 */}
+            <div className="d-flex justify-content-between align-items-start mb-3">
+              <div>
+                <div className="fw-bold" style={{ fontSize: "1.1rem" }}>
+                  취소/환불 상세
+                </div>
+                <div className="small text-muted">
+                  처리일시: {formatKoreanDateTime(cancelDetail?.created_date)}
+                </div>
+              </div>
+              <span
+                className={`badge ${
+                  cancelDetail?.order_status === "R1" ? "bg-secondary" : "bg-success"
+                }`}
+              >
+                {cancelDetail?.order_status === "R1" ? "취소/환불" : "처리 완료"}
+              </span>
+            </div>
+
+            {/* 구분선 */}
+            <div
+              style={{
+                borderTop: "1px dashed #d7dbe2",
+                margin: "12px 0 16px",
+              }}
+            />
+
+            {/* 주문/상점 정보 */}
+            <div className="mb-3">
+              <div className="d-flex justify-content-between align-items-center">
+                <div className="small text-muted">주문번호</div>
+                <div className="fw-semibold">{(cancelDetail?.toss_orderid).substring(6) ?? "-"}</div>
+              </div>
+              {/* <div className="fw-semibold">
+                {cancelDetail?.toss_orderid ?? "-"}
+              </div> */}
+              
+              <div className="small text-muted mt-2">판매자</div>
+              <div className="fw-semibold">
+                {cancelDetail?.store_name ?? "-"}
+              </div>
+            </div>
+
+            {/* 상품 정보 */}
+            <div className="d-flex gap-3 align-items-center mb-3">
+              {cancelDetail?.main_image && (
+                <img
+                  src={cancelDetail.main_image}
+                  alt={cancelDetail?.name ?? "product"}
+                  style={{
+                    width: 64,
+                    height: 64,
+                    objectFit: "cover",
+                    borderRadius: 8,
+                    border: "1px solid #eee",
+                  }}
+                />
+              )}
+
+              <div className="flex-grow-1">
+                <div className="fw-semibold">
+                  {cancelDetail?.name ?? "상품명"}
+                </div>
+                <div className="small text-muted">
+                  {[
+                    cancelDetail?.grade,
+                    cancelDetail?.unit_name,
+                    cancelDetail?.origin_region,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </div>
+              </div>
+            </div>
+
+            {/* 금액/수량 */}
+            <div className="border rounded-3 p-3 mb-3">
+              <div className="d-flex justify-content-between small mb-1">
+                <span className="text-muted">주문 단가</span>
+                <span>{moneyKRW(cancelDetail?.price_at_order ?? 0)}</span>
+              </div>
+              <div className="d-flex justify-content-between small mb-1">
+                <span className="text-muted">수량</span>
+                <span>{cancelDetail?.quantity ?? 0}개</span>
+              </div>
+              <div
+                style={{
+                  borderTop: "1px dashed #e2e6ee",
+                  margin: "8px 0",
+                }}
+              />
+              <div className="d-flex justify-content-between">
+                <span className="fw-semibold">주문 금액</span>
+                <span className="fw-semibold">
+                  {moneyKRW(
+                    (cancelDetail?.price_at_order ?? 0) *
+                      (cancelDetail?.quantity ?? 0)
+                  )}
+                </span>
+              </div>
+            </div>
+
+            {/* 취소/환불 정보 */}
+            <div className="mb-3">
+              <div className="small text-muted">사유</div>
+              <div className="fw-semibold">
+                {cancelDetail?.cancel_reason ?? "-"}
+              </div>
+            </div>
+
+            <div
+              className="border rounded-3 p-3"
+              style={{ background: "#fafbfe" }}
+            >
+              <div className="d-flex justify-content-between">
+                <span className="fw-semibold">환불 예정/완료 금액</span>
+                <span className="fw-bold">
+                  {moneyKRW(cancelDetail?.refund_amount ?? 0)}
+                </span>
+              </div>
+              <div className="small text-muted mt-1">
+                주문일시: {formatKoreanDateTime(cancelDetail?.order_created_date)}
+              </div>
+            </div>
+
+            {/* 하단 안내 */}
+            <div className="small text-muted mt-3">
+              ※ 쿠폰 및 적립금으로 할인받은 금액을 제외한 나머지 금액이 환불됩니다. <br/>
+              ※ 사용한 적립금은 적정 비율로 돌려받으실 수 있습니다. <br/>
+              ※ 모든 주문이 배송 전에 취소되었을 경우에는 배송비를 환불받으실 수 있습니다.
+            </div>
+
+            {/* 푸터 버튼 */}
+            <div className="d-flex justify-content-end mt-4">
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleCloseCancelDetail}
+              >
+                닫기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+      {/* 🧾🆕 구매 상세(영수증) 모달 */}
+      {showOrderDetail && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.35)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1050,
+          }}
+          aria-modal="true"
+          role="dialog"
+        >
+          <div
+            className="bg-white rounded-3 p-4"
+            style={{
+              width: "min(520px, 94%)",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+            }}
+          >
+            {/* 헤더 */}
+            <div className="d-flex justify-content-between align-items-start mb-3">
+              <div>
+                <div className="fw-bold" style={{ fontSize: "1.1rem" }}>
+                  구매 상세 내역
+                </div>
+                <div className="small text-muted">
+                  주문상품 생성일시: {formatKoreanDateTime(orderDetail?.created_date)}
+                </div>
+              </div>
+
+              <span className="badge bg-primary">
+                {orderDetail?.order_status ?? "상태"}
+              </span>
+            </div>
+
+            {/* 구분선 */}
+            <div
+              style={{
+                borderTop: "1px dashed #d7dbe2",
+                margin: "12px 0 16px",
+              }}
+            />
+
+            {/* 주문/판매처 정보 */}
+            <div className="mb-3">
+              <div className="d-flex justify-content-between align-items-center">
+                <div className="small text-muted">주문번호</div>
+                <div className="fw-semibold">{(orderDetail?.toss_orderid).substring(6) ?? "-"}</div>
+              </div>
+              
+              <div className="d-flex justify-content-between align-items-center">
+                <div className="small text-muted mt-2">주문상품번호</div>
+                <div className="fw-semibold">{orderDetail?.order_item_id ?? "-"}</div>
+              </div>
+
+              <div className="d-flex justify-content-between align-items-center">
+                <div className="small text-muted mt-2">판매자</div>
+                <div className="fw-semibold">{orderDetail?.store_name ?? "-"}</div>
+              </div>
+
+              
+
+              
+            </div>
+
+            {/* 상품 정보 */}
+            <div className="d-flex gap-3 align-items-center mb-3">
+              {orderDetail?.main_image && (
+                <img
+                  src={orderDetail.main_image}
+                  alt={orderDetail?.product_name ?? "product"}
+                  style={{
+                    width: 64,
+                    height: 64,
+                    objectFit: "cover",
+                    borderRadius: 8,
+                    border: "1px solid #eee",
+                  }}
+                />
+              )}
+
+              <div className="flex-grow-1">
+                <div className="fw-semibold">
+                  {orderDetail?.product_name ?? "상품명"}
+                </div>
+                <div className="small text-muted">
+                  {[
+                    orderDetail?.grade,
+                    orderDetail?.unit_name,
+                    orderDetail?.origin_region,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </div>
+              </div>
+            </div>
+
+            {/* 금액/수량 */}
+            <div className="border rounded-3 p-3 mb-3">
+              <div className="d-flex justify-content-between small mb-1">
+                <span className="text-muted">주문 단가</span>
+                <span>{moneyKRW(orderDetail?.price_at_order ?? 0)}</span>
+              </div>
+              <div className="d-flex justify-content-between small mb-1">
+                <span className="text-muted">수량</span>
+                <span>{orderDetail?.quantity ?? 0}개</span>
+              </div>
+              <div
+                style={{
+                  borderTop: "1px dashed #e2e6ee",
+                  margin: "8px 0",
+                }}
+              />
+              <div className="d-flex justify-content-between">
+                <span className="fw-semibold">상품 합계</span>
+                <span className="fw-semibold">
+                  {moneyKRW(orderDetail?.line_total_amount ?? 0)}
+                </span>
+              </div>
+            </div>
+
+            {/* 배송 정보 */}
+            <div className="border rounded-3 p-3 mb-3" style={{ background: "#fafbfe" }}>
+              <div className="d-flex justify-content-between">
+                <span className="fw-semibold">배송 상태</span>
+                <span>
+                  {orderDetail?.delivery_status ?? "-"}
+                </span>
+              </div>
+            </div>
+
+            {/* 하단 안내 */}
+            <div className="small text-muted">
+              본 영수증은 구매 상세 확인용입니다.
+            </div>
+
+            {/* 푸터 버튼 */}
+            <div className="d-flex justify-content-end mt-4">
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleCloseOrderDetail}
+              >
+                닫기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
 
 
     </div>

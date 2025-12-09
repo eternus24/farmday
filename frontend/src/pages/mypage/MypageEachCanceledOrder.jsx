@@ -1,6 +1,6 @@
 import { NavLink } from "react-router-dom";
 
-export default function MypageEachCanceledOrder({co,formatKoreanDateTime,moneyKRW}) {
+export default function MypageEachCanceledOrder({co,formatKoreanDateTime,moneyKRW,handleOpenCancelDetail}) {
 
   return (
     <div key={co.orders_canceled_id} className="order-canceled-box">
@@ -54,6 +54,8 @@ export default function MypageEachCanceledOrder({co,formatKoreanDateTime,moneyKR
           <div
             className="order-cancel-finished"
             tabIndex={0}
+            onClick={() => handleOpenCancelDetail(co)}
+            style={{cursor:'pointer'}}
           >
             취소/환불 상세
           </div>

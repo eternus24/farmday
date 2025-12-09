@@ -43,6 +43,8 @@ public class DeliveryDTO {
     private String user_id;
     private String user_name;
 
-
+    // group_deal join용
+    private String title;
+    private String sub_title;
 
 }

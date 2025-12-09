@@ -5,6 +5,7 @@ import com.farmday.coupon.domain.CouponTemplate;
 import com.farmday.coupon.dto.MyCouponResponse;
 import com.farmday.user.domain.User;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 import java.util.Map;
@@ -25,5 +26,12 @@ public interface CouponMapper {
     void insertCoupon(Coupon coupon);
 
     List<MyCouponResponse> findCouponsByUserNo(Long userNo);
+
+    // ================================yh===============================
+    int existsWinterEventCoupon(Long userNo);
+    int deleteUsedCoupon(
+        @Param("user_no")int user_no,
+        @Param("coupon_id")int coupon_id
+    );
 
 }

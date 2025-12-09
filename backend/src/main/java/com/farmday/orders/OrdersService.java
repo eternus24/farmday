@@ -61,14 +61,37 @@ public class OrdersService {
         return ordersMapper.updateUserPoints(user_id, points);
     }
     
+    public int findProductStockQty(int product_id) throws Exception {
+        return ordersMapper.findProductStockQty(product_id);
+    }
+
+    public boolean updateProductAmount(int product_id, int stock_qty) throws Exception {
+        return ordersMapper.updateProductAmount(product_id, stock_qty)==1;
+    }
+
+
 
     public List<OrdersDTO> findAllOrdersByUserId(String user_id) throws Exception {
         return ordersMapper.findAllOrdersByUserId(user_id);
     }
 
+    public List<OrdersDTO> findAllGroupDealOrdersByUserId(String user_id) throws Exception {
+        return ordersMapper.findAllGroupDealOrdersByUserId(user_id);
+    }
+
     public List<OrdersItemDTO> findOrdersItemByOrderId(int order_id) throws Exception {
         return ordersMapper.findOrdersItemByOrderId(order_id);
     }
+
+    public int findOrderItemIdOfGroupDealOrder(int order_id) throws Exception {
+        return ordersMapper.findOrderItemIdOfGroupDealOrder(order_id);
+    }
+
+
+    public OrdersItemDTO findGroupDealItemByOrderId(int order_id) throws Exception {
+        return ordersMapper.findGroupDealItemByOrderId(order_id);
+    }
+
 
 
     public int insertOrdersItemIntoCancel(OrdersCanceledDTO dto) throws Exception {
@@ -90,6 +113,10 @@ public class OrdersService {
 
     public int chargeShippingFeeAfterCancel(int order_id, int shipping_fee) throws Exception {
         return ordersMapper.chargeShippingFeeAfterCancel(order_id, shipping_fee);
+    }
+
+    public List<OrdersImgListDTO> findOrdersImgListByOrderId(int order_id) throws Exception {
+        return ordersMapper.findOrdersImgListByOrderId(order_id);
     }
 
     //민아 - 리뷰 작성 시 적립금 증가

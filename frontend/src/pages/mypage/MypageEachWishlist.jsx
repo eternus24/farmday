@@ -61,7 +61,7 @@ export default function MypageEachWishlist({wl,formatKoreanDateTime,moneyKRW,get
            {formatKoreanDateTime(wl.created_date)}
          </span>
          <span className="me-2">
-          123
+          
          </span>
           
       </div>

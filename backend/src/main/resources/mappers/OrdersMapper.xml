@@ -61,9 +61,16 @@
 
   <insert id="insertOrdersItem" parameterType="com.farmday.orders.OrdersItemDTO">
     insert into orders_Item
-      (order_item_id,order_id,product_id,product_name,price_at_order,quantity,line_total_amount)
+      (order_item_id,order_id,product_id,product_name,group_deal_id,price_at_order,quantity,line_total_amount)
     values
-      (ORDERS_ITEM_SEQ.NEXTVAL,#{order_id},#{product_id},#{product_name},#{price_at_order},#{quantity},#{line_total_amount})
+      (ORDERS_ITEM_SEQ.NEXTVAL,
+      #{order_id},
+      NULLIF(#{product_id}, 0),
+      #{product_name},
+      NULLIF(#{group_deal_id}, 0),
+      #{price_at_order},
+      #{quantity},
+      #{line_total_amount})
   </insert>
 
   <insert id="insertOrdersItemIntoDelivery" parameterType="com.farmday.orders.OrdersItemDTO">
@@ -80,29 +87,64 @@
   </update>
 
 
+  <select id="findProductStockQty" parameterType="int" resultType="int">
+    select stock_qty from product_detail where product_id=#{product_id}
+  </select>
+
+  <update id="updateProductAmount" parameterType="java.util.Map">
+    update product_detail set
+      stock_qty=stock_qty+#{stock_qty}
+    <![CDATA[
+      where product_id=#{product_id} and stock_qty+#{stock_qty}>=0
+    ]]>
+  </update>
+
 
 
 
   <select id="findAllOrdersByUserId" parameterType="String" resultType="com.farmday.orders.OrdersDTO">
-    select * from orders where user_id=#{user_id} order by order_id desc
+    select * from orders where user_id=#{user_id} and order_type='normal' order by order_id desc
+  </select>
+
+  <select id="findAllGroupDealOrdersByUserId" parameterType="String" resultType="com.farmday.orders.OrdersDTO">
+    select * from orders where user_id=#{user_id} and order_type='groupdeal' order by order_id desc
   </select>
 
   <select id="findOrdersItemByOrderId" parameterType="int" resultType="com.farmday.orders.OrdersItemDTO">
     select 
       o.*, 
-      p.main_image, 
+      p.main_image,
       pd.grade,pd.unit_name,pd.origin_region,
       d.delivery_status,
-      s.store_name
+      s.store_name,
+      od.toss_orderid
     from 
-      orders_item o, product p, product_detail pd, delivery d, store s
+      orders_item o, product p, product_detail pd, delivery d, store s, orders od
     where 
       o.order_id = #{order_id}
       and o.product_id = p.product_id
       and o.product_id = pd.product_id
       and p.producer_id = s.producer_id
+      and o.order_id = od.order_id
       and o.order_item_id = d.order_item_id(+)
     order by o.line_total_amount desc
+  </select>
+
+
+  <select id="findOrderItemIdOfGroupDealOrder" parameterType="int" resultType="int">
+    select order_item_id from orders_item where order_id=#{order_id}
+  </select>
+
+
+
+  <select id="findGroupDealItemByOrderId" parameterType="int" resultType="com.farmday.orders.OrdersItemDTO">
+    select 
+      oi.*, d.delivery_status 
+    from 
+      orders_item oi, delivery d
+    where 
+      oi.order_id=#{order_id}
+      and oi.order_item_id=d.order_item_id(+)
   </select>
 
 
@@ -141,6 +183,18 @@
       order_total_amount=order_total_amount+#{shipping_fee}
     where order_id=#{order_id}
   </update>
+
+
+  <select id="findOrdersImgListByOrderId" parameterType="int" resultType="com.farmday.orders.OrdersImgListDTO">
+    select 
+      p.product_id, p.main_image
+    from 
+      orders_item oi, product p
+    where 
+      oi.order_id=#{order_id}
+      and oi.product_id=p.product_id 
+    order by oi.order_item_id
+  </select>
 
   <!-- 민아 - 리뷰 작성 시 적립금 -->
   <select id="findUserNoByOrderItemId" resultType="long">

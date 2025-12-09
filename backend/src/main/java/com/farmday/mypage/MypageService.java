@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.farmday.groupdeal.dto.GroupDealDetailResponseDto;
 import com.farmday.orders.DeliveryDTO;
 import com.farmday.review.dto.ReviewDTO;
 
@@ -14,6 +15,9 @@ public class MypageService {
 
     @Autowired
     MypageMapper mypageMapper;
+
+    @Autowired
+    com.farmday.groupdeal.mapper.GroupDealMapper groupDealMapper;
     
     public String findProductMainImage(int product_id) throws Exception {
         return mypageMapper.findProductMainImage(product_id);
@@ -50,6 +54,12 @@ public class MypageService {
         return mypageMapper.findDeliveryInfo(order_item_id);
     }
 
+    public DeliveryDTO findGroupDealDeliveryInfo(int order_item_id) throws Exception {
+        return mypageMapper.findGroupDealDeliveryInfo(order_item_id);
+    }
+
+
+
     public int awstestInsert(int product_id, String image_url) throws Exception {
         return mypageMapper.awstestInsert(product_id, image_url);
     }
@@ -57,5 +67,6 @@ public class MypageService {
     public String awstestSelect(int product_id) throws Exception {
         return mypageMapper.awstestSelect(product_id);
     }
+
 
 }

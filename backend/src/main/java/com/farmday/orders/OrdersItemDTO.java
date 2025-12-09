@@ -8,7 +8,7 @@ public class OrdersItemDTO {
     private int order_id;
     private int product_id;
     private String product_name;
-    private int discount_amount;
+    private int group_deal_id;
     private int price_at_order;
     private int quantity;
     private int line_total_amount;
@@ -18,6 +18,7 @@ public class OrdersItemDTO {
 
     // orders join용
     private String user_id;
+    private String toss_orderid;
 
     // product join용
     private String main_image;

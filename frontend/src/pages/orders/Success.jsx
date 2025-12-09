@@ -2,6 +2,7 @@
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { CartContext } from "../../contexts/CartContext";
+import { joinGroupDeal } from "../../api/groupDealApi";
 
 function formatDateTime(iso) {
   if (!iso) return "-";
@@ -133,6 +134,7 @@ export function SuccessPage() {
       used_points: Number(c1.used_points ?? 0),
       order_total_amount: Number(c1.order_total_amount ?? amount),
       subtotal: Number(c1.subtotal ?? 0),
+      couponId: Number(c1.couponId ?? 0),
 
       receiver_name: c2.receiver_name ?? "",
       receiver_phone: c2.receiver_phone ?? "",
@@ -144,6 +146,7 @@ export function SuccessPage() {
       orderName: payment?.orderName ?? null,
       method: payment?.method ?? null,
       provider: payment?.card?.company ?? payment?.easyPay?.provider ?? null,
+      
     };
 
     // ⚠️ 서버에서 재계산/검증하는 것이 안전합니다(클라이언트 값 신뢰 금지).

@@ -6,7 +6,6 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import com.farmday.orders.DeliveryDTO;
-import com.farmday.review.dto.ReviewDTO;
 
 
 @Mapper
@@ -34,7 +33,7 @@ public interface MypageMapper {
 
 		public DeliveryDTO findDeliveryInfo(int order_item_id) throws Exception;
 
-
+		public DeliveryDTO findGroupDealDeliveryInfo(int order_item_id) throws Exception;
 
 		public int awstestInsert(
 			@Param("product_id") int product_id, 

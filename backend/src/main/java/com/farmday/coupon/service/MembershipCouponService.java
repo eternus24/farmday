@@ -2,6 +2,7 @@ package com.farmday.coupon.service;
 
 import java.util.List;
 
+import com.farmday.coupon.domain.Coupon;
 import com.farmday.coupon.dto.MyCouponResponse;
 
 public interface MembershipCouponService {
@@ -16,5 +17,10 @@ public interface MembershipCouponService {
     void issueMonthlyGradeCoupons();
 
     List<MyCouponResponse> getMyCoupons(Long userNo);
+
+    //==========================yh=========================
+    void insertCoupon(Coupon coupon);
+    int existsWinterEventCoupon(Long userNo);
+    int deleteUsedCoupon(int user_no, int coupon_id);
     
 }

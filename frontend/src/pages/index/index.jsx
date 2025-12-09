@@ -7,10 +7,23 @@ import PriceTicker from "../../components/price/PriceTicker";
 import HomePriceSpikeSection from "../../components/price/HomePriceSpikeSection";
 import ShopProductCard from "../../components/shop/ShopProductCard";
 import { getGroupDealList } from "../../api/groupDealApi";
+import { shouldShowMainPopup } from "../popup/popup";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 export default function Index() {
+    useEffect(() => {
+    document.title = "Fruitables - Vegetable Website Template";
+    if (shouldShowMainPopup()) {
+      const popupUrl = `${window.location.origin}/main-popup`;
+      window.open(
+        popupUrl,
+        "mainNotice",
+        "width=450,height=480,left=200,top=100,menubar=no,toolbar=no,location=no,status=no,resizable=no,scrollbars=yes"
+      );
+    }
+  }, []);
+
   useEffect(() => {
     document.title = "FarmDay - 산지직송 농산물";
   }, []);

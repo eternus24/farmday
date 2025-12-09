@@ -2,27 +2,20 @@ import { Link, NavLink } from "react-router-dom";
 import MypageProfile from "./MypageProfile";
 
 
-export default function MypageLeftSideBar({user_name,overview,moneyKRW,userInfo,showContent,setShowContent,myReview,setMyReview,getMyReview,openContent}) {
+export default function MypageLeftSideBar({user_name,overview,moneyKRW,userInfo,showContent,setShowContent,myReview,setMyReview,getMyReview,openContent,couponAmount}) {
 
   return (
     <aside className="col-lg-4">
 
       {/* 프로필/요약 카드 */}
       <MypageProfile
-        user_name={user_name} overview={overview} moneyKRW={moneyKRW} userInfo={userInfo}
+        user_name={user_name} overview={overview} moneyKRW={moneyKRW} userInfo={userInfo} couponAmount={couponAmount} openContent={openContent}
       />
 
       {/* 메뉴 */}
       <nav className="border rounded-3 bg-white p-3">
         <div className="mb-3">
-          <div className="fw-semibold mb-2 link-main" onClick={() => openContent('orderList')}>
-            <img
-                src="https://api.iconify.design/emojione:package.svg?color=%23888888"
-                className="menu-img"
-            />
-            주문내역
-          </div>
-
+          
           <NavLink to="/cart">
             <div className="fw-semibold mb-2 link-main">
               <img
@@ -41,7 +34,7 @@ export default function MypageLeftSideBar({user_name,overview,moneyKRW,userInfo,
             찜한 상품
           </div>
 
-          <div className="fw-semibold mb-2 link-main">
+          <div className="fw-semibold mb-2 link-main" onClick={() => openContent("myInfo")}>
             <img
                 src="https://api.iconify.design/emojione:unlocked.svg?color=%23888888"
                 className="menu-img"
@@ -56,8 +49,13 @@ export default function MypageLeftSideBar({user_name,overview,moneyKRW,userInfo,
           <div className="fw-semibold mb-2">쇼핑</div>
           <ul className="list-unstyled ms-1 small">
             <li className="mb-2">
-                <div className="link-secondary">
-                결제수단 · 페이
+                <div className="link-secondary" onClick={() => openContent('orderList')}>
+                  나의 주문 내역
+                </div>
+            </li>
+            <li className="mb-2">
+                <div className="link-secondary" onClick={() => openContent('groupDeal')}>
+                  공동구매 내역
                 </div>
             </li>
             <li className="mb-2">
@@ -70,22 +68,7 @@ export default function MypageLeftSideBar({user_name,overview,moneyKRW,userInfo,
                   상품 후기
                 </div>
             </li>
-            <li className="mb-2">
-                <Link
-                className="link-secondary"
-                to="/mypage/gifts"
-                >
-                  선물 내역
-                </Link>
-            </li>
-            <li className="mb-2">
-                <Link
-                className="link-secondary"
-                to="/mypage/support"
-                >
-                  상담 문의
-                </Link>
-            </li>
+            
           </ul>
         </div>
 
@@ -93,36 +76,9 @@ export default function MypageLeftSideBar({user_name,overview,moneyKRW,userInfo,
           <div className="fw-semibold mb-2">혜택</div>
           <ul className="list-unstyled ms-1 small">
             <li className="mb-2">
-              <li className="mb-2 link-secondary" onClick={() => openContent('membership')} style={{cursor: 'pointer'}}>
-              멤버십 및 등급
-              </li>
-            </li>
-          </ul>
-        </div>
-
-        <div className="mb-3">
-          <div className="fw-semibold mb-2">내 정보관리</div>
-          <ul className="list-unstyled ms-1 small">
-            <li className="mb-2">
-                <Link
-                className="link-secondary"
-                to="/mypage/addresses"
-                >
-                배송지 관리
-                </Link>
-            </li>
-            <li className="mb-2">
-            <li className="mb-2 link-secondary" onClick={() => openContent("myInfo")} style={{cursor: 'pointer'}}>
-                내 정보 수정
-            </li>
-            </li>
-            <li className="mb-2">
-                <Link
-                className="link-secondary"
-                to="/mypage/vip"
-                >
-                VIP 예상 등급
-                </Link>
+              <div className="link-secondary" onClick={() => openContent('membership')} style={{cursor: 'pointer'}}>
+                멤버십 및 등급
+              </div>
             </li>
           </ul>
         </div>
@@ -130,22 +86,14 @@ export default function MypageLeftSideBar({user_name,overview,moneyKRW,userInfo,
         <div>
           <div className="fw-semibold mb-2">서비스 안내</div>
           <ul className="list-unstyled ms-1 small">
-            <li className="mb-2">
-              <Link
-              className="link-secondary"
-              to="/help/purplebox"
-              >
-              퍼플박스
-              </Link>
-            </li>
-            <li className="mb-2">
-              <Link
-              className="link-secondary"
-              to="/help/vip"
-              >
-              VIP 안내
-              </Link>
-            </li>
+            <NavLink to="/help">
+              <li className="mb-2">
+                <div className="mb-2 link-secondary" style={{cursor: 'pointer'}}>
+                    고객센터
+                </div>
+              </li>
+            </NavLink>
+            
           </ul>
         </div>
       </nav>

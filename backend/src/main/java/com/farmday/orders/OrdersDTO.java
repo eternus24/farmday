@@ -1,5 +1,7 @@
 package com.farmday.orders;
 
+import java.util.List;
+
 import lombok.Data;
 
 @Data
@@ -32,4 +34,8 @@ public class OrdersDTO {
     private String thumbnail_name;
     private String thumbnail_img;
     private int thumbnail_id;
+
+    private List<OrdersImgListDTO> orders_img_list;
+
+    private int couponId;
 }

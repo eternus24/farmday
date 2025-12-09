@@ -27,5 +27,4 @@ public interface CartMapper {
 
     boolean deleteCart(int cart_id) throws Exception;
 
-
 }

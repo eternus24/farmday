@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.farmday.groupdeal.dto.GroupDealDetailResponseDto;
 import com.farmday.orders.DeliveryDTO;
 
 import org.springframework.web.bind.annotation.PostMapping;
@@ -79,7 +80,10 @@ public class MypageController {
         return mypageService.findDeliveryInfo(order_item_id);
     }
 
-
+    @GetMapping("/mypage/findGroupDealDeliveryInfo")
+    public DeliveryDTO findGroupDealDeliveryInfo(@RequestParam("order_item_id") int order_item_id) throws Exception {
+        return mypageService.findGroupDealDeliveryInfo(order_item_id);
+    }
 
 
 

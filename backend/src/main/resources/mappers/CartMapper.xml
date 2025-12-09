@@ -12,11 +12,15 @@
     select 
       c.cart_id,c.user_id,c.product_id,c.quantity,c.created_date,
       p.producer_id,p.base_category_id,p.name product_name,p.main_image,p.summary,p.status,p.created_date product_created_date,p.updated_date product_updated_date,
-      d.detail_id,d.grade,d.unit_name,d.price,d.stock_qty,d.origin_region,d.harvest_date,d.expire_date,d.detail_desc
+      d.detail_id,d.grade,d.unit_name,d.price,d.stock_qty,d.origin_region,d.harvest_date,d.expire_date,d.detail_desc,
+      s.store_name
     from 
-      cart c, product p, product_detail d 
+      cart c, product p, product_detail d, store s
     where 
-      user_id=#{user_id} and c.product_id=p.product_id and c.product_id=d.product_id
+      user_id=#{user_id} 
+      and c.product_id=p.product_id 
+      and c.product_id=d.product_id
+      and p.producer_id=s.producer_id
     order by created_date desc
   </select>
 

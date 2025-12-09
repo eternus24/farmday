@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 
-export default function MypageEachOrdersItem({item,moneyKRW,handleOpenCancelModal,confirmOrder,refundRequest,handleOpenDeliveryModal}) {
+export default function MypageEachOrdersItem({item,moneyKRW,handleOpenCancelModal,confirmOrder,refundRequest,handleOpenDeliveryModal,handleOpenOrderDetail}) {
 
   const navigate = useNavigate()
 
@@ -120,10 +120,10 @@ export default function MypageEachOrdersItem({item,moneyKRW,handleOpenCancelModa
           {(item.order_status === 'E1' || item.order_status === 'E2') && (
             
             <>
-              <div className="order-cancel-btn" style={{display:"flex",float:"left",marginRight:10}} tabIndex={0} onClick={()=>navigate(`/review/write/${item.order_item_id}`,{state:item})}>
+              <div className="order-cancel-btn" style={{display:"flex",float:"left",marginRight:10}} tabIndex={0} onClick={()=>navigate(`/review/write/${item.order_item_id}`)}>
                 리뷰 작성
               </div>
-              <div className="order-cancel-btn" style={{display:"flex",float:"right"}}>
+              <div className="order-cancel-btn" style={{display:"flex",float:"right"}} onClick={() => handleOpenOrderDetail(item)}>
                 구매 상세
               </div>
             </>
@@ -131,10 +131,10 @@ export default function MypageEachOrdersItem({item,moneyKRW,handleOpenCancelModa
           {(item.order_status === 'E3') && (
             
             <>
-              <div className="order-cancel-btn" style={{display:"flex",float:"left",marginRight:10}}>
+              <div className="order-cancel-finished" style={{display:"flex",float:"left",marginRight:10}}>
                 리뷰 작성 완료
               </div>
-              <div className="order-cancel-btn" style={{display:"flex",float:"right"}}>
+              <div className="order-cancel-btn" style={{display:"flex",float:"right"}} onClick={() => handleOpenOrderDetail(item)}>
                 구매 상세
               </div>
             </>

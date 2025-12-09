@@ -1,27 +1,23 @@
-// ==============================================
-// frontend/src/pages/orders/orders.jsx
-// ==============================================
-import React, { useContext, useEffect, useMemo, useState } from "react";
-import { useLocation, Link } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
+import { useLocation, Link, useParams } from "react-router-dom";
 import "../../assets/css/cart.css";
 import { loadTossPayments, ANONYMOUS } from "@tosspayments/tosspayments-sdk";
-import { random123DaysLaterLabelKST } from "./dateCalc";
-import { AuthContext } from "../../contexts/AuthContext";
-import axios from "axios";
+import { random123DaysLaterLabelKST } from "../orders/dateCalc";
 
 function money(n) { return `$${n.toFixed(2)}`; }
 
-export default function Orders() {
+export default function GroupDealOrders() {
+
+  const { groupDealId } = useParams();
+
   const [items, setItems] = useState([]);
   const [status, setStatus] = useState("loading"); // loading | ready | error
   const [paying, setPaying] = useState(false);
-  const { auth } = useContext(AuthContext);
 
-  const [coupon, setCoupon] = useState([]);
   const [userInfo, setUserInfo] = useState([]);
 
   // ⬇️ 추가: 쿠폰/적립금 상태
-  const [selectedCoupon, setSelectedCoupon] = useState("NONE");
+  const [selectedCoupon, setSelectedCoupon] = useState("NONE"); // NONE | 5PCT | 10PCT
   const [usedPoints, setUsedPoints] = useState(0);
   const [pointsInput, setPointsInput] = useState("");
 
@@ -30,50 +26,54 @@ export default function Orders() {
   const user_id = JSON.parse(window.localStorage.getItem('loginUser')).userId;
 
   const location = useLocation();
-  const { shipping: shippingFromState } = location.state || {};
-
-  const token =
-    auth?.accessToken ||
-    auth?.token ||
-    localStorage.getItem("accessToken");
-
-  const userNo = auth.userNo;
+  const { shipping, fromGroupDeal, quantity } = location.state || {};
 
   // cart.jsx의 로딩 방식과 동일: fetch → map/normalize → setItems
   async function reloadCart(signal) {
     setStatus("loading");
     try {
       const res = await fetch(
-        `${API_BASE}/cart/findCartByUserId?user_id=${user_id}`,
+        `${API_BASE}/api/group-deals/${groupDealId}`,
         { credentials: "include", signal, cache: "no-store" }
       );
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
 
-      const mapped = (Array.isArray(data) ? data : [])
-        .map((row, idx) => {
-          const cartId = row?.cart_id;
-          const pid = row?.product_id;
-          if (pid == null) return null;
-          const qtyNum = Number.parseInt(row?.quantity, 10);
-          const qty = Number.isFinite(qtyNum) && qtyNum > 0 ? Math.min(999, qtyNum) : 1;
-          return {
-            _key: cartId != null ? String(cartId) : `row#${idx}`,
-            id: String(pid),
-            name: row.product_name,
-            info: `기본 옵션`,
-            summary: row.summary,
-            qty,
-            grade_and_unit_name: `(${row.grade}) ${row.unit_name}`,
-            price: Number(row?.price ?? 3.99),
-            img: row.main_image,
-            eta: random123DaysLaterLabelKST() + " 도착 예정",
-            store_name: row.store_name,
-          };
-        })
-        .filter(Boolean);
+      if (!data) {                         // ✨ 추가: 데이터 없을 때 처리
+        setItems([]);
+        setStatus("ready");
+        return;
+      }
 
-      setItems(mapped);
+      const row = data;                    // ✨ 추가: 단일 DTO를 row로 사용
+
+      const cartId = row?.groupDealId;     // ✨ 변경: List용 map 제거하고 단일 값 사용
+      const pid = row?.groupDealId;        //    (필요하다면 productId 등으로 교체)
+      if (pid == null) {                   // ✨ 추가: pid 없으면 빈 배열 처리
+        setItems([]);
+        setStatus("ready");
+        return;
+      }
+
+      const qtyNum = Number.parseInt(quantity, 10);  // ✨ 그대로 사용 (state 등에서 온 quantity)
+      const qty = Number.isFinite(qtyNum) && qtyNum > 0 ? Math.min(999, qtyNum) : 1;
+
+      const item = {                       // ✨ 변경: 단일 item 객체 생성
+        _key: cartId != null ? String(cartId) : `row#0`,
+        id: String(pid),
+        name: row.title,
+        info: `기본 옵션`,
+        summary: row.subTitle,
+        qty,
+        // grade_and_unit_name: `(${row.grade}) ${row.unit_name}`,
+        grade_and_unit_name: `(일반) 1개`,
+        price: Number(row?.dealPrice ?? 3.99),
+        img: row.images[0].imageUrl,
+        eta: random123DaysLaterLabelKST() + " 도착 예정",
+        store_name: 'Farmday 공동구매',
+      };
+
+      setItems([item]);                    // ✨ 변경: 단일 DTO를 배열 한 칸으로 넣기
       setStatus("ready");
     } catch (e) {
       if (e.name === "AbortError") return;
@@ -102,40 +102,7 @@ export default function Orders() {
     }
   }
 
-
-  async function getCoupons() {
-    try {
-      const res = await fetch(
-        `${API_BASE}/api/mypage/coupon/my-coupons?userNo=${userNo}`,
-          {
-            method: "GET",
-            credentials: "include",
-            cache: "no-store",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: token.startsWith('Bearer ')
-                ? token
-                : `Bearer ${token}`,
-            },
-          }
-      );
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      console.log("쿠폰 응답:", data);
-
-      setCoupon(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error("쿠폰 조회 실패:", err);
-    }
-
-
-  };
-
-
-
-
   useEffect(() => {
-    getCoupons();
     const ac = new AbortController();
     reloadCart(ac.signal);
     const ac2 = new AbortController();
@@ -148,43 +115,19 @@ export default function Orders() {
     [items]
   );
 
-  const shipping = useMemo(() => {
-    // subtotal 기준 정책
-    const auto = subtotal >= 40000 ? 0 : 3000;
-
-    // 혹시라도 예외 상황 대비 (보수적 안전 처리)
-    return Number.isFinite(auto) ? auto : Number(shippingFromState ?? 0);
-  }, [subtotal, shippingFromState]);
-
   // 보유 적립금
   const availablePoints = useMemo(
     () => Math.max(0, Math.round(Number(userInfo?.points ?? 0))),
     [userInfo]
   );
 
-  // 선택된 쿠폰 객체 찾기
-  const selectedCouponObj = useMemo(() => {
-    if (selectedCoupon === "NONE") return null;
-    return coupon.find((cp) => String(cp.couponId) === String(selectedCoupon)) ?? null;
-  }, [selectedCoupon, coupon]);
-
-  // 할인 계산은 객체 기준으로
+  // 쿠폰 할인금액
   const discountAmount = useMemo(() => {
-    if (!selectedCouponObj) return 0;
-
-    const type = selectedCouponObj.discountType;
-    const value = Number(selectedCouponObj.discountValue ?? 0);
-
-    if (type === "RATE") {
-      const rate = value * 0.01;
-      return Math.floor(subtotal * rate);
-    }
-    if (type === "FIXED") {
-      return value;
-    }
-    return 0;
-  }, [selectedCouponObj, subtotal]);
-
+    const rate =
+      selectedCoupon === "5PCT" ? 0.05 :
+      selectedCoupon === "10PCT" ? 0.10 : 0;
+    return Math.floor(subtotal * rate);
+  }, [selectedCoupon, subtotal]);
 
   // 적립금 적용 전 결제 예정 금액(상한 산정용)
   const payableBeforePoints = useMemo(
@@ -204,7 +147,7 @@ export default function Orders() {
   const rewardBase = Math.floor(subtotal * userInfo.point_rate * 0.01);
   // const [rewardBase, setRewardBase] = useState(Math.floor(subtotal * 0.01));
   const farmpayPoints = Math.floor(subtotal * 0.05);
-  const rewardReview = 0.1*subtotal; // 후기 적립 최대
+  const rewardReview = 1000*items.length; // 후기 적립 최대
   const rewardTotal = rewardBase + rewardReview;
 
   const [delivery_message,setDelivery_message] = useState('')
@@ -247,21 +190,21 @@ export default function Orders() {
 
         metadata: {
           user_id: String(user_id),
-          order_type: "normal",
+          order_type: "groupdeal_"+String(groupDealId)+"_"+String(quantity),
           order_status: "A",
           checkout1: JSON.stringify({
             shipping_fee: String(Number(shipping ?? 0)),
             discount_amount: String(Number(discountAmount)),
             used_points: String(Number(usedPoints)),
             order_total_amount: String(Math.round(total)),
-            subtotal: String(Number(subtotal ?? 0)),
-            couponId: String(selectedCoupon)
+            subtotal: String(Number(subtotal ?? 0))
           }),
           checkout2: JSON.stringify({
             receiver_name: String(userInfo?.name ?? ""),
             receiver_phone: String(userInfo?.phone ?? ""),
             receiver_addr: String(userInfo?.addr ?? ""),
             delivery_message: String(delivery_message ?? ""),
+            // fromGroupDeal: fromGroupDeal
           }),
         },
 
@@ -352,17 +295,20 @@ export default function Orders() {
 
 
 
-
-
-
   return (
+
     <div style={{fontFamily: "'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', Pretendard-Regular, ui-sans-serif, system-ui, -apple-system, 'Segoe UI`, Roboto,  sans-serif"}}>
       <div className="container-fluid page-header py-5" style={{ marginTop: 120 }}>
-        <h1 className="text-center text-white display-6">주문 및 결제</h1>
+        <h1 className="text-center text-white display-6">공동구매 참여</h1>
+        {/* <ol className="breadcrumb justify-content-center mb-0">
+          <li className="breadcrumb-item"><Link to="/">Home</Link></li>
+          <li className="breadcrumb-item"><span>Pages</span></li>
+          <li className="breadcrumb-item active text-white">Orders</li>
+        </ol> */}
       </div>
 
       <div className="container-fluid py-5" style={{backgroundColor:"#ffffff"}}>
-        <div className="container">
+        <div className="container py-5">
           {status === "loading" && <div className="text-center py-5">최신 장바구니 불러오는 중…</div>}
 
           {status !== "loading" && (
@@ -400,28 +346,26 @@ export default function Orders() {
                     <div key={it._key} className="border-bottom pb-3 mb-3">
                       <div className="d-flex">
                         {it.img ? (
-                          <img src={it.img} alt={it.name} className="rounded me-3" style={{width: 100, height: 100, objectFit: "cover"}} />
+                          <img src={it.img} alt={it.title} className="rounded me-3" style={{width: 100, height: 100, objectFit: "cover"}} />
                         ) : (
                           <div className="rounded me-3 bg-white border" style={{width: 100, height: 100}} aria-label={`${it.name} no image`} />
                         )}
                         <div className="flex-grow-1">
+
+                          <div className="fw-semibold">{it.name}</div>
                           <div className="text-muted small">
-                            {it.store_name}
+                            {it.summary}
                           </div>
-                          <div className="fw-semibold" style={{fontWeight:'500',color:'#222'}}>{it.name}</div>
                           
-                          <div className="text-muted small">
-                            {it.grade_and_unit_name}, {moneyKRW(it.price)} / {it.qty}개
-                          </div>
-                          <div className="fw-semibold mt-1" style={{fontWeight:'600',color:'#222'}}>
-                            {moneyKRW(it.price*it.qty)}
-                          </div>
+                          
+                          <div className="text-muted small">{moneyKRW(it.price)} / {it.qty}개</div>
+                          <div className="fw-semibold mt-1">{moneyKRW(it.price*it.qty)}</div>
                         </div>
                       </div>
-                      <div className="text-muted small d-flex align-items-center mt-2">
+                      {/* <div className="text-muted small d-flex align-items-center mt-2">
                         <i className="fa fa-truck me-2" aria-hidden="true" />
                         {it.eta}
-                      </div>
+                      </div> */}
                       {/* <button className="btn btn-sm btn-outline-secondary rounded-pill mt-2">쿠폰 사용</button> */}
                     </div>
                   ))}
@@ -436,15 +380,9 @@ export default function Orders() {
                           value={selectedCoupon}
                           onChange={(e) => setSelectedCoupon(e.target.value)}
                         >
-                          {/* <option value="NONE">쿠폰 선택 안 함</option>
-                          <option value="5PCT">11월 정기 할인쿠폰 5%</option>
-                          <option value="10PCT">신규회원 첫구매 10%</option> */}
                           <option value="NONE">쿠폰 선택 안 함</option>
-                          {coupon.map((cp) => (
-                            <option key={cp.couponId} value={cp.couponId}>
-                              {cp.couponName}
-                            </option>
-                          ))}
+                          <option value="5PCT">11월 정기 할인쿠폰 5%</option>
+                          <option value="10PCT">신규회원 첫구매 10%</option>
                         </select>
                       </div>
                       <div className="col-auto text-muted small">할인 금액</div>
@@ -579,5 +517,9 @@ export default function Orders() {
         </div>
       </div>
     </div>
+
+
+
   );
+
 }

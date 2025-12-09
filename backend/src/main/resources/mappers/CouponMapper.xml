@@ -149,4 +149,19 @@
         
     </select>
 
+    <!-- =====================yh=================== -->
+    <select id="existsWinterEventCoupon"
+            parameterType="long"
+            resultType="int">
+        SELECT COUNT(*)
+        FROM COUPON
+        WHERE user_no = #{userNo}
+          AND coupon_type_code = 'WINTER_EVENT'
+    </select>
+
+    <delete id="deleteUsedCoupon" parameterType="java.util.Map">
+        delete coupon
+        where user_no=#{user_no} and coupon_id=#{coupon_id}
+    </delete>
+
 </mapper>

@@ -1,6 +1,7 @@
 import React,{useContext, useState} from 'react';
 import '../../assets/css/shopDetail.css';
 import { CartContext } from '../../contexts/CartContext';
+import { useNavigate } from 'react-router-dom';
 
 const ShopOption = ({product}) => {
 
@@ -61,6 +62,25 @@ const ShopOption = ({product}) => {
     }
     // ===========================================================
 
+    const navigate = useNavigate();
+
+    async function directPurchase(product_id) {
+        const cartUploadData = [{
+            product_id: product_id,
+            quantity: qty
+        }]
+        const res = await fetch(`${API_BASE}/cart/insertCart/${user_id}`, {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(cartUploadData),
+        });
+        await findCartAmount();
+
+        navigate("/orders", { state: { ok: true, updated: items.length, total, shipping: 0}, replace: false });
+
+    }
+
     return (
         <div className='detail-option-wrap'>
             <h4 className='detail-option-title'>상품 선택</h4>
@@ -87,7 +107,7 @@ const ShopOption = ({product}) => {
                 </div>
 
                 <div className='detail-btn-wrap'>
-                    <button className='btn-buy'>구매하기</button>
+                    <button className='btn-buy' onClick={() => directPurchase(product.productId)}>구매하기</button>
                     <button className='btn-price' onClick={() => insertCart(product.productId,product.name)}>장바구니</button>
                 </div>
             

@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { Link, NavLink } from "react-router-dom";
-import MypageEachOrders from "./MypageEachOrders";
+import MypageEachGroupDeal from "./MypageEachGroupDeal";
 
 const PAGE_SIZE = 5;
 const PAGE_WINDOW = 5;
 
-export default function MypageOrderList({months,setMonths,searchInput,setSearchInput,setQuery,status,userOrders,getUserOrders,emptyText,formatKoreanDateTime,handleToggleOrderDetails,openOrderId,moneyKRW,handleOpenCancelModal,ordersItem,confirmOrder,refundRequest,handleOpenDeliveryModal,handleOpenOrderDetail}) {
+export default function MypageGroupDeal({months,setMonths,searchInput,setSearchInput,setQuery,status,userOrders,getUserOrders,emptyText,formatKoreanDateTime,handleToggleOrderDetails,openOrderId,moneyKRW,handleOpenCancelModal,ordersItem,confirmOrder,refundRequest,handleOpenGroupDealDeliveryModal,API_BASE}) {
 
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -37,7 +37,7 @@ export default function MypageOrderList({months,setMonths,searchInput,setSearchI
       <div className="border rounded-3 bg-white p-4">
         {/* 타이틀 + 필터 */}
         <div className="d-flex flex-column flex-md-row gap-2 justify-content-between align-items-md-center">
-          <h5 className="mb-0">주문 내역</h5>
+          <h5 className="mb-0">공동구매 참여 내역</h5>
           <div className="d-flex gap-2">
             <select
               className="form-select form-select-sm"
@@ -128,8 +128,8 @@ export default function MypageOrderList({months,setMonths,searchInput,setSearchI
           {userOrders.length > 0 && (
             <div className="vstack gap-3">
               {pagedOrders.map((od) => (
-                <MypageEachOrders
-                  od={od} formatKoreanDateTime={formatKoreanDateTime} moneyKRW={moneyKRW} handleToggleOrderDetails={handleToggleOrderDetails} openOrderId={openOrderId} ordersItem={ordersItem} handleOpenCancelModal={handleOpenCancelModal} confirmOrder={confirmOrder} refundRequest={refundRequest} handleOpenDeliveryModal={handleOpenDeliveryModal} handleOpenOrderDetail={handleOpenOrderDetail}
+                <MypageEachGroupDeal
+                  od={od} formatKoreanDateTime={formatKoreanDateTime} moneyKRW={moneyKRW} handleToggleOrderDetails={handleToggleOrderDetails} openOrderId={openOrderId} ordersItem={ordersItem} handleOpenCancelModal={handleOpenCancelModal} confirmOrder={confirmOrder} refundRequest={refundRequest} handleOpenGroupDealDeliveryModal={handleOpenGroupDealDeliveryModal} API_BASE={API_BASE}
                 />
               ))}
             </div>

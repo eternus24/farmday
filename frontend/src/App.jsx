@@ -58,7 +58,6 @@ import ScrollToTop from "./components/common/ScrollToTop";
 import OrderDelivery from "./pages/mypage/OrderDelivery";
 import ReviewWrite from "./components/review/ReviewWrite";
 
-import AwsTest from "./pages/mypage/AwsTest";
 import FindId from "./pages/login/FindId";
 import PasswordResetRequest from "./pages/login/PasswordResetRequest";
 import PasswordResetForm from "./pages/login/PasswordResetForm";
@@ -73,6 +72,8 @@ import StoreInfoPage from "./pages/mystore/StoreInfoPage";
 import ProducerGroupDealManagePage from "./pages/producer/ProducerGroupDealManagePage";
 import SellerDashboard from "./pages/producer/SellerDashboard";
 import ProducerListPage from "./pages/producer/ProducerListPage";
+import MainPopup from "./pages/popup/MainPopup";
+import GroupDealOrders from "./pages/groupdeal/GroupDealOrders";
 
 // JWT 파싱 헬퍼
 function parseJwt(token) {
@@ -232,6 +233,10 @@ function App() {
                 path="/groupdeal/:groupDealId/manage"
                 element={<GroupDealManagePage />}
               />
+              <Route
+                path="/group-deals/orders/:groupDealId"
+                element={<GroupDealOrders/>}
+              />
 
               <Route path="/price" element={<PricePage />} />
 
@@ -315,7 +320,7 @@ function App() {
                 }
               />
             </Route>
-            <Route path="/awstest" element={<AwsTest/>}/>
+            <Route path="/main-popup" element={<MainPopup />} />
           </Routes>
         </BrowserRouter>
       </CartContext.Provider>

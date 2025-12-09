@@ -148,5 +148,21 @@ public class MembershipCouponServiceImpl implements MembershipCouponService {
     public List<MyCouponResponse> getMyCoupons(Long userNo) {
         return couponMapper.findCouponsByUserNo(userNo);
     }
+
+    //=========================yh===============================
+    @Override
+    public void insertCoupon(Coupon coupon) {
+        couponMapper.insertCoupon(coupon);
+    }
+
+    @Override
+    public int existsWinterEventCoupon(Long userNo) {
+        return couponMapper.existsWinterEventCoupon(userNo);
+    }
+
+    @Override
+    public int deleteUsedCoupon(int user_no, int coupon_id) {
+        return couponMapper.deleteUsedCoupon(user_no,coupon_id);
+    }
     
 }

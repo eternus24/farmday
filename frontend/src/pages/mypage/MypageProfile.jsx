@@ -1,14 +1,14 @@
-export default function MypageProfile({user_name,overview,moneyKRW,userInfo}) {
+export default function MypageProfile({user_name,overview,moneyKRW,userInfo,couponAmount,openContent}) {
 
   return (
     <div className="border rounded-3 bg-white p-3 mb-3">
       <div className="d-flex justify-content-between align-items-center greeting-box-1">
         <div className="fw-semibold">
-          반가워요!!{" "}
+          반가워요!!{" "} 
           <span className="text-primary">{user_name}</span>님
         </div>
         <span className="greeting-badge">
-        {overview.grade || "LV.1"}
+          {userInfo.user_grade || "LV.1"} 💎
         </span>
       </div>
 
@@ -24,8 +24,8 @@ export default function MypageProfile({user_name,overview,moneyKRW,userInfo}) {
 
         <div className="greeting-box-2-2 d-flex justify-content-between align-items-center">
           <div>보유 쿠폰</div>
-          <span className="greeting-badge-2">
-              0 개 <a style={{ color: "gray" }}>&gt;</a>
+          <span className="greeting-badge-2" onClick={() => openContent('membership')} style={{cursor:'pointer'}}>
+              {couponAmount} 개 <a style={{ color: "gray" }}>&gt;</a>
           </span>
         </div>
       </div>

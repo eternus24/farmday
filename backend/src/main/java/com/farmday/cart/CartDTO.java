@@ -37,13 +37,5 @@ public class CartDTO {
 
     //Store (join용)
     private String store_name;
-
-    //그룹딜
-    private Long groupDealId;
-
-    // 필요하면 편의 메서드
-    public boolean isGroupDeal() {
-        return groupDealId != null;
-    }
     
 }
