@@ -39,5 +39,4 @@ public interface ReviewMapper {
     //숫자
     public int countLike(Long reviewId);
 
-
 }

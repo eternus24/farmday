@@ -134,9 +134,9 @@ export default function ReviewWrite() {
           </div>
 
           {/* 별점 */}
-          <div className="review-rating-box">
+          <div className="review-rating-wrap">
             <label className="review-label">별점 선택</label>
-            <div className="star-container">
+            <div className="review-star-center">
               {[1, 2, 3, 4, 5].map(star => (
                 <span key={star} className="star-icon" onClick={() => setRating(star)}
                   onMouseEnter={() => setHover(star)} onMouseLeave={() => setHover(0)}
