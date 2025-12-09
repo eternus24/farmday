@@ -20,49 +20,86 @@ function RankRow({ index, item, type }) {
     line = "오늘은 가격이 올라서, 급하지 않다면 조금 기다려도 좋아요.";
   }
 
+  // 전체 이름(툴팁용)
+  const fullName =
+    item.productName +
+    (item.unit ? ` (${item.unit})` : "");
+
   return (
     <div
       style={{
-        padding: "7px 0",
-        borderBottom: "1px solid rgba(0,0,0,0.04)",
+        padding: "8px 0",
+        borderBottom: "1px solid rgba(148,163,184,0.18)",
         display: "flex",
         flexDirection: "column",
-        gap: 2,
+        gap: 4,
+        minHeight: 75,
+        justifyContent: "space-between",
       }}
     >
-      <div>
+      {/* 🔥 윗줄: 순위 뱃지 + (이름 …) + 퍼센트 */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 4,
+        }}
+      >
+        {/* 순위 동그라미 */}
         <span
           style={{
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
-            width: 22,
-            height: 22,
+            width: 20,
+            height: 20,
             borderRadius: "999px",
-            background: index === 0 ? "#ff8c1a" : "rgba(255,140,26,0.12)",
+            background: index === 0 ? "#ff8c1a" : "rgba(255,140,26,0.06)",
             color: index === 0 ? "#fff" : "#ff8c1a",
-            fontSize: 12,
+            fontSize: 11,
             fontWeight: 700,
-            marginRight: 8,
+            marginRight: 4,
+            flexShrink: 0,
           }}
         >
           {index + 1}
         </span>
-        <b>{item.productName}</b>{" "}
-        {item.unit && (
-          <span style={{ fontSize: 12, opacity: 0.8 }}>({item.unit})</span>
-        )}
+
+        {/* 🔥 이름+단위 영역: 여기서 ... 처리 */}
+        <span
+          title={fullName} // 마우스 올리면 전체 이름 보이게
+          style={{
+            flex: 1,
+            minWidth: 0,
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+        >
+          <b>{item.productName}</b>
+          {item.unit && (
+            <span style={{ fontSize: 12, opacity: 0.8 }}>
+              {" "}
+              ({item.unit})
+            </span>
+          )}
+        </span>
+
+        {/* 퍼센트 */}
         <span
           style={{
             fontSize: 12,
-            marginLeft: 6,
-            color: type === "down" ? "#2db46b" : "#ff8c1a",
+            marginLeft: 4,
+            color: type === "down" ? "#16a34a" : "#f97316",
+            flexShrink: 0,
           }}
         >
           {type === "down" ? "-" : "+"}
           {absRate}%
         </span>
       </div>
+
+      {/* 설명 문장 */}
       <div style={{ fontSize: 12, opacity: 0.85 }}>{line}</div>
     </div>
   );
@@ -71,7 +108,7 @@ function RankRow({ index, item, type }) {
 export default function HomePriceSpikeSection({
   notices = [],
   loadingNotices = false,
-  onNoticeClick, // 🔥 부모에서 내려주는 콜백
+  onNoticeClick,
 }) {
   const [summary, setSummary] = useState(null);
   const [error, setError] = useState(null);
@@ -104,7 +141,6 @@ export default function HomePriceSpikeSection({
   const fallingRank = falling.slice(0, 3);
   const risingRank = rising.slice(0, 3);
 
-  // 공지 상단 박스에서 보여줄 개수 (예: 3개만)
   const topNotices = (notices || []).slice(0, 3);
 
   if (error) return null;
@@ -112,40 +148,62 @@ export default function HomePriceSpikeSection({
   return (
     <div
       className="container"
-      style={{ marginTop: 16, marginBottom: 24, maxWidth: 1120 }}
+      style={{
+        marginTop: 24,
+        marginBottom: 16,
+        maxWidth: 1120,
+        borderTop: "1px solid #e5e7eb", // 섹션 위에만 라인
+        borderBottom: "1px solid #d1d5db",   // 🔥 아래 라인 추가
+        paddingTop: 16,
+      }}
     >
-      {/* 🔸 여기서부터 카드 2개를 좌우로 배치 */}
+      {/* 🔸 카드 느낌 줄이고, 그냥 2컬럼 섹션처럼 */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "minmax(0, 0.95fr) minmax(0, 1.25fr)",
-          gap: 20,
+          gridTemplateColumns: "minmax(0, 0.7fr) minmax(0, 1.3fr)",
+          columnGap: 40,
         }}
       >
-        {/* ───────── 왼쪽: 공지사항 카드 ───────── */}
+        {/* ───────── 왼쪽: 공지사항 영역 ───────── */}
         <div
           style={{
-            borderRadius: 16,
-            background: "#ffffff",
-            padding: "16px 18px 14px",
+            paddingRight: 20,
+            borderRight: "1px solid rgba(148,163,184,0.25)", // 가운데만 살짝
           }}
         >
           <div
             style={{
-              fontSize: 16,
-              fontWeight: 700,
-              marginBottom: 8,
               display: "flex",
-              alignItems: "center",
-              gap: 8,
+              alignItems: "baseline",
+              justifyContent: "space-between",
+              marginBottom: 6,
             }}
           >
-            <span role="img" aria-label="notice">
-              📢
-            </span>
-            <span>공지사항</span>
+            <div
+              style={{
+                fontSize: 15,
+                fontWeight: 700,
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <span role="img" aria-label="notice">
+                📢
+              </span>
+              <span>공지사항</span>
+            </div>
+            {/* 필요하면 더보기 버튼 나중에 추가 가능 */}
           </div>
-          <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 8 }}>
+
+          <div
+            style={{
+              fontSize: 12,
+              opacity: 0.75,
+              marginBottom: 6,
+            }}
+          >
             배송·서비스 관련 안내를 확인해 주세요.
           </div>
 
@@ -171,14 +229,11 @@ export default function HomePriceSpikeSection({
                   key={n.noticeId || n.id}
                   style={{
                     padding: "6px 0",
-                    borderBottom: "1px solid rgba(0,0,0,0.04)",
+                    borderBottom: "1px solid rgba(148,163,184,0.18)",
                     cursor: "pointer",
                   }}
                   onClick={() => {
-                    // 🔥 페이지 이동 대신 부모 콜백 호출
-                    if (onNoticeClick) {
-                      onNoticeClick(n);
-                    }
+                    if (onNoticeClick) onNoticeClick(n);
                   }}
                 >
                   <div
@@ -205,32 +260,25 @@ export default function HomePriceSpikeSection({
           )}
         </div>
 
-        {/* ───────── 오른쪽: 급락·급등 카드 ───────── */}
-        <div
-          style={{
-            borderRadius: 16,
-            background: "#ffffff",
-            padding: "16px 18px 14px",
-          }}
-        >
-          {/* 카드 제목은 여기! 공지와 완전히 분리 */}
+        {/* ───────── 오른쪽: 급락·급등 영역 ───────── */}
+        <div style={{ paddingLeft: 8 }}>
           <div
             style={{
               display: "flex",
               justifyContent: "space-between",
               gap: 8,
               alignItems: "center",
-              marginBottom: 10,
+              marginBottom: 8,
               flexWrap: "wrap",
             }}
           >
             <div
               style={{
-                fontSize: 16,
+                fontSize: 15,
                 fontWeight: 700,
                 display: "flex",
                 alignItems: "center",
-                gap: 8,
+                gap: 6,
               }}
             >
               <span role="img" aria-label="graph">
@@ -242,7 +290,7 @@ export default function HomePriceSpikeSection({
               <div
                 style={{
                   fontSize: 12,
-                  opacity: 0.8,
+                  opacity: 0.75,
                 }}
               >
                 오늘 기준 농산물 시세 요약이에요
@@ -250,26 +298,20 @@ export default function HomePriceSpikeSection({
             )}
           </div>
 
-          {/* 안쪽은 다시 2컬럼: 좌(급락) / 우(급등) */}
           <div
             style={{
               display: "grid",
               gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)",
-              gap: 20,
+              gap: 24,
             }}
           >
             {/* 오늘 갑자기 싸진 품목 */}
-            <div
-              style={{
-                borderRight: "1px solid rgba(0,0,0,0.06)",
-                paddingRight: 12,
-              }}
-            >
+            <div>
               <div
                 style={{
-                  marginBottom: 6,
+                  marginBottom: 4,
                   fontWeight: 600,
-                  fontSize: 14,
+                  fontSize: 13,
                   display: "flex",
                   alignItems: "center",
                   gap: 6,
@@ -304,9 +346,9 @@ export default function HomePriceSpikeSection({
             <div>
               <div
                 style={{
-                  marginBottom: 6,
+                  marginBottom: 4,
                   fontWeight: 600,
-                  fontSize: 14,
+                  fontSize: 13,
                   display: "flex",
                   alignItems: "center",
                   gap: 6,

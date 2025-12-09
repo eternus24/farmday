@@ -396,7 +396,7 @@ export default function Index() {
       {/* ✅ 공동구매 섹션 (1줄 4개 + 슬라이드) */}
       <div className="container py-5">
         <div className="d-flex justify-content-between align-items-center mb-4">
-          <h2 className="mb-0">공동구매</h2>
+          <h2 className="mb-0">산지직송 공동구매</h2>
           <button
             type="button"
             className="btn btn-link p-0"
@@ -543,7 +543,7 @@ export default function Index() {
 
       {/* ✅ 하단 배너 섹션 – 티커처럼 왼쪽으로 흘러가기 */}
       <div className="container py-5">
-        <h4 className="mb-3">FarmDay 추천 배너</h4>
+        <h4 className="mb-3">FarmDay</h4>
 
         {(() => {
           const data = heroBanners && heroBanners.length > 0

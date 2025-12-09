@@ -78,7 +78,7 @@ export default function Footer() {
                 className="fw-bold fs-3 mb-2"
                 style={{ color: "#4a3822" }}
               >
-                070-5217-9477
+                1600-1234
               </div>
 
               <div className="small">
