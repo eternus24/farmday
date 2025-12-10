@@ -2,7 +2,7 @@
 // frontend/src/pages/mypage/mypage.jsx
 // ==============================================
 import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate, useSearchParams } from "react-router-dom";
 import "../../assets/css/mypage.css";
 import MypageLeftSideBar from "./MypageLeftSideBar";
 import MypageOrderList from "./MypageOrderList";
@@ -16,6 +16,7 @@ import MypageWishlist from "./MypageWishlist";
 import Membership from "./Membership";
 import MyInfo from "./MyInfo";
 import MypageGroupDeal from "./MypageGroupDeal";
+import logoImg from "../../assets/img/FarmDay.png";
 import { AuthContext } from "../../contexts/AuthContext";
 
 function moneyKRW(n) {
@@ -71,6 +72,14 @@ export default function MyPage() {
     points: 0,
     couponCount: 0,
   });
+
+   //민아 - 추가
+  const [searchParams] = useSearchParams();
+  const tabFromQuery = searchParams.get("tab");
+
+  useEffect(() => {
+  if (tabFromQuery) setShowContent(tabFromQuery);
+  }, [tabFromQuery]);
   const [orders, setOrders] = useState([]);
   const [months, setMonths] = useState(3);
   const [query, setQuery] = useState("");
@@ -516,7 +525,7 @@ export default function MyPage() {
     const result = await Swal.fire({
       html: `
         <br/>
-        <img src="https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdna%2FVJeVm%2FdJMcac2z6rq%2FAAAAAAAAAAAAAAAAAAAAABaVghGKOGjppn8tBrHbTDYjmeu3vF7fHhu6sJybVq4l%2Fimg.png%3Fcredential%3DyqXZFxpELC7KVnFOS48ylbz2pIh7yKj8%26expires%3D1764514799%26allow_ip%3D%26allow_referer%3D%26signature%3DO3hjGw2TFVTw2gy2EEnkBBm4nQE%253D" width="200px"/>
+        <img src="`+logoImg+`" width="200px"/>
         <br/><br/>
         구매를 확정하시겠습니까?<br/>
         구매 확정 후에는 환불이 불가능합니다.
@@ -564,7 +573,7 @@ export default function MyPage() {
     const result = await Swal.fire({
       html: `
         <br/>
-        <img src="https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdna%2FVJeVm%2FdJMcac2z6rq%2FAAAAAAAAAAAAAAAAAAAAABaVghGKOGjppn8tBrHbTDYjmeu3vF7fHhu6sJybVq4l%2Fimg.png%3Fcredential%3DyqXZFxpELC7KVnFOS48ylbz2pIh7yKj8%26expires%3D1764514799%26allow_ip%3D%26allow_referer%3D%26signature%3DO3hjGw2TFVTw2gy2EEnkBBm4nQE%253D" width="200px"/>
+        <img src="`+logoImg+`" width="200px"/>
         <br/><br/>
         환불 신청하시겠습니까?<br/>
         신청 후 1:1 문의를 통해서 문의해주세요.

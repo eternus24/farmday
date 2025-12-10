@@ -10,11 +10,29 @@ export default function MainPopup() {
 
   const { protocol, hostname } = window.location;
   const API_BASE = `${protocol}//${hostname}:8080`;
-  const user_id = JSON.parse(window.localStorage.getItem('loginUser')).userId;
+  // ✅ loginUser 안전하게 파싱
+  let user_id = null;
+  try {
+    const loginUserStr = window.localStorage.getItem("loginUser");
+
+    if (
+      loginUserStr &&
+      loginUserStr !== "null" &&
+      loginUserStr !== "undefined"
+    ) {
+      const loginUser = JSON.parse(loginUserStr);
+      user_id = loginUser?.userId ?? null;
+    }
+  } catch (e) {
+    console.error("[loginUser 파싱 실패]", e);
+  }
+
+  // ✅ 토큰도 안전하게
   const token =
-      auth?.accessToken ||
-      auth?.token ||
-      localStorage.getItem("accessToken");
+    auth?.accessToken ||
+    auth?.token ||
+    localStorage.getItem("accessToken") ||
+    null;
 
   async function addWinterEventCoupon() {
     try {
@@ -78,7 +96,13 @@ export default function MainPopup() {
       <button
         type="button"
         className="popup-banner-btn"
-        onClick={handleBannerClick}
+        onClick={() => {
+          if (user_id == null) {
+            alert("로그인 후 이용해주세요");
+            return;
+          }
+          handleBannerClick();
+        }}
         title="쿠폰 받으러 가기!!"
       />
       

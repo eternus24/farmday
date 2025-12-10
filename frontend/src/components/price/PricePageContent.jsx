@@ -1,5 +1,6 @@
 // src/components/price/PricePageContent.jsx
 import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { fetchTodaySummary } from "../../api/priceApi";
 import "./price.css";
 import {
@@ -695,6 +696,8 @@ export default function PricePageContent() {
   // eslint-disable-next-line no-unused-vars
   const totalCount = downCount + upCount + flatCount;
 
+  const navigate = useNavigate();
+
   let moodLabel = "보통 날";
   let moodSentence = "전체적으로는 크게 오르지도 내리지도 않은 편이에요.";
   let actionSentence =
@@ -839,6 +842,7 @@ export default function PricePageContent() {
                   <button
                     type="button"
                     className="btn btn-lg"
+                    onClick={() => navigate("/shop")}
                     style={{
                       borderRadius: "999px",
                       padding: "10px 26px",
@@ -849,7 +853,6 @@ export default function PricePageContent() {
                       color: "#ffffff",
                       boxShadow: "0 10px 24px rgba(15,23,42,0.3)",
                     }}
-                    onClick={handleScrollToMain}
                   >
                     오늘 시세 살펴보기
                   </button>
@@ -941,6 +944,7 @@ export default function PricePageContent() {
                 <button
                   type="button"
                   className="btn btn-lg"
+                  onClick={() => navigate("/shop")}
                   style={{
                     borderRadius: "999px",
                     padding: "10px 26px",
@@ -951,7 +955,6 @@ export default function PricePageContent() {
                     color: "#ffffff",
                     boxShadow: "0 10px 24px rgba(15,23,42,0.3)",
                   }}
-                  onClick={handleScrollToMain}
                 >
                   오늘 시세 살펴보기
                 </button>
