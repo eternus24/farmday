@@ -1,6 +1,6 @@
 // 경로: frontend/src/pages/groupdeal/ProducerGroupDealCreatePage.jsx
 import React, { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 import {
   createGroupDeal,
@@ -8,7 +8,8 @@ import {
   uploadGroupDealImage,
   getGroupDealDetail,
 } from "../../api/groupDealApi";
-import { useParams } from "react-router-dom";
+
+import { fetchRecentPriceByName } from "../../api/priceApi";
 
 import "./ProducerGroupDealCreatePage.css";
 
@@ -35,9 +36,9 @@ function toDateTimeString(dateStr) {
   return `${dateStr}T00:00:00`;
 }
 
-/* ---------------------- */
-/* 상품 타입/템플릿 도우미 */
-/* ---------------------- */
+/* ----------------------
+ * 상품 타입/템플릿 도우미
+ * ---------------------- */
 
 const PRODUCT_KEYWORDS = {
   fruit: [
@@ -252,7 +253,7 @@ function ProducerGroupDealCreatePage() {
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  // 최근 시세(데모용)
+  // 최근 시세
   const [recentMarketPrice, setRecentMarketPrice] = useState(null);
 
   const discountRate = calcDiscountRate(form.originPrice, form.dealPrice);
@@ -291,13 +292,23 @@ function ProducerGroupDealCreatePage() {
               detail: data.detail || "",
               originPrice: data.originPrice ? String(data.originPrice) : "",
               dealPrice: data.dealPrice ? String(data.dealPrice) : "",
-              minMemberCount: data.minMemberCount ? String(data.minMemberCount) : "",
-              maxMemberCount: data.maxMemberCount ? String(data.maxMemberCount) : "",
-              perUserLimitQty: data.perUserLimitQty ? String(data.perUserLimitQty) : "",
+              minMemberCount: data.minMemberCount
+                ? String(data.minMemberCount)
+                : "",
+              maxMemberCount: data.maxMemberCount
+                ? String(data.maxMemberCount)
+                : "",
+              perUserLimitQty: data.perUserLimitQty
+                ? String(data.perUserLimitQty)
+                : "",
               startAt: data.startAt ? data.startAt.slice(0, 10) : "",
               endAt: data.endAt ? data.endAt.slice(0, 10) : "",
-              shippingStartDate: data.shippingStartDate ? data.shippingStartDate.slice(0, 10) : "",
-              shippingEndDate: data.shippingEndDate ? data.shippingEndDate.slice(0, 10) : "",
+              shippingStartDate: data.shippingStartDate
+                ? data.shippingStartDate.slice(0, 10)
+                : "",
+              shippingEndDate: data.shippingEndDate
+                ? data.shippingEndDate.slice(0, 10)
+                : "",
               imageUrls: data.images ? data.images.map((img) => img.imageUrl) : [],
             });
 
@@ -385,9 +396,7 @@ function ProducerGroupDealCreatePage() {
       return;
     }
 
-    const startDate = new Date(
-      endDate.getTime() + 1 * 24 * 60 * 60 * 1000
-    );
+    const startDate = new Date(endDate.getTime() + 1 * 24 * 60 * 60 * 1000);
     const shipEnd = new Date(
       startDate.getTime() + (days - 1) * 24 * 60 * 60 * 1000
     );
@@ -447,21 +456,44 @@ function ProducerGroupDealCreatePage() {
     });
   };
 
-  const handleSetRecentMarketPrice = function () {
-    if (!form.dealPrice) {
-      window.alert("먼저 공동구매 가격을 입력해주세요.");
+  // 🔍 최근 시세 불러오기 → 실제 가격 API 사용
+  const handleSetRecentMarketPrice = async function () {
+    if (!productName || productName.trim() === "") {
+      window.alert("먼저 제품명(농산물 이름)을 입력해주세요.");
       return;
     }
-    const deal = Number(form.dealPrice);
-    if (!deal) return;
-    const market = Math.round(deal * 1.15);
-    setRecentMarketPrice(market);
-    setForm(function (prev) {
-      return {
-        ...prev,
-        originPrice: String(market),
-      };
-    });
+
+    try {
+      const card = await fetchRecentPriceByName(productName);
+
+      if (!card) {
+        window.alert(
+          "입력하신 이름으로 오늘 시세를 찾지 못했습니다.\n" +
+            "그래도 공동구매 가격만 입력하셔도 등록은 가능합니다."
+        );
+        return;
+      }
+
+      const market = Number(card.todayPrice) || 0;
+      if (!market) {
+        window.alert(
+          "시세 데이터를 찾았지만 금액 정보가 없습니다.\n" +
+            "잠시 후 다시 시도해 주세요."
+        );
+        return;
+      }
+
+      setRecentMarketPrice(market);
+      setForm(function (prev) {
+        return {
+          ...prev,
+          originPrice: String(market),
+        };
+      });
+    } catch (e) {
+      console.error(e);
+      window.alert("시세를 불러오는 중 오류가 발생했습니다.");
+    }
   };
 
   const validateForm = function () {
@@ -508,9 +540,7 @@ function ProducerGroupDealCreatePage() {
       dealPrice: Number(form.dealPrice),
       discountRate: discountRate != null ? discountRate : null,
       minMemberCount: Number(form.minMemberCount),
-      maxMemberCount: form.maxMemberCount
-        ? Number(form.maxMemberCount)
-        : null,
+      maxMemberCount: form.maxMemberCount ? Number(form.maxMemberCount) : null,
       perUserLimitQty: form.perUserLimitQty
         ? Number(form.perUserLimitQty)
         : null,
@@ -607,730 +637,725 @@ function ProducerGroupDealCreatePage() {
 
   if (loading) {
     return (
-      <div className="producer-groupdeal-page container">
-        <div style={{ padding: "40px", textAlign: "center" }}>
-          <p>공동구매 정보를 불러오는 중...</p>
+      <div className="producer-groupdeal-page">
+        <div className="pg-main-card">
+          <div style={{ padding: "40px", textAlign: "center" }}>
+            <p>공동구매 정보를 불러오는 중...</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="producer-groupdeal-page container">
-      {/* 상단 안내 영역 */}
-      <div className="pg-header">
-        <div>
-          <h2 className="pg-title">
-            {isEditMode ? "공동구매 수정하기" : "공동구매 등록하기"}
-          </h2>
-          <p className="pg-subtitle">
-            사진만 올려 주시고, 가격과 기간만 선택하셔도 등록이 됩니다.{" "}
-            <span className="pg-required-mark">★ 표시</span>된 곳만 꼭
-            채워 주세요.
-          </p>
+    <div className="producer-groupdeal-page">
+      <div className="pg-main-card">
+        {/* 상단 안내 영역 */}
+        <div className="pg-header">
+          <div>
+            <h2 className="pg-title">
+              {isEditMode ? "공동구매 수정하기" : "공동구매 등록하기"}
+            </h2>
+            <p className="pg-subtitle">
+              사진만 올려 주시고, 가격과 기간만 선택하셔도 등록이 됩니다.{" "}
+              <span className="pg-required-mark">★ 표시</span>된 곳만 꼭
+              채워 주세요.
+            </p>
+          </div>
         </div>
-        <div className="pg-steps">
-          <div className="pg-step">1. 사진</div>
-          <div className="pg-step">2. 농산물 정보</div>
-          <div className="pg-step">3. 가격</div>
-          <div className="pg-step">4. 수량</div>
-          <div className="pg-step">5. 기간</div>
-        </div>
-      </div>
 
-      {/* 1. 사진 올리기 */}
-      <section className="pg-section-card">
-        <div className="pg-section-title">
-          <span className="pg-section-badge">1</span>
-          <span>사진 올리기</span>
-        </div>
-        <p className="text-muted mb-2">
-          농장 사진이나 상품 사진을 최소 1장 이상 올려 주세요.
-        </p>
-        <div className="mb-3">
-          <label className="pg-file-label" htmlFor="groupdeal-images">
-            📷 사진 선택하기
-          </label>
-          <input
-            id="groupdeal-images"
-            type="file"
-            multiple
-            accept="image/*"
-            onChange={handleUploadImages}
-            disabled={uploading}
-            className="pg-file-input"
-          />
-        </div>
-        {uploading && (
-          <p className="text-muted pg-uploading-text">
-            사진을 올리는 중입니다. 잠시만 기다려 주세요...
+        {/* 1. 사진 올리기 */}
+        <section className="pg-section-card">
+          <div className="pg-section-title">
+            <span className="pg-section-badge">1</span>
+            <span>사진 올리기</span>
+          </div>
+          <p className="pg-section-sub">
+            농장 사진이나 상품 사진을 최소 1장 이상 올려 주세요.
           </p>
-        )}
+          <div className="pg-section-body">
+            <div className="mb-3">
+              <label className="pg-file-label" htmlFor="groupdeal-images">
+                📷 사진 선택하기
+              </label>
+              <input
+                id="groupdeal-images"
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={handleUploadImages}
+                disabled={uploading}
+                className="pg-file-input"
+              />
+            </div>
+            {uploading && (
+              <p className="pg-uploading-text">
+                사진을 올리는 중입니다. 잠시만 기다려 주세요...
+              </p>
+            )}
 
-        {form.imageUrls && form.imageUrls.length > 0 && (
-          <div className="row g-3">
-            {form.imageUrls.map(function (url, idx) {
-              return (
-                <div className="col-6 col-md-3" key={url + idx}>
-                  <div
-                    className="position-relative pg-image-card"
-                    style={{
-                      border:
-                        idx === 0
-                          ? "2px solid #00c853"
-                          : "1px solid #e5e7eb",
-                    }}
-                  >
-                    <img
-                      src={url}
-                      alt={"이미지" + (idx + 1)}
-                      className="pg-image-thumb"
-                    />
-                    {idx === 0 && (
-                      <span className="badge pg-image-main-badge">
-                        대표
-                      </span>
-                    )}
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-light pg-image-remove-btn"
-                      onClick={function () {
-                        handleRemoveImage(idx);
-                      }}
-                    >
-                      삭제
-                    </button>
+            {form.imageUrls && form.imageUrls.length > 0 && (
+              <div className="pg-image-grid">
+                {form.imageUrls.map(function (url, idx) {
+                  return (
+                    <div className="pg-image-col" key={url + idx}>
+                      <div
+                        className="pg-image-card position-relative"
+                        style={{
+                          border:
+                            idx === 0
+                              ? "2px solid #00c853"
+                              : "1px solid #e5e7eb",
+                        }}
+                      >
+                        <img
+                          src={url}
+                          alt={"이미지" + (idx + 1)}
+                          className="pg-image-thumb"
+                        />
+                        {idx === 0 && (
+                          <span className="badge pg-image-main-badge">
+                            대표
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-light pg-image-remove-btn"
+                          onClick={function () {
+                            handleRemoveImage(idx);
+                          }}
+                        >
+                          삭제
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* 2. 농산물 정보 */}
+        <section className="pg-section-card">
+          <div className="pg-section-title">
+            <span className="pg-section-badge">2</span>
+            <span>농산물 정보</span>
+          </div>
+
+          <div className="pg-section-body">
+            {/* 제품명 */}
+            <div className="mb-4">
+              <label className="pg-label">
+                제품명(농산물 이름){" "}
+                <span className="text-danger fw-bold">★</span>
+              </label>
+              <input
+                type="text"
+                className="pg-input-lg"
+                placeholder="예) 꿀고구마, 샤인머스캣, 햇사과 5kg"
+                value={productName}
+                onChange={function (e) {
+                  var value = e.target.value;
+                  setProductName(value);
+
+                  if (!form.title || form.title.trim() === "") {
+                    handleChange("title", value.trim() + " 공동구매");
+                  }
+                }}
+              />
+              <div className="pg-hint">
+                농산물 이름만 적어 주셔도 제목과 설명에 자동으로 활용됩니다.
+              </div>
+            </div>
+
+            {/* 공동구매 제목 */}
+            <div className="mb-4">
+              <label className="pg-label">
+                공동구매 제목 <span className="text-danger fw-bold">★</span>
+              </label>
+
+              {productName && productName.trim() !== "" && (
+                <div className="pg-suggest-box">
+                  <div className="pg-hint-small">
+                    아래 추천 제목 중 하나를 눌러 자동으로 채우실 수 있어요.
+                  </div>
+                  <div className="pg-suggest-list">
+                    {[
+                      productName + " 공동구매",
+                      "산지직송 " + productName,
+                      "올해 햇 " + productName + " 특가",
+                    ].map(function (txt) {
+                      return (
+                        <button
+                          key={txt}
+                          type="button"
+                          className="pg-suggest-btn"
+                          onClick={function () {
+                            handleChange("title", txt);
+                          }}
+                        >
+                          {txt}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
+              )}
 
-      {/* 2. 농산물 정보 */}
-      <section className="pg-section-card">
-        <div className="pg-section-title">
-          <span className="pg-section-badge">2</span>
-          <span>농산물 정보</span>
-        </div>
+              <input
+                type="text"
+                className="pg-input-lg"
+                value={form.title}
+                onChange={function (e) {
+                  handleChange("title", e.target.value);
+                }}
+              />
+            </div>
 
-        {/* 제품명 */}
-        <div className="mb-4">
-          <label className="pg-label">
-            제품명(농산물 이름) <span className="text-danger fw-bold">★</span>
-          </label>
-          <input
-            type="text"
-            className="pg-input-lg"
-            placeholder="예) 꿀고구마, 샤인머스캣, 햇사과 5kg"
-            value={productName}
-            onChange={function (e) {
-              var value = e.target.value;
-              setProductName(value);
+            {/* 한 줄 소개 */}
+            <div className="mb-3">
+              <label className="pg-label">한 줄 소개</label>
+              <input
+                type="text"
+                className="pg-input"
+                placeholder="예) 달콤한 맛의 농산물을 산지에서 바로 보내드립니다."
+                value={form.subTitle}
+                onChange={function (e) {
+                  handleChange("subTitle", e.target.value);
+                }}
+              />
+            </div>
 
-              if (!form.title || form.title.trim() === "") {
-                handleChange("title", value.trim() + " 공동구매");
-              }
-            }}
-          />
-          <div className="pg-hint">
-            농산물 이름만 적어 주셔도 제목과 설명에 자동으로 활용됩니다.
-          </div>
-        </div>
-
-        {/* 공동구매 제목 */}
-        <div className="mb-4">
-          <label className="pg-label">
-            공동구매 제목 <span className="text-danger fw-bold">★</span>
-          </label>
-
-          {productName && productName.trim() !== "" && (
-            <div className="pg-suggest-box">
-              <div className="pg-hint-small">
-                아래 추천 제목 중 하나를 눌러 자동으로 채우실 수 있어요.
+            {/* 상품 설명 도우미 + 자동 문장 */}
+            <div className="pg-helper-box">
+              <div className="pg-helper-title">
+                ✍️ 문장 만들기 도우미{" "}
+                {productName && productName.trim() !== "" && (
+                  <span className="pg-helper-badge">
+                    {productName} 관련 문장
+                  </span>
+                )}
               </div>
-              <div className="pg-suggest-list">
-                {[
-                  productName + " 공동구매",
-                  "산지직송 " + productName,
-                  "올해 햇 " + productName + " 특가",
-                ].map(function (txt) {
+
+              <div className="pg-tag-row">
+                {descriptionTemplates.map(function (tpl) {
                   return (
                     <button
-                      key={txt}
+                      key={tpl.id + tpl.sentence}
                       type="button"
-                      className="pg-suggest-btn"
+                      className="pg-tag-btn"
                       onClick={function () {
-                        handleChange("title", txt);
+                        appendDetailSentence(tpl.sentence);
                       }}
                     >
-                      {txt}
+                      {tpl.label}
                     </button>
                   );
                 })}
               </div>
+
+              {recentTemplates && recentTemplates.length > 0 && (
+                <div className="pg-helper-sub">
+                  최근에 자주 사용하신 설명 문장도 함께 보여드리고 있어요.
+                </div>
+              )}
             </div>
-          )}
 
-          <input
-            type="text"
-            className="pg-input-lg"
-            value={form.title}
-            onChange={function (e) {
-              handleChange("title", e.target.value);
-            }}
-          />
-        </div>
-
-        {/* 한 줄 소개 */}
-        <div className="mb-3">
-          <label className="pg-label">한 줄 소개</label>
-          <input
-            type="text"
-            className="pg-input"
-            placeholder="예) 달콤한 맛의 농산물을 산지에서 바로 보내드립니다."
-            value={form.subTitle}
-            onChange={function (e) {
-              handleChange("subTitle", e.target.value);
-            }}
-          />
-        </div>
-
-        {/* 상품 설명 도우미 + 자동 문장 */}
-        <div className="pg-helper-box">
-          <div className="pg-helper-title">
-            ✍️ 문장 만들기 도우미{" "}
-            {productName && productName.trim() !== "" && (
-              <span className="pg-helper-badge">
-                {productName} 관련 문장
-              </span>
-            )}
-          </div>
-
-          <div className="pg-tag-row">
-            {descriptionTemplates.map(function (tpl) {
-              return (
+            {/* 설명 입력 + 음성 입력 + 미리보기 */}
+            <div className="mb-2">
+              <div className="pg-detail-header">
+                <label className="pg-label mb-0">상품 설명</label>
                 <button
-                  key={tpl.id + tpl.sentence}
                   type="button"
-                  className="pg-tag-btn"
-                  onClick={function () {
-                    appendDetailSentence(tpl.sentence);
-                  }}
+                  className="pg-voice-btn"
+                  onClick={handleStartVoiceInput}
                 >
-                  {tpl.label}
+                  <span className="pg-voice-btn-icon">🎤</span>
+                  <span>{isListening ? "듣는 중..." : "말해서 설명 쓰기"}</span>
                 </button>
-              );
-            })}
+              </div>
+              {isListening && (
+                <div className="pg-voice-status">
+                  지금 말씀해 주세요. 잠시 후 자동으로 글로 입력됩니다.
+                </div>
+              )}
+            </div>
+
+            <textarea
+              className="pg-textarea"
+              rows={4}
+              placeholder="버튼을 눌러 문장을 넣고, 필요한 부분만 고쳐서 사용하셔도 됩니다. 음성 입력 버튼을 눌러 말로 작성하실 수도 있어요."
+              value={form.detail}
+              onChange={function (e) {
+                handleChange("detail", e.target.value);
+              }}
+            />
+
+            <div className="pg-detail-preview-box">
+              <div className="pg-detail-preview-title">
+                ✨ 이렇게 고객에게 보여집니다
+              </div>
+              <div className="pg-detail-preview-text">
+                {form.detail && form.detail.trim().length > 0
+                  ? form.detail
+                  : "작성하신 설명이 여기에 미리보기로 표시됩니다."}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 3. 가격 설정 */}
+        <section className="pg-section-card">
+          <div className="pg-section-title">
+            <span className="pg-section-badge">3</span>
+            <span>가격 설정</span>
           </div>
 
-          {recentTemplates && recentTemplates.length > 0 && (
-            <div className="pg-helper-sub">
-              최근에 자주 사용하신 설명 문장도 함께 보여드리고 있어요.
-            </div>
-          )}
-        </div>
+          <div className="pg-section-body">
+            <div className="row g-3 mb-3">
+              {/* 공동구매 가격 */}
+              <div className="col-12 col-md-6">
+                <label className="pg-label">
+                  공동구매 가격
+                  <span className="text-danger fw-bold"> ★</span>
+                </label>
+                <div className="pg-price-choice-row mb-2">
+                  {[20000, 25000, 30000].map(function (v) {
+                    return (
+                      <button
+                        key={v}
+                        type="button"
+                        className="pg-price-option"
+                        onClick={function () {
+                          handleNumberChange("dealPrice", String(v));
+                        }}
+                      >
+                        {formatNumber(v)}원
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="input-group">
+                  <input
+                    type="text"
+                    className="form-control form-control-lg pg-input-lg"
+                    placeholder="예) 25000"
+                    value={form.dealPrice}
+                    onChange={function (e) {
+                      handleNumberChange("dealPrice", e.target.value);
+                    }}
+                  />
+                  <span className="input-group-text pg-unit-box">원</span>
+                </div>
+              </div>
 
-        {/* 설명 입력 + 음성 입력 + 미리보기 */}
-        <div className="mb-2">
-          <div className="pg-detail-header">
-            <label className="pg-label mb-0">상품 설명</label>
+              {/* 시세 */}
+              <div className="col-12 col-md-6">
+                <label className="pg-label">원래 판매 가격</label>
+                <div className="pg-price-helper-row mb-2">
+                  <button
+                    type="button"
+                    className="pg-price-helper"
+                    onClick={handleSetRecentMarketPrice}
+                  >
+                    최근 시세 불러오기
+                  </button>
+                </div>
+                <div className="input-group mb-1">
+                  <input
+                    type="text"
+                    className="form-control form-control-lg pg-input-lg"
+                    placeholder="예) 30000"
+                    value={form.originPrice}
+                    onChange={function (e) {
+                      handleNumberChange("originPrice", e.target.value);
+                    }}
+                  />
+                  <span className="input-group-text pg-unit-box">원</span>
+                </div>
+                {recentMarketPrice && (
+                  <div className="pg-hint-small">
+                   시세 : 최근 소매 평균 약{" "}
+                    {formatNumber(recentMarketPrice)}원
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 가격 비교 가이드 */}
+            <div className="pg-guide-box">
+              <div className="pg-guide-title">가격 가이드</div>
+              <div className="pg-guide-text">
+                {form.originPrice &&
+                form.dealPrice &&
+                discountRate != null ? (
+                  <span>
+                    원래 가격{" "}
+                    <strong>{formatNumber(form.originPrice)}원</strong> 대비{" "}
+                    <strong>
+                      약 {Math.abs(discountRate)}%{" "}
+                      {discountRate > 0 ? "할인" : "할증"}
+                    </strong>
+                    으로 판매하시게 됩니다.
+                  </span>
+                ) : (
+                  <span>
+                    시세와 공동구매 가격을 입력하시면 할인율을 한눈에 보실 수
+                    있습니다.
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 4. 수량 설정 */}
+        <section className="pg-section-card">
+          <div className="pg-section-title">
+            <span className="pg-section-badge">4</span>
+            <span>수량 설정</span>
+          </div>
+
+          <div className="pg-section-body">
+            <div className="pg-quantity-grid">
+              {/* 최소 모집 수량 */}
+              <div className="pg-quantity-box">
+                <div className="pg-quantity-title">
+                  최소 모집 수량{" "}
+                  <span className="text-danger fw-bold">★</span>
+                </div>
+                <div className="pg-quick-button-row mb-2">
+                  {[10, 30, 50, 100].map(function (v) {
+                    return (
+                      <button
+                        key={v}
+                        type="button"
+                        className="pg-quick-button"
+                        onClick={function () {
+                          handleQuickMinCount(v);
+                        }}
+                      >
+                        {v}박스
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="input-group">
+                  <input
+                    type="text"
+                    className="form-control form-control-lg pg-input-lg"
+                    placeholder="예) 50"
+                    value={form.minMemberCount}
+                    onChange={function (e) {
+                      handleNumberChange("minMemberCount", e.target.value);
+                    }}
+                  />
+                  <span className="input-group-text pg-unit-box">
+                    박스 이상
+                  </span>
+                </div>
+                <div className="pg-quantity-help">
+                  이 수량 이상 모이면 출하를 진행합니다.
+                </div>
+              </div>
+
+              {/* 최대 수량 */}
+              <div className="pg-quantity-box">
+                <div className="pg-quantity-title">
+                  최대 수량 <span className="text-muted">(선택)</span>
+                </div>
+                <div className="pg-quick-button-row mb-2">
+                  <button
+                    type="button"
+                    className="pg-quick-button"
+                    onClick={function () {
+                      handleNumberChange("maxMemberCount", "");
+                    }}
+                  >
+                    제한 없음
+                  </button>
+                  {["50", "100", "200"].map(function (v) {
+                    return (
+                      <button
+                        key={v}
+                        type="button"
+                        className="pg-quick-button"
+                        onClick={function () {
+                          handleNumberChange("maxMemberCount", v);
+                        }}
+                      >
+                        {v}박스
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="input-group mb-1">
+                  <input
+                    type="text"
+                    className="form-control form-control-lg pg-input-lg"
+                    placeholder="예) 100 (미입력 시 제한 없음)"
+                    value={form.maxMemberCount}
+                    onChange={function (e) {
+                      handleNumberChange("maxMemberCount", e.target.value);
+                    }}
+                  />
+                  <span className="input-group-text pg-unit-box">
+                    박스까지
+                  </span>
+                </div>
+                <div className="pg-quantity-help">
+                  너무 많이 모이면 힘드신 경우에만 입력해 주세요.
+                </div>
+              </div>
+
+              {/* 1인당 제한 수량 */}
+              <div className="pg-quantity-box">
+                <div className="pg-quantity-title">
+                  1인당 제한 수량{" "}
+                  <span className="text-muted">(선택)</span>
+                </div>
+                <div className="pg-quick-button-row mb-2">
+                  <button
+                    type="button"
+                    className="pg-quick-button"
+                    onClick={function () {
+                      handleNumberChange("perUserLimitQty", "");
+                    }}
+                  >
+                    제한 없음
+                  </button>
+                  {["1", "2", "3"].map(function (v) {
+                    return (
+                      <button
+                        key={v}
+                        type="button"
+                        className="pg-quick-button"
+                        onClick={function () {
+                          handleNumberChange("perUserLimitQty", v);
+                        }}
+                      >
+                        {v}박스
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="input-group mb-1">
+                  <input
+                    type="text"
+                    className="form-control form-control-lg pg-input-lg"
+                    placeholder="예) 2 (미입력 시 제한 없음)"
+                    value={form.perUserLimitQty}
+                    onChange={function (e) {
+                      handleNumberChange("perUserLimitQty", e.target.value);
+                    }}
+                  />
+                  <span className="input-group-text pg-unit-box">박스</span>
+                </div>
+                <div className="pg-quantity-help">
+                  한 분이 너무 많이 가져가는 것을 막고 싶을 때 사용합니다.
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 5. 모집 기간과 발송 예정일 */}
+        <section className="pg-section-card">
+          <div className="pg-section-title">
+            <span className="pg-section-badge">5</span>
+            <span>모집 기간과 발송 예정일</span>
+          </div>
+
+          <div className="pg-section-body">
+            <div className="row g-3 mb-3">
+              {/* 모집 기간 */}
+              <div className="col-12 col-md-6">
+                <label className="pg-label">
+                  모집 기간 <span className="text-danger fw-bold">★</span>
+                </label>
+                <div className="pg-quick-button-row mb-2">
+                  <button
+                    type="button"
+                    className="pg-quick-button"
+                    onClick={function () {
+                      const today = new Date();
+                      const yyyy = today.getFullYear();
+                      const mm = String(today.getMonth() + 1).padStart(2, "0");
+                      const dd = String(today.getDate()).padStart(2, "0");
+                      const start = yyyy + "-" + mm + "-" + dd;
+                      const endDate = new Date(
+                        today.getTime() + 3 * 24 * 60 * 60 * 1000
+                      );
+                      const eyyyy = endDate.getFullYear();
+                      const emm = String(endDate.getMonth() + 1).padStart(
+                        2,
+                        "0"
+                      );
+                      const edd = String(endDate.getDate()).padStart(2, "0");
+                      const end = eyyyy + "-" + emm + "-" + edd;
+                      handleChange("startAt", start);
+                      handleChange("endAt", end);
+                    }}
+                  >
+                    오늘부터 3일간
+                  </button>
+                  <button
+                    type="button"
+                    className="pg-quick-button"
+                    onClick={function () {
+                      const today = new Date();
+                      const yyyy = today.getFullYear();
+                      const mm = String(today.getMonth() + 1).padStart(2, "0");
+                      const dd = String(today.getDate()).padStart(2, "0");
+                      const start = yyyy + "-" + mm + "-" + dd;
+                      const endDate = new Date(
+                        today.getTime() + 7 * 24 * 60 * 60 * 1000
+                      );
+                      const eyyyy = endDate.getFullYear();
+                      const emm = String(endDate.getMonth() + 1).padStart(
+                        2,
+                        "0"
+                      );
+                      const edd = String(endDate.getDate()).padStart(2, "0");
+                      const end = eyyyy + "-" + emm + "-" + edd;
+                      handleChange("startAt", start);
+                      handleChange("endAt", end);
+                    }}
+                  >
+                    오늘부터 7일간
+                  </button>
+                </div>
+                <div className="input-group mb-1">
+                  <span className="input-group-text">시작</span>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={form.startAt}
+                    onChange={function (e) {
+                      handleChange("startAt", e.target.value);
+                    }}
+                  />
+                </div>
+                <div className="input-group mb-1">
+                  <span className="input-group-text">마감</span>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={form.endAt}
+                    onChange={function (e) {
+                      handleChange("endAt", e.target.value);
+                    }}
+                  />
+                </div>
+                <div className="pg-hint-small">
+                  마감일 이후에는 더 이상 공동구매 참여가 불가능합니다.
+                </div>
+              </div>
+
+              {/* 발송 예정일 */}
+              <div className="col-12 col-md-6">
+                <label className="pg-label">
+                  발송 예정일 <span className="text-muted">(선택)</span>
+                </label>
+                <div className="pg-quick-button-row mb-2">
+                  <button
+                    type="button"
+                    className="pg-quick-button"
+                    onClick={function () {
+                      handleQuickShipping(3);
+                    }}
+                  >
+                    마감 다음날부터 3일간 발송
+                  </button>
+                  <button
+                    type="button"
+                    className="pg-quick-button"
+                    onClick={function () {
+                      handleQuickShipping(7);
+                    }}
+                  >
+                    마감 다음날부터 7일간 발송
+                  </button>
+                </div>
+                <div className="input-group mb-1">
+                  <span className="input-group-text">시작</span>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={form.shippingStartDate}
+                    onChange={function (e) {
+                      handleChange("shippingStartDate", e.target.value);
+                    }}
+                  />
+                </div>
+                <div className="input-group mb-1">
+                  <span className="input-group-text">종료</span>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={form.shippingEndDate}
+                    onChange={function (e) {
+                      handleChange("shippingEndDate", e.target.value);
+                    }}
+                  />
+                </div>
+                <div className="pg-hint-small">
+                  수확, 날씨, 물류 사정에 따라 1~2일 정도 변동될 수 있습니다.
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ☎️ 전화 안내 배너 */}
+        <section className="pg-call-banner">
+          <div className="pg-call-text">
+            <span className="pg-call-tag">도움이 필요하신가요?</span>
+            <h3 className="pg-call-title">전화 한 통이면 등록이 더 편해집니다.</h3>
+            <p className="pg-call-desc">
+              어려우시면 그냥 전화 주세요. 팜데이 담당자가 순서대로 안내해
+              드립니다.
+            </p>
+          </div>
+
+          {/* 👉 href 안의 번호만 실제 상담 번호로 바꾸면 바로 전화 연결됨 */}
+          <a href="tel:010-1234-5678" className="pg-call-button">
+            <span className="pg-call-icon" aria-hidden="true">
+              ☎️
+            </span>
+            <span className="pg-call-label">
+              010-1234-5678
+              <br />
+              <small>지금 바로 전화하기</small>
+            </span>
+          </a>
+        </section>
+
+        {/* 제출 버튼 */}
+        <section className="pg-footer">
+          <div className="pg-footer-inner">
+            <div className="pg-footer-text">
+              위 내용만 한 번 확인하시고, 아래 버튼을 누르시면{" "}
+              {isEditMode ? "수정이" : "등록이"} 완료됩니다.
+            </div>
             <button
               type="button"
-              className="pg-voice-btn"
-              onClick={handleStartVoiceInput}
+              className="pg-submit-button"
+              onClick={handleSubmit}
+              disabled={submitting || loading}
             >
-              <span className="pg-voice-btn-icon">🎤</span>
-              <span>{isListening ? "듣는 중..." : "말해서 설명 쓰기"}</span>
+              {submitting
+                ? isEditMode
+                  ? "수정 중..."
+                  : "등록 중..."
+                : isEditMode
+                ? "공동구매 수정하기"
+                : "공동구매 등록하기"}
             </button>
           </div>
-          {isListening && (
-            <div className="pg-voice-status">
-              지금 말씀해 주세요. 잠시 후 자동으로 글로 입력됩니다.
-            </div>
-          )}
-        </div>
-
-        <textarea
-          className="pg-textarea"
-          rows={4}
-          placeholder="버튼을 눌러 문장을 넣고, 필요한 부분만 고쳐서 사용하셔도 됩니다. 음성 입력 버튼을 눌러 말로 작성하실 수도 있어요."
-          value={form.detail}
-          onChange={function (e) {
-            handleChange("detail", e.target.value);
-          }}
-        />
-
-        <div className="pg-detail-preview-box">
-          <div className="pg-detail-preview-title">
-            ✨ 이렇게 고객에게 보여집니다
-          </div>
-          <div>
-            {form.detail && form.detail.trim().length > 0
-              ? form.detail
-              : "작성하신 설명이 여기에 미리보기로 표시됩니다."}
-          </div>
-        </div>
-      </section>
-
-      {/* 3. 가격 설정 */}
-      <section className="pg-section-card">
-        <div className="pg-section-title">
-          <span className="pg-section-badge">3</span>
-          <span>가격 설정</span>
-        </div>
-
-        <div className="row g-3 mb-3">
-          {/* 공동구매 가격 */}
-          <div className="col-12 col-md-6">
-            <label className="pg-label">
-              공동구매 가격(한 박스)
-              <span className="text-danger fw-bold"> ★</span>
-            </label>
-            <div className="pg-price-choice-row mb-2">
-              {[20000, 25000, 30000].map(function (v) {
-                return (
-                  <button
-                    key={v}
-                    type="button"
-                    className="pg-price-option"
-                    onClick={function () {
-                      handleNumberChange("dealPrice", String(v));
-                    }}
-                  >
-                    {formatNumber(v)}원
-                  </button>
-                );
-              })}
-            </div>
-            <div className="input-group">
-              <input
-                type="text"
-                className="form-control form-control-lg pg-input-lg"
-                placeholder="예) 25000"
-                value={form.dealPrice}
-                onChange={function (e) {
-                  handleNumberChange("dealPrice", e.target.value);
-                }}
-              />
-              <span className="input-group-text">원</span>
-            </div>
-          </div>
-
-          {/* 시세 */}
-          <div className="col-12 col-md-6">
-            <label className="pg-label">원래 판매 가격(시세)</label>
-            <div className="pg-price-helper-row mb-2">
-              <button
-                type="button"
-                className="pg-price-helper"
-                onClick={handleSetRecentMarketPrice}
-              >
-                최근 시세 불러오기(예시)
-              </button>
-            </div>
-            <div className="input-group mb-1">
-              <input
-                type="text"
-                className="form-control form-control-lg pg-input-lg"
-                placeholder="예) 30000"
-                value={form.originPrice}
-                onChange={function (e) {
-                  handleNumberChange("originPrice", e.target.value);
-                }}
-              />
-              <span className="input-group-text">원</span>
-            </div>
-            {recentMarketPrice && (
-              <div className="pg-hint-small">
-                예시 시세 : 최근 소매 평균 약{" "}
-                {formatNumber(recentMarketPrice)}원
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* 가격 비교 가이드 */}
-        <div className="pg-guide-box">
-          <div className="pg-guide-title">가격 가이드</div>
-          <div className="pg-guide-text">
-            {form.originPrice &&
-            form.dealPrice &&
-            discountRate != null ? (
-              <span>
-                원래 가격{" "}
-                <strong>{formatNumber(form.originPrice)}원</strong> 대비{" "}
-                <strong>
-                  약 {Math.abs(discountRate)}%{" "}
-                  {discountRate > 0 ? "할인" : "할증"}
-                </strong>
-                으로 판매하시게 됩니다.
-              </span>
-            ) : (
-              <span>
-                시세와 공동구매 가격을 입력하시면 할인율을 한눈에 보실 수
-                있습니다.
-              </span>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* 4. 수량 설정 */}
-      <section className="pg-section-card">
-        <div className="pg-section-title">
-          <span className="pg-section-badge">4</span>
-          <span>수량 설정</span>
-        </div>
-
-        <div className="pg-quantity-grid">
-          {/* 최소 모집 수량 */}
-          <div className="pg-quantity-box">
-            <div className="pg-quantity-title">
-              최소 모집 수량 <span className="text-danger fw-bold">★</span>
-            </div>
-            <div className="pg-quick-button-row mb-2">
-              {[10, 30, 50, 100].map(function (v) {
-                return (
-                  <button
-                    key={v}
-                    type="button"
-                    className="pg-quick-button"
-                    onClick={function () {
-                      handleQuickMinCount(v);
-                    }}
-                  >
-                    {v}박스
-                  </button>
-                );
-              })}
-            </div>
-            <div className="input-group">
-              <input
-                type="text"
-                className="form-control form-control-lg pg-input-lg"
-                placeholder="예) 50"
-                value={form.minMemberCount}
-                onChange={function (e) {
-                  handleNumberChange("minMemberCount", e.target.value);
-                }}
-              />
-              <span className="input-group-text">박스 이상</span>
-            </div>
-            <div className="pg-quantity-help">
-              이 수량 이상 모이면 출하를 진행합니다.
-            </div>
-          </div>
-
-          {/* 최대 수량 */}
-          <div className="pg-quantity-box">
-            <div className="pg-quantity-title">
-              최대 수량 <span className="text-muted">(선택)</span>
-            </div>
-            <div className="pg-quick-button-row mb-2">
-              <button
-                type="button"
-                className="pg-quick-button"
-                onClick={function () {
-                  handleNumberChange("maxMemberCount", "");
-                }}
-              >
-                제한 없음
-              </button>
-              {["50", "100", "200"].map(function (v) {
-                return (
-                  <button
-                    key={v}
-                    type="button"
-                    className="pg-quick-button"
-                    onClick={function () {
-                      handleNumberChange("maxMemberCount", v);
-                    }}
-                  >
-                    {v}박스
-                  </button>
-                );
-              })}
-            </div>
-            <div className="input-group mb-1">
-              <input
-                type="text"
-                className="form-control form-control-lg pg-input-lg"
-                placeholder="예) 100 (미입력 시 제한 없음)"
-                value={form.maxMemberCount}
-                onChange={function (e) {
-                  handleNumberChange("maxMemberCount", e.target.value);
-                }}
-              />
-              <span className="input-group-text">박스까지</span>
-            </div>
-            <div className="pg-quantity-help">
-              너무 많이 모이면 힘드신 경우에만 입력해 주세요.
-            </div>
-          </div>
-
-          {/* 1인당 제한 수량 */}
-          <div className="pg-quantity-box">
-            <div className="pg-quantity-title">
-              1인당 제한 수량{" "}
-              <span className="text-muted">(선택)</span>
-            </div>
-            <div className="pg-quick-button-row mb-2">
-              <button
-                type="button"
-                className="pg-quick-button"
-                onClick={function () {
-                  handleNumberChange("perUserLimitQty", "");
-                }}
-              >
-                제한 없음
-              </button>
-              {["1", "2", "3"].map(function (v) {
-                return (
-                  <button
-                    key={v}
-                    type="button"
-                    className="pg-quick-button"
-                    onClick={function () {
-                      handleNumberChange("perUserLimitQty", v);
-                    }}
-                  >
-                    {v}박스
-                  </button>
-                );
-              })}
-            </div>
-            <div className="input-group mb-1">
-              <input
-                type="text"
-                className="form-control form-control-lg pg-input-lg"
-                placeholder="예) 2 (미입력 시 제한 없음)"
-                value={form.perUserLimitQty}
-                onChange={function (e) {
-                  handleNumberChange(
-                    "perUserLimitQty",
-                    e.target.value
-                  );
-                }}
-              />
-              <span className="input-group-text">박스</span>
-            </div>
-            <div className="pg-quantity-help">
-              한 분이 너무 많이 가져가는 것을 막고 싶을 때 사용합니다.
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 5. 모집 기간과 발송 예정일 */}
-      <section className="pg-section-card">
-        <div className="pg-section-title">
-          <span className="pg-section-badge">5</span>
-          <span>모집 기간과 발송 예정일</span>
-        </div>
-
-        <div className="row g-3 mb-3">
-          {/* 모집 기간 */}
-          <div className="col-12 col-md-6">
-            <label className="pg-label">
-              모집 기간 <span className="text-danger fw-bold">★</span>
-            </label>
-            <div className="pg-quick-button-row mb-2">
-              <button
-                type="button"
-                className="pg-quick-button"
-                onClick={function () {
-                  const today = new Date();
-                  const yyyy = today.getFullYear();
-                  const mm = String(today.getMonth() + 1).padStart(
-                    2,
-                    "0"
-                  );
-                  const dd = String(today.getDate()).padStart(2, "0");
-                  const start = yyyy + "-" + mm + "-" + dd;
-                  const endDate = new Date(
-                    today.getTime() + 3 * 24 * 60 * 60 * 1000
-                  );
-                  const eyyyy = endDate.getFullYear();
-                  const emm = String(
-                    endDate.getMonth() + 1
-                  ).padStart(2, "0");
-                  const edd = String(endDate.getDate()).padStart(
-                    2,
-                    "0"
-                  );
-                  const end = eyyyy + "-" + emm + "-" + edd;
-                  handleChange("startAt", start);
-                  handleChange("endAt", end);
-                }}
-              >
-                오늘부터 3일간
-              </button>
-              <button
-                type="button"
-                className="pg-quick-button"
-                onClick={function () {
-                  const today = new Date();
-                  const yyyy = today.getFullYear();
-                  const mm = String(today.getMonth() + 1).padStart(
-                    2,
-                    "0"
-                  );
-                  const dd = String(today.getDate()).padStart(2, "0");
-                  const start = yyyy + "-" + mm + "-" + dd;
-                  const endDate = new Date(
-                    today.getTime() + 7 * 24 * 60 * 60 * 1000
-                  );
-                  const eyyyy = endDate.getFullYear();
-                  const emm = String(
-                    endDate.getMonth() + 1
-                  ).padStart(2, "0"
-                  );
-                  const edd = String(endDate.getDate()).padStart(
-                    2,
-                    "0"
-                  );
-                  const end = eyyyy + "-" + emm + "-" + edd;
-                  handleChange("startAt", start);
-                  handleChange("endAt", end);
-                }}
-              >
-                오늘부터 7일간
-              </button>
-            </div>
-            <div className="input-group mb-1">
-              <span className="input-group-text">시작</span>
-              <input
-                type="date"
-                className="form-control"
-                value={form.startAt}
-                onChange={function (e) {
-                  handleChange("startAt", e.target.value);
-                }}
-              />
-            </div>
-            <div className="input-group mb-1">
-              <span className="input-group-text">마감</span>
-              <input
-                type="date"
-                className="form-control"
-                value={form.endAt}
-                onChange={function (e) {
-                  handleChange("endAt", e.target.value);
-                }}
-              />
-            </div>
-            <div className="pg-hint-small">
-              마감일 이후에는 더 이상 공동구매 참여가 불가능합니다.
-            </div>
-          </div>
-
-          {/* 발송 예정일 */}
-          <div className="col-12 col-md-6">
-            <label className="pg-label">
-              발송 예정일 <span className="text-muted">(선택)</span>
-            </label>
-            <div className="pg-quick-button-row mb-2">
-              <button
-                type="button"
-                className="pg-quick-button"
-                onClick={function () {
-                  handleQuickShipping(3);
-                }}
-              >
-                마감 다음날부터 3일간 발송
-              </button>
-              <button
-                type="button"
-                className="pg-quick-button"
-                onClick={function () {
-                  handleQuickShipping(7);
-                }}
-              >
-                마감 다음날부터 7일간 발송
-              </button>
-            </div>
-            <div className="input-group mb-1">
-              <span className="input-group-text">시작</span>
-              <input
-                type="date"
-                className="form-control"
-                value={form.shippingStartDate}
-                onChange={function (e) {
-                  handleChange(
-                    "shippingStartDate",
-                    e.target.value
-                  );
-                }}
-              />
-            </div>
-            <div className="input-group mb-1">
-              <span className="input-group-text">종료</span>
-              <input
-                type="date"
-                className="form-control"
-                value={form.shippingEndDate}
-                onChange={function (e) {
-                  handleChange(
-                    "shippingEndDate",
-                    e.target.value
-                  );
-                }}
-              />
-            </div>
-            <div className="pg-hint-small">
-              수확, 날씨, 물류 사정에 따라 1~2일 정도 변동될 수 있습니다.
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ☎️ 전화 안내 배너 - 여기부터 추가 */}
-      <section className="pg-call-banner">
-        <div className="pg-call-text">
-          <span className="pg-call-tag">도움이 필요하신가요?</span>
-          <h3 className="pg-call-title">전화 한 통이면 등록이 더 편해집니다.</h3>
-          <p className="pg-call-desc">
-            어려우시면 그냥 전화 주세요. 팜데이 담당자가 순서대로 안내해 드립니다.
-          </p>
-        </div>
-
-        {/* 👉 href 안의 번호만 실제 상담 번호로 바꾸면 바로 전화 연결됨 */}
-        <a href="tel:010-1234-5678" className="pg-call-button">
-          <span className="pg-call-icon" aria-hidden="true">☎️</span>
-          <span className="pg-call-label">
-            010-1234-5678
-            <br />
-            <small>지금 바로 전화하기</small>
-          </span>
-        </a>
-      </section>
-      {/* ☎️ 전화 안내 배너 끝 */}
-
-      {/* 제출 버튼 */}
-      <section className="pg-footer">
-        <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
-          <div className="text-muted small">
-            위 내용만 한 번 확인하시고, 아래 버튼을 누르시면{" "}
-            {isEditMode ? "수정이" : "등록이"} 완료됩니다.
-          </div>
-          <button
-            type="button"
-            className="btn pg-submit-button"
-            onClick={handleSubmit}
-            disabled={submitting || loading}
-          >
-            {submitting
-              ? isEditMode
-                ? "수정 중..."
-                : "등록 중..."
-              : isEditMode
-              ? "공동구매 수정하기"
-              : "공동구매 등록하기"}
-          </button>
-        </div>
-      </section>
+        </section>
+      </div>
     </div>
   );
 }

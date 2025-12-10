@@ -1,7 +1,6 @@
-// 경로: frontend/src/pages/groupdeal/components/QASection.jsx
 import React from "react";
 
-const QASection = ({ qaList, onAnswer }) => {
+const QASection = ({ qaList, onAnswer, onEditAnswer, onDeleteAnswer }) => {
   return (
     <div style={styles.section}>
       <div style={styles.title}>🙋‍♀️ 고객 질문 & 답변</div>
@@ -9,7 +8,9 @@ const QASection = ({ qaList, onAnswer }) => {
       {/* 질문이 하나도 없으면 */}
       {(!qaList || qaList.length === 0) && (
         <div style={styles.noQA}>
-          아직 등록된 질문이 없습니다.<br/>궁금한 내용을 먼저 남겨보세요 😊
+          아직 등록된 질문이 없습니다.
+          <br />
+          궁금한 내용을 먼저 남겨보세요 😊
         </div>
       )}
 
@@ -18,28 +19,72 @@ const QASection = ({ qaList, onAnswer }) => {
         <div style={styles.list}>
           {qaList.map((item, idx) => (
             <div key={idx} style={styles.qaItem}>
-              
               {/* 질문 내용 */}
               <div style={styles.questionBox}>
                 <div style={styles.qLabel}>Q</div>
-                <div style={styles.qText}>{item.question}</div>
+                <div style={styles.qText}>
+                  {/* 🔹 제목이 있으면 위에 굵게 표시 */}
+                  {item.title && (
+                    <div style={styles.qTitle}>{item.title}</div>
+                  )}
+
+                  {/* 🔹 본문: content > question 순서로 사용 */}
+                  <div>{item.content || item.question}</div>
+                </div>
               </div>
 
               {/* 답변 있는지 여부 */}
               {item.answer ? (
                 <div style={styles.answerBox}>
-                  <div style={styles.aLabel}>💬 판매자 답변</div>
+                  {/* 상단: 라벨 + (수정/삭제 버튼) */}
+                  <div style={styles.answerHeaderRow}>
+                    <div style={styles.aLabel}>💬 판매자 답변</div>
+
+                    {(onEditAnswer || onDeleteAnswer) && (
+                      <div style={styles.answerActions}>
+                        {onEditAnswer && (
+                          <button
+                            type="button"
+                            style={styles.actionBtn}
+                            onClick={() =>
+                              onEditAnswer(item.questionId, item.answer)
+                            }
+                          >
+                            수정
+                          </button>
+                        )}
+                        {onDeleteAnswer && (
+                          <button
+                            type="button"
+                            style={styles.actionBtnDanger}
+                            onClick={() => onDeleteAnswer(item.questionId)}
+                          >
+                            삭제
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 답변 본문 */}
                   <div style={styles.aText}>{item.answer}</div>
                 </div>
               ) : (
-                <button
-                  style={styles.answerBtn}
-                  onClick={() => onAnswer(item.questionId)}
-                >
-                  답변 작성하기
-                </button>
+                // 답변이 아직 없으면: 답변 작성 버튼
+                onAnswer && (
+                  <button
+                    style={styles.answerBtn}
+                    onClick={() =>
+                      onAnswer(
+                        item.questionId,
+                        item.title || item.content || item.question
+                      )
+                    }
+                  >
+                    답변 작성하기
+                  </button>
+                )
               )}
-
             </div>
           ))}
         </div>
@@ -50,16 +95,13 @@ const QASection = ({ qaList, onAnswer }) => {
 
 const styles = {
   section: {
-    marginTop: "40px",
-    borderTop: "2px solid #e5e7eb",
-    paddingTop: "20px",
-    fontFamily: `"Noto Sans KR", sans-serif`,
+    marginTop: 12,
   },
   title: {
-    fontSize: "22px",
+    fontSize: "16px",
     fontWeight: "700",
-    marginBottom: "16px",
-    color: "#111",
+    marginBottom: "12px",
+    color: "#222",
   },
   noQA: {
     fontSize: "15.5px",
@@ -90,19 +132,27 @@ const styles = {
     fontSize: "18px",
     fontWeight: "700",
     background: "#ccf09e",
-    color: "#3a4b00",
-    borderRadius: "50%",
-    width: "26px",
-    height: "26px",
+    color: "#274501",
+    borderRadius: "999px",
+    width: "32px",
+    height: "32px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+    flexShrink: 0,
   },
   qText: {
     fontSize: "16px",
     lineHeight: "24px",
     color: "#333",
     flex: 1,
+  },
+  // 🔹 제목 스타일
+  qTitle: {
+    fontSize: "15px",
+    fontWeight: 700,
+    marginBottom: "4px",
+    color: "#111",
   },
   answerBox: {
     marginTop: "14px",
@@ -111,16 +161,45 @@ const styles = {
     borderRadius: "10px",
     border: "1px solid #e1efcf",
   },
+  answerHeaderRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "8px",
+    marginBottom: "6px",
+  },
   aLabel: {
     fontSize: "14px",
     fontWeight: "600",
-    marginBottom: "6px",
     color: "#4a6d00",
   },
   aText: {
     fontSize: "15px",
     color: "#222",
     lineHeight: "22px",
+    marginTop: "2px",
+  },
+  answerActions: {
+    display: "flex",
+    gap: "6px",
+  },
+  actionBtn: {
+    padding: "4px 10px",
+    fontSize: "13px",
+    borderRadius: "999px",
+    border: "1px solid #c8e29a",
+    backgroundColor: "#fafff2",
+    color: "#4a6d00",
+    cursor: "pointer",
+  },
+  actionBtnDanger: {
+    padding: "4px 10px",
+    fontSize: "13px",
+    borderRadius: "999px",
+    border: "1px solid #ffb3b3",
+    backgroundColor: "#fff",
+    color: "#d72626",
+    cursor: "pointer",
   },
   answerBtn: {
     width: "100%",

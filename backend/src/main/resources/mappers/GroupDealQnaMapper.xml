@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.farmday.groupdeal.qna.mapper.GroupDealQnaMapper">
+
+    <!-- INSERT: 질문 등록 -->
+    <insert id="insertQuestion" parameterType="com.farmday.groupdeal.qna.dto.GroupDealQnaDTO">
+        INSERT INTO GROUP_DEAL_QNA (
+            qna_id,
+            group_deal_id,
+            parent_id,
+            user_id,
+            title,
+            content,
+            is_private,
+            status,
+            created_date,
+            updated_date
+        ) VALUES (
+            SEQ_GROUP_DEAL_QNA.NEXTVAL,
+            #{groupDealId},
+            #{parentId},
+            #{userId},
+            #{title},
+            #{content},
+            #{isPrivate},
+            #{status},
+            SYSDATE,
+            SYSDATE
+        )
+    </insert>
+
+    <!-- SELECT: 공동구매별 QnA 리스트 -->
+    <select id="getQnaByGroupDeal"
+            resultType="com.farmday.groupdeal.qna.dto.GroupDealQnaDTO">
+        SELECT
+            qna_id          AS qnaId,
+            group_deal_id   AS groupDealId,
+            parent_id       AS parentId,
+            user_id         AS userId,
+            title,
+            content,
+            is_private      AS isPrivate,
+            status,
+            responder_id    AS responderId,
+            answer_content  AS answerContent,
+            answered_at     AS answeredAt,
+            created_date    AS createdDate,
+            updated_date    AS updatedDate
+        FROM GROUP_DEAL_QNA
+        WHERE group_deal_id = #{groupDealId}
+        ORDER BY created_date DESC
+    </select>
+
+    <!-- UPDATE: 질문 수정 -->
+    <update id="updateQuestion"
+            parameterType="com.farmday.groupdeal.qna.dto.GroupDealQnaDTO">
+        UPDATE GROUP_DEAL_QNA
+        SET title       = #{title},
+            content     = #{content},
+            is_private  = #{isPrivate},
+            updated_date = SYSDATE
+        WHERE qna_id = #{qnaId}
+    </update>
+
+    <!-- DELETE: 질문 삭제 -->
+    <delete id="deleteQuestion">
+        DELETE FROM GROUP_DEAL_QNA
+        WHERE qna_id = #{qnaId}
+    </delete>
+
+    <!-- UPDATE: 답변 등록 -->
+    <update id="insertAnswer"
+            parameterType="com.farmday.groupdeal.qna.dto.GroupDealQnaDTO">
+        UPDATE GROUP_DEAL_QNA
+        SET responder_id   = #{responderId},
+            answer_content = #{answerContent},
+            answered_at    = SYSDATE,
+            status         = 'ANSWERED',
+            updated_date   = SYSDATE
+        WHERE qna_id = #{qnaId}
+    </update>
+
+    <!-- UPDATE: 답변 수정 -->
+    <update id="updateAnswer"
+            parameterType="com.farmday.groupdeal.qna.dto.GroupDealQnaDTO">
+        UPDATE GROUP_DEAL_QNA
+        SET answer_content = #{answerContent},
+            updated_date   = SYSDATE
+        WHERE qna_id = #{qnaId}
+    </update>
+
+    <!-- UPDATE: 답변 삭제 -->
+    <update id="deleteAnswer">
+        UPDATE GROUP_DEAL_QNA
+        SET responder_id   = NULL,
+            answer_content = NULL,
+            answered_at    = NULL,
+            status         = 'WAITING',
+            updated_date   = SYSDATE
+        WHERE qna_id = #{qnaId}
+    </update>
+
+    <!-- 상태 변경 -->
+    <update id="updateStatus">
+        UPDATE GROUP_DEAL_QNA
+        SET status = #{status},
+            updated_date = SYSDATE
+        WHERE qna_id = #{qnaId}
+    </update>
+
+    <!-- 한 건 조회 -->
+    <select id="findById"
+            resultType="com.farmday.groupdeal.qna.dto.GroupDealQnaDTO">
+        SELECT
+            qna_id          AS qnaId,
+            group_deal_id   AS groupDealId,
+            parent_id       AS parentId,
+            user_id         AS userId,
+            title,
+            content,
+            is_private      AS isPrivate,
+            status,
+            responder_id    AS responderId,
+            answer_content  AS answerContent,
+            answered_at     AS answeredAt,
+            created_date    AS createdDate,
+            updated_date    AS updatedDate
+        FROM GROUP_DEAL_QNA
+        WHERE qna_id = #{qnaId}
+    </select>
+
+</mapper>

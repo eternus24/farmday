@@ -123,7 +123,7 @@ export default function ProducerLayout() {
                 <NavLink to="/producer/seller-dashboard">공동구매 대시보드</NavLink>
               </li>
               <li>
-                <NavLink to="/producer/groupdeals">생산자 마이페이지</NavLink>
+                <NavLink to="/producer/groupdeals">공동구매 마이페이지</NavLink>
               </li>
               <li>
                 <NavLink to="/producer/orders">판매 관리</NavLink>

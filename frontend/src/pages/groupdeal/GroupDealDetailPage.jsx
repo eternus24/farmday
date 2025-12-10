@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import {
-  getGroupDealDetail,
-} from "../../api/groupDealApi";
+import { getGroupDealDetail, joinGroupDeal } from "../../api/groupDealApi";
 import BarProgress from "./components/BarProgress";
 import GroupDealDetailTabs from "../../layouts/GroupDealDetailTabs";
 
@@ -53,7 +51,6 @@ const GroupDealDetailPage = () => {
       setLoading(true);
       setError("");
 
-      // ✅ groupDealId가 숫자가 아니면 바로 에러 처리 ("/group-deals/manage" 같은 경우 방지)
       if (!groupDealId || !/^\d+$/.test(groupDealId)) {
         setError("잘못된 접근입니다. 유효하지 않은 공동구매 ID입니다.");
         setDeal(null);
@@ -66,9 +63,16 @@ const GroupDealDetailPage = () => {
         if (!data) {
           setError("공동구매 정보를 찾을 수 없습니다.");
         } else {
-          // productName 보정 (없으면 title 사용)
           const normalized = { ...data };
           normalized.productName = data.productName || data.title;
+
+          if (Array.isArray(data.images)) {
+            normalized.imagePaths = data.images
+              .map((img) => img.imageUrl)
+              .filter(Boolean);
+          } else {
+            normalized.imagePaths = [];
+          }
 
           setDeal(normalized);
         }
@@ -79,6 +83,7 @@ const GroupDealDetailPage = () => {
         setLoading(false);
       }
     };
+
     fetchDetail();
   }, [groupDealId]);
 
@@ -93,7 +98,8 @@ const GroupDealDetailPage = () => {
     setQuantity(n);
   };
 
-   const handleJoinAndGoCart = async () => {
+  // 🔥 구매 버튼 클릭 시 처리 (+ 마감/매진 방지)
+  const handleJoinAndGoCart = async () => {
 
     if (!deal) return;
     if (joining) return;
@@ -148,6 +154,25 @@ const GroupDealDetailPage = () => {
 
   const remainingText = formatRemainingTime(deal.endAt);
 
+  // 🔹 디테일 페이지에서의 마감/매진 상태 계산
+  const statusUpper = (deal.status || "").toString().toUpperCase();
+  const hasMax =
+    typeof deal.maxMemberCount === "number" && deal.maxMemberCount > 0;
+  const currentQty =
+    typeof deal.currentQuantity === "number" ? deal.currentQuantity : 0;
+  const isSoldOut = hasMax && currentQty >= deal.maxMemberCount;
+  const isTimeOver = remainingText === "마감";
+  const isStatusClosed = statusUpper && statusUpper !== "OPEN";
+  const isClosed = isSoldOut || isTimeOver || isStatusClosed;
+  const closeLabel = isSoldOut ? "매진" : isClosed ? "마감" : "";
+
+  const canJoin = !isClosed && statusUpper === "OPEN";
+
+  let statusLabel = "모집중";
+  if (isSoldOut) statusLabel = "매진";
+  else if (isTimeOver) statusLabel = "마감";
+  else if (isStatusClosed) statusLabel = deal.status || "종료";
+
   return (
     <div
       className="container"
@@ -196,6 +221,39 @@ const GroupDealDetailPage = () => {
                 }}
               >
                 이미지 준비중
+              </div>
+            )}
+
+            {/* 🔥 디테일에서도 마감/매진 오버레이 */}
+            {isClosed && (
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  background:
+                    "linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.6))",
+                }}
+              />
+            )}
+            {closeLabel && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: "50%",
+                  left: "50%",
+                  transform: "translate(-50%, -50%)",
+                  padding: "10px 26px",
+                  borderRadius: "999px",
+                  fontSize: "1.25rem",
+                  fontWeight: 800,
+                  letterSpacing: "0.18em",
+                  textAlign: "center",
+                  backgroundColor: "rgba(15,23,42,0.95)",
+                  color: "#fefce8",
+                  boxShadow: "0 14px 36px rgba(0,0,0,0.5)",
+                }}
+              >
+                {closeLabel === "매진" ? "매진!" : "마감!"}
               </div>
             )}
           </div>
@@ -285,13 +343,10 @@ const GroupDealDetailPage = () => {
               <span
                 className="small fw-bold"
                 style={{
-                  color:
-                    deal.status?.toUpperCase() === "OPEN"
-                      ? "#16a34a"
-                      : "#9ca3af",
+                  color: isClosed ? "#9ca3af" : "#16a34a",
                 }}
               >
-                {deal.status === "OPEN" ? "모집중" : deal.status}
+                {statusLabel}
               </span>
             </div>
             <div className="d-flex justify-content-between mb-1">
@@ -326,8 +381,7 @@ const GroupDealDetailPage = () => {
               <span
                 className="small fw-semibold"
                 style={{
-                  color:
-                    remainingText === "마감" ? "#9ca3af" : "#16a34a",
+                  color: remainingText === "마감" ? "#9ca3af" : "#16a34a",
                 }}
               >
                 {remainingText}
@@ -338,114 +392,101 @@ const GroupDealDetailPage = () => {
           {/* 발송 정보 */}
           <div
             className="border rounded-3 p-3 mb-3"
-            style={{ backgroundColor: "#eff4ef", borderColor: "#b7c8be" }}
+            style={{ backgroundColor: "#f9fafb", borderColor: "#e5e7eb" }}
           >
-            <div className="small text-muted mb-1">발송 예정일</div>
-            <div className="small fw-semibold mb-2">
-              {formatDateRange(
-                deal.shippingStartDate,
-                deal.shippingEndDate
-              )}
+            <div className="d-flex justify-content-between mb-1">
+              <span className="small text-muted">발송 예정일</span>
+              <span className="small fw-semibold">
+                {formatDateRange(
+                  deal.shippingStartDate,
+                  deal.shippingEndDate
+                )}
+              </span>
             </div>
-            <div className="small text-muted">
-              수확 및 물류 사정에 따라 1~2일 정도 변동될 수 있습니다.
-            </div>
+            {deal.shippingMethod && (
+              <div className="d-flex justify-content-between mb-1">
+                <span className="small text-muted">배송 방법</span>
+                <span className="small">{deal.shippingMethod}</span>
+              </div>
+            )}
+            {deal.shippingFee != null && (
+              <div className="d-flex justify-content-between">
+                <span className="small text-muted">배송비</span>
+                <span className="small fw-semibold">
+                  {deal.shippingFee === 0
+                    ? "무료 배송"
+                    : formatPrice(deal.shippingFee)}
+                </span>
+              </div>
+            )}
           </div>
 
-          {/* 수량 + 버튼 */}
-          <div className="d-flex align-items-center gap-3 mb-3">
-            <div>
-              <div className="small text-muted mb-1">상품 수량</div>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  borderRadius: "999px",
-                  border: "1px solid #cbd5ce",
-                  padding: "6px 14px",
-                  minWidth: 120,
-                  backgroundColor: "#f8faf8",
-                }}
-              >
-                <button
-                  type="button"
-                  style={{
-                    border: "none",
-                    background: "transparent",
-                    fontSize: "1.1rem",
-                    lineHeight: 1,
-                    color: "#6b7c6f",
-                  }}
-                  onClick={() => handleChangeQty(quantity - 1)}
-                  disabled={joining}
-                >
-                  -
-                </button>
-                <span
-                  style={{
-                    fontSize: "1rem",
-                    color: "#1b2f25",
-                    minWidth: 24,
-                    textAlign: "center",
-                  }}
-                >
-                  {quantity}
-                </span>
-                <button
-                  type="button"
-                  style={{
-                    border: "none",
-                    background: "transparent",
-                    fontSize: "1.1rem",
-                    lineHeight: 1,
-                    color: "#6b7c6f",
-                  }}
-                  onClick={() => handleChangeQty(quantity + 1)}
-                  disabled={joining}
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
-            <div className="flex-grow-1 text-end">
+          {/* 수량 선택 + 버튼 */}
+          <div className="d-flex align-items-center gap-3 mt-3">
+            <div
+              className="d-flex align-items-center border rounded-3 px-2"
+              style={{ backgroundColor: "#f9fafb" }}
+            >
               <button
                 type="button"
-                className="btn btn-lg"
-                style={{
-                  borderRadius: "999px",
-                  background: "#3f6b57",
-                  border: "none",
-                  padding: "13px 30px",
-                  fontSize: "1.05rem",
-                  fontWeight: 700,
-                  color: "white",
-                  whiteSpace: "nowrap",
-                }}
-                onClick={handleJoinAndGoCart}
-                disabled={joining || deal.status?.toUpperCase() !== "OPEN"}
+                className="btn btn-sm btn-link text-decoration-none"
+                onClick={() => handleChangeQty(quantity - 1)}
+                disabled={!canJoin}
               >
-                {joining ? "공동구매 참여 중..." : "바로구매"}
+                -
+              </button>
+              <input
+                type="number"
+                min={1}
+                value={quantity}
+                onChange={(e) => handleChangeQty(e.target.value)}
+                className="form-control form-control-sm text-center border-0"
+                style={{
+                  width: 60,
+                  boxShadow: "none",
+                  backgroundColor: "transparent",
+                }}
+                disabled={!canJoin}
+              />
+              <button
+                type="button"
+                className="btn btn-sm btn-link text-decoration-none"
+                onClick={() => handleChangeQty(quantity + 1)}
+                disabled={!canJoin}
+              >
+                +
               </button>
             </div>
+
+            <button
+              type="button"
+              className="btn btn-lg flex-grow-1"
+              style={{
+                borderRadius: "999px",
+                backgroundColor: canJoin ? "#166534" : "#9ca3af",
+                border: "none",
+                fontWeight: 700,
+                fontSize: "0.98rem",
+                color: "#ffffff",
+                padding: "10px 20px",
+                boxShadow: canJoin
+                  ? "0 12px 28px rgba(22,101,52,0.35)"
+                  : "none",
+              }}
+              onClick={handleJoinAndGoCart}
+              disabled={joining || !canJoin}
+            >
+              {isSoldOut
+                ? "매진된 공동구매입니다"
+                : isClosed
+                ? "마감된 공동구매입니다"
+                : joining
+                ? "공동구매 참여 중..."
+                : "바로구매"}
+            </button>
           </div>
 
-          {/* 상세 설명 */}
-          {deal.detail && (
-            <div className="mt-3">
-              <h5 className="fw-bold mb-2">상품 소개</h5>
-              <p
-                style={{
-                  whiteSpace: "pre-line",
-                  fontSize: "0.95rem",
-                  color: "#374151",
-                }}
-              >
-                {deal.detail}
-              </p>
-            </div>
-          )}
+          {/* 🔥 여기 있던 상품 소개(deal.detail) 영역은 탭으로 이동 */}
         </div>
       </div>
 

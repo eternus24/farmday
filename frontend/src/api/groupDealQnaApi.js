@@ -52,8 +52,22 @@ export const deleteGroupDealQna = async (qnaId) => {
   return res.data;
 };
 
-// 🔹 답변 등록/수정 (관리자/생산자용 – 필요시 사용)
+// 🔹 답변 등록 (최초 작성용)
 export const answerGroupDealQna = async (qnaId, payload) => {
   const res = await qnaAxios.post(`/${qnaId}/answer`, payload);
+  return res.data;
+};
+
+// 🔹 답변 수정 (판매자/생산자용)
+//  - 백엔드에서 POST /{qnaId}/answer 를 upsert(등록+수정)으로 쓰고 있다면
+//    이 함수랑 answerGroupDealQna 는 같은 엔드포인트를 사용함
+export const updateGroupDealQnaAnswer = async (qnaId, payload) => {
+  const res = await qnaAxios.post(`/${qnaId}/answer`, payload);
+  return res.data;
+};
+
+// 🔹 답변 삭제 (판매자/생산자용)
+export const deleteGroupDealQnaAnswer = async (qnaId) => {
+  const res = await qnaAxios.delete(`/${qnaId}/answer`);
   return res.data;
 };

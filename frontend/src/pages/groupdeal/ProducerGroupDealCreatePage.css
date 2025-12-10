@@ -1,17 +1,22 @@
 /* =========================================
    ProducerGroupDealCreatePage.css (통합본)
-   - 플랫 흑백 + 딥그린 포인트 최소
-   - 큰 라운드 회색 박스 제거 (버튼만 라운드)
+   - 플랫 흑백 베이스 + 올리브영 톤 포인트
+   - 큰 라운드 문서 박스 제거 (섹션만 카드 느낌)
    ========================================= */
 
 :root {
-  --pg-deep-green: #0f3d2e;
+  --pg-deep-green: #0f3d2e;       /* 텍스트용 진한 녹색(필요시) */
   --pg-border: #e5e7eb;
   --pg-muted: #6b7280;
   --pg-text: #111827;
+
+  /* 올리브영 스타일 포인트 컬러 */
+  --pg-olive-main: #7fba00;
+  --pg-olive-main-dark: #629300;
+  --pg-olive-soft: #e9f6d4;
 }
 
-/* 페이지 전체 레이아웃 */
+/* 페이지 전체 레이아웃 (배경 완전 흰색) */
 .producer-groupdeal-page {
   max-width: 960px;
   margin: 0 auto;
@@ -20,6 +25,15 @@
     sans-serif;
   color: var(--pg-text);
   background-color: #ffffff;
+}
+
+/* pg-main-card: 바깥 문서 박스 느낌 제거 */
+.pg-main-card {
+  background-color: transparent;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+  padding: 0; /* 여백은 섹션 카드에서 처리 */
 }
 
 /* 상단 헤더 */
@@ -65,20 +79,25 @@
 }
 
 /* =========================================
-   섹션 공통 (1~5 큰 구분선 + 타이틀 강조)
+   섹션 공통 (1~5) – 흰 배경 + 진한 테두리
    ========================================= */
 
 .pg-section-card {
-  padding: 22px 0 18px;
-  margin-bottom: 6px;
-  border-top: 2px solid #111111;
+  padding: 18px 16px 18px;
+  margin-bottom: 20px;
+  border: 1px solid #111827;
+  border-radius: 10px;
+  background-color: #ffffff;
+  box-sizing: border-box;
 }
 
 .pg-section-title {
   display: flex;
   align-items: baseline;
   gap: 10px;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #111827;
 }
 
 .pg-section-badge {
@@ -97,44 +116,71 @@
 .pg-label {
   display: block;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 15px;
   margin-bottom: 6px;
 }
 
 .pg-input-lg {
   width: 100%;
-  border-radius: 4px;
+  border-radius: 6px;
   border: 1px solid var(--pg-border);
   padding: 9px 11px;
   font-size: 15px;
+  transition: border-color 0.12s ease-out, box-shadow 0.12s ease-out;
 }
 
 .pg-input {
   width: 100%;
-  border-radius: 4px;
+  border-radius: 6px;
   border: 1px solid var(--pg-border);
   padding: 8px 10px;
-  font-size: 14px;
+  font-size: 15px;
+  transition: border-color 0.12s ease-out, box-shadow 0.12s ease-out;
 }
 
 .pg-input-lg:focus,
 .pg-input:focus,
 .pg-textarea:focus {
   outline: none;
-  border-color: #111111;
+  border-color: var(--pg-olive-main);
+  box-shadow: 0 0 0 1px rgba(127, 186, 0, 0.15);
 }
 
 /* 힌트 텍스트 */
 .pg-hint {
   margin-top: 6px;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--pg-muted);
 }
 
 .pg-hint-small {
   margin-top: 4px;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--pg-muted);
+}
+
+/* 가격 입력 옆 단위 박스(원, 박스 이상 등) */
+.pg-unit-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--pg-olive-main);
+  background-color: var(--pg-olive-soft);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pg-olive-main-dark);
+  box-sizing: border-box;
+}
+
+.pg-unit-box--right {
+  border-radius: 0 999px 999px 0;
+}
+
+.pg-unit-box--left {
+  border-radius: 999px 0 0 999px;
 }
 
 /* 파일 업로드 */
@@ -142,10 +188,20 @@
   display: inline-block;
   padding: 9px 14px;
   border-radius: 999px;
-  background-color: #000000;
+  background-color: var(--pg-olive-main);
   color: #ffffff;
   font-size: 14px;
   cursor: pointer;
+  border: none;
+  font-weight: 600;
+  transition: background-color 0.12s ease-out, transform 0.08s ease-out,
+    box-shadow 0.12s ease-out;
+}
+
+.pg-file-label:hover {
+  background-color: var(--pg-olive-main-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
 }
 
 .pg-file-input {
@@ -156,17 +212,31 @@
   font-size: 13px;
 }
 
-/* 이미지 썸네일 */
+/* 이미지 썸네일 그리드 */
+.pg-image-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr)); /* 한 줄에 최대 5장 */
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.pg-image-col {
+  /* 필요하면 개별 스타일 추가 */
+}
+
+/* 이미지 카드 */
 .pg-image-card {
-  border-radius: 4px;
+  position: relative;
+  border-radius: 6px;
   overflow: hidden;
   background-color: #ffffff;
   border: 1px solid var(--pg-border);
 }
 
+/* 정사각형 썸네일 */
 .pg-image-thumb {
   width: 100%;
-  height: 150px;
+  aspect-ratio: 1 / 1;
   object-fit: cover;
   display: block;
 }
@@ -175,7 +245,7 @@
   position: absolute;
   top: 8px;
   left: 8px;
-  background-color: #000000;
+  background-color: rgba(17, 24, 39, 0.9);
   color: #ffffff;
   font-size: 11px;
   border-radius: 999px;
@@ -212,10 +282,12 @@
   font-size: 12px;
   padding: 4px 9px;
   cursor: pointer;
+  transition: background-color 0.12s ease-out, border-color 0.12s ease-out;
 }
 
 .pg-suggest-btn:hover {
-  border-color: #000000;
+  border-color: var(--pg-olive-main);
+  background-color: var(--pg-olive-soft);
 }
 
 /* 문장 도우미 박스 – 플랫 */
@@ -255,11 +327,12 @@
   font-size: 12px;
   padding: 4px 8px;
   cursor: pointer;
+  transition: background-color 0.12s ease-out, border-color 0.12s ease-out;
 }
 
 .pg-tag-btn:hover {
-  border-color: #000000;
-  background-color: #f9fafb;
+  border-color: var(--pg-olive-main);
+  background-color: var(--pg-olive-soft);
 }
 
 .pg-helper-sub {
@@ -286,6 +359,12 @@
   background-color: #ffffff;
   padding: 4px 9px;
   cursor: pointer;
+  transition: background-color 0.12s ease-out, border-color 0.12s ease-out;
+}
+
+.pg-voice-btn:hover {
+  border-color: var(--pg-olive-main);
+  background-color: var(--pg-olive-soft);
 }
 
 .pg-voice-btn-icon {
@@ -301,14 +380,14 @@
 .pg-textarea {
   width: 100%;
   margin-top: 4px;
-  border-radius: 4px;
+  border-radius: 6px;
   border: 1px solid var(--pg-border);
   padding: 10px 12px;
   font-size: 14px;
   resize: vertical;
 }
 
-/* 설명 미리보기 – 회색 배경 제거 */
+/* 설명 미리보기 */
 .pg-detail-preview-box {
   margin-top: 10px;
   border-top: 1px solid var(--pg-border);
@@ -322,7 +401,7 @@
   font-size: 13px;
 }
 
-/* 가격 선택 버튼 */
+/* 가격 선택 버튼 – 올리브영 칩 */
 .pg-price-choice-row {
   display: flex;
   flex-wrap: wrap;
@@ -336,13 +415,19 @@
   font-size: 13px;
   background-color: #ffffff;
   cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.12s ease-out, border-color 0.12s ease-out,
+    color 0.12s ease-out;
 }
 
-.pg-price-option:hover {
-  border-color: #000000;
+.pg-price-option:hover,
+.pg-price-option.pg-price-option--active {
+  border-color: var(--pg-olive-main);
+  background-color: var(--pg-olive-soft);
+  color: var(--pg-olive-main-dark);
 }
 
-/* 시세 헬퍼 */
+/* 시세 헬퍼 버튼 (최근 시세 불러오기) */
 .pg-price-helper-row {
   display: flex;
   gap: 8px;
@@ -350,18 +435,27 @@
 
 .pg-price-helper {
   border-radius: 999px;
-  border: 1px solid var(--pg-border);
+  border: 1px solid var(--pg-olive-main);
   background-color: #ffffff;
   font-size: 12px;
-  padding: 5px 10px;
+  padding: 5px 12px;
   cursor: pointer;
+  font-weight: 600;
+  color: var(--pg-olive-main-dark);
+  transition: background-color 0.12s ease-out, border-color 0.12s ease-out,
+    color 0.12s ease-out, transform 0.08s ease-out,
+    box-shadow 0.12s ease-out;
 }
 
 .pg-price-helper:hover {
-  border-color: #000000;
+  background-color: var(--pg-olive-main);
+  color: #ffffff;
+  border-color: var(--pg-olive-main-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
 }
 
-/* 가격 가이드 박스 – 라운드 없이 */
+/* 가격 가이드 박스 */
 .pg-guide-box {
   margin-top: 8px;
   border-top: 1px dashed var(--pg-border);
@@ -379,7 +473,7 @@
 }
 
 /* =========================================
-   4. 수량 설정 – 플랫 / 무신사 느낌
+   4. 수량 설정 – 플랫 / 올리브영 칩
    ========================================= */
 
 .pg-quantity-grid {
@@ -409,10 +503,10 @@
   margin-bottom: 8px;
 }
 
-/* 칩 스타일 버튼만 라운드 */
+/* 칩 스타일 버튼 */
 .pg-quick-button {
   border-radius: 999px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--pg-border);
   background-color: #ffffff;
   padding: 6px 12px;
   font-size: 13px;
@@ -421,14 +515,17 @@
   letter-spacing: 0.02em;
   cursor: pointer;
   transition: background-color 0.12s ease-out, color 0.12s ease-out,
-    border-color 0.12s ease-out, transform 0.08s ease-out;
+    border-color 0.12s ease-out, transform 0.08s ease-out,
+    box-shadow 0.12s ease-out;
 }
 
-.pg-quick-button:hover {
-  border-color: #111827;
-  background-color: #111827;
+.pg-quick-button:hover,
+.pg-quick-button.pg-quick-button--active {
+  border-color: var(--pg-olive-main);
+  background-color: var(--pg-olive-main);
   color: #ffffff;
   transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
 }
 
 .pg-quantity-help {
@@ -437,42 +534,116 @@
   color: var(--pg-muted);
 }
 
-/* 푸터 / 제출 버튼 */
-.pg-footer {
-  margin-top: 22px;
-  border-top: 1px solid var(--pg-border);
-  padding-top: 14px;
+/* =========================================
+   날짜(시작/종료) 인풋 그룹 – 한 덩어리 박스
+   ========================================= */
+
+.pg-section-card .input-group {
+  border: 1px solid #111827;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: #ffffff;
 }
 
-.pg-submit-button {
-  background-color: #000000;
-  color: #ffffff;
-  border-radius: 999px;
-  padding: 10px 20px;
+/* 시작/종료 두 줄 사이 간격 */
+.pg-section-card .input-group + .input-group {
+  margin-top: 8px;
+}
+
+/* 왼쪽 라벨(시작/종료) */
+.pg-section-card .input-group-text {
+  background-color: #f9fafb;
+  border: 0;
+  border-right: 1px solid #111827;
+  min-width: 68px;
+  font-size: 14px;
   font-weight: 600;
-  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.pg-submit-button:disabled {
-  opacity: 0.7;
+/* 오른쪽 date 인풋 – 테두리 제거 */
+.pg-section-card .input-group .form-control,
+.pg-section-card .input-group input[type="date"] {
+  border: 0;
+  border-radius: 0;
+  font-size: 14px;
+  padding: 8px 10px;
+  box-shadow: none;
+}
+
+/* 포커스 시 바깥 박스만 보이게 */
+.pg-section-card .input-group .form-control:focus,
+.pg-section-card .input-group input[type="date"]:focus {
+  outline: none;
+  box-shadow: none;
 }
 
 /* =========================================
-   ☎ 전화 안내 – 박스/초록색 제거
-   (pg-call-banner / pg-call-button를 쓰는 JSX용)
+   푸터 / 제출 버튼 – 문구 + 버튼 한 줄
+   ========================================= */
+
+.pg-footer {
+  margin-top: 24px;
+  border-top: 1px solid var(--pg-border);
+  padding-top: 16px;
+}
+
+.pg-footer-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.pg-footer-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* CTA 버튼 */
+.pg-submit-button {
+  background-color: var(--pg-olive-main);
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 11px 26px;
+  font-weight: 600;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.12s ease-out, transform 0.08s ease-out,
+    box-shadow 0.12s ease-out;
+}
+
+.pg-submit-button:hover:not(:disabled) {
+  background-color: var(--pg-olive-main-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.12);
+}
+
+.pg-submit-button:disabled {
+  opacity: 0.55;
+  cursor: default;
+  box-shadow: none;
+}
+
+/* =========================================
+   ☎ 전화 안내 – 카드형 박스
    ========================================= */
 
 .pg-call-banner {
-  margin-top: 20px;
-  margin-bottom: 10px;
-  padding: 10px 0;
-  border-top: 1px solid var(--pg-border);
-  border-bottom: 1px solid var(--pg-border);
+  margin-top: 24px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border: 1px solid var(--pg-border);
+  border-radius: 10px;
+  background-color: #f9fafb;
   display: flex;
   align-items: center;
-  gap: 10px;
-  color: var(--pg-text);
-  background-color: #ffffff;
+  gap: 12px;
 }
 
 .pg-call-text {
@@ -481,8 +652,8 @@
 
 .pg-call-tag {
   display: inline-block;
-  padding: 2px 6px;
-  border-radius: 2px;
+  padding: 2px 8px;
+  border-radius: 999px;
   border: 1px solid #000000;
   font-size: 10px;
   letter-spacing: 0.08em;
@@ -491,24 +662,24 @@
 
 .pg-call-title {
   margin: 6px 0 2px;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
 }
 
 .pg-call-desc {
   margin: 0;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--pg-muted);
 }
 
-/* 전화 링크 – 박스 없이 텍스트 형태 */
+/* 전화 링크 – 텍스트 형태(번호 크게) */
 .pg-call-button {
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 14px;
-  font-weight: 600;
+  gap: 8px;
+  font-size: 17px;
+  font-weight: 700;
   color: #111827;
   text-decoration: none;
 }
@@ -518,20 +689,30 @@
 }
 
 .pg-call-icon {
-  font-size: 18px;
+  font-size: 20px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   animation: pg-phone-wiggle 1.4s ease-in-out infinite;
 }
 
+.pg-call-label {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.pg-call-label strong {
+  font-size: 16px;
+}
+
 .pg-call-label small {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 400;
   color: var(--pg-muted);
 }
 
-/* 살짝 흔들리는 애니메이션만 유지 */
+/* 살짝 흔들리는 애니메이션 */
 @keyframes pg-phone-wiggle {
   0% { transform: rotate(0deg); }
   10% { transform: rotate(-12deg); }
@@ -560,7 +741,8 @@
   }
 
   .pg-section-card {
-    padding: 18px 0 14px;
+    padding: 16px 12px 14px;
+    margin-bottom: 12px;
   }
 
   .pg-quantity-grid {
@@ -571,4 +753,41 @@
     flex-direction: column;
     align-items: flex-start;
   }
+
+  .pg-footer-inner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pg-submit-button {
+    width: 100%;
+    text-align: center;
+  }
+
+  /* 모바일에서는 이미지 3개씩 */
+  .pg-image-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* =========================================
+   단위 라벨(원 / 박스까지) – 이중 테두리 제거 + 올리브 칩 스타일
+   ========================================= */
+
+/* 인풋 그룹 안에 붙은 단위 칩만 타깃 */
+.pg-section-card .input-group .pg-unit-box {
+  background-color: var(--pg-olive-main);   /* 초록 배경 */
+  color: #ffffff;                           /* 흰 글씨 */
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 72px;
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 0;                                /* 자기 테두리 제거 */
+  border-left: 1px solid #111827;          /* 인풋과 구분선만 */
+  border-radius: 0;                         /* 모서리는 바깥 input-group이 담당 */
+  box-shadow: none;
 }

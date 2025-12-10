@@ -18,9 +18,16 @@ function authHeader() {
  * 공통: fetch 래퍼 (JSON 전용)
  */
 async function request(url, options = {}) {
-  const res = await fetch(url, {
+  const timestamp = Date.now(); // 🔥 캐싱 방지 파라미터 추가
+  const finalUrl = url.includes("?") ? `${url}&_t=${timestamp}` : `${url}?_t=${timestamp}`;
+
+  const res = await fetch(finalUrl, {
+    cache: "no-store", // 🔥 fetch 자체 캐시 차단
     headers: {
       "Content-Type": "application/json",
+      "Cache-Control": "no-cache, no-store, must-revalidate", // 🔥 HTTP 캐시 차단
+      Pragma: "no-cache",
+      Expires: "0",
       ...authHeader(),
       ...(options.headers || {}),
     },
@@ -31,12 +38,14 @@ async function request(url, options = {}) {
     const msg = await res.text().catch(() => "");
     throw new Error(msg || `요청 실패: ${res.status}`);
   }
+
   try {
     return await res.json();
   } catch {
     return null;
   }
 }
+
 
 /* --------------------------------------------------------------------- */
 /*  소비자 / 공통: 공동구매 목록 & 상세                                  */

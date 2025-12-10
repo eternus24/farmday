@@ -7,23 +7,23 @@ function formatNumber(num) {
   return Number(num).toLocaleString("ko-KR");
 }
 
-// 급락·급등 한 줄
+// ✅ 홈용 RankRow – 한 줄 레이아웃 (왼쪽 품목 / 오른쪽 시세)
 function RankRow({ index, item, type }) {
   const rate = item.diffRate || 0;
   const absRate = Math.abs(rate).toFixed(1);
+  const isDown = type === "down";
 
-  let line = "";
-  if (type === "down") {
-    line =
-      "오늘은 가격이 많이 내려가서 장 볼 때 같이 담기 좋은 날이에요.";
-  } else {
-    line = "오늘은 가격이 올라서, 급하지 않다면 조금 기다려도 좋아요.";
-  }
+  const accentColor = isDown ? "#16a34a" : "#f97316";
+  const badgeBg = isDown
+    ? "rgba(22,163,74,0.08)"
+    : "rgba(249,115,22,0.08)";
 
-  // 전체 이름(툴팁용)
   const fullName =
-    item.productName +
-    (item.unit ? ` (${item.unit})` : "");
+    item.productName + (item.unit ? ` (${item.unit})` : "");
+
+  const shortComment = isDown
+    ? "장 보시기 좋은 날이에요."
+    : "급하지 않다면 조금 기다려도 좋아요.";
 
   return (
     <div
@@ -31,18 +31,19 @@ function RankRow({ index, item, type }) {
         padding: "8px 0",
         borderBottom: "1px solid rgba(148,163,184,0.18)",
         display: "flex",
-        flexDirection: "column",
-        gap: 4,
-        minHeight: 75,
+        alignItems: "center",
         justifyContent: "space-between",
+        gap: 12,
+        minHeight: 52,
       }}
     >
-      {/* 🔥 윗줄: 순위 뱃지 + (이름 …) + 퍼센트 */}
+      {/* 🔹 왼쪽: 순위 + 품목명/단위 */}
       <div
         style={{
           display: "flex",
           alignItems: "center",
-          gap: 4,
+          gap: 10,
+          minWidth: 0,
         }}
       >
         {/* 순위 동그라미 */}
@@ -51,56 +52,81 @@ function RankRow({ index, item, type }) {
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
-            width: 20,
-            height: 20,
+            width: 26,
+            height: 26,
             borderRadius: "999px",
-            background: index === 0 ? "#ff8c1a" : "rgba(255,140,26,0.06)",
-            color: index === 0 ? "#fff" : "#ff8c1a",
-            fontSize: 11,
-            fontWeight: 700,
-            marginRight: 4,
+            background: accentColor,
+            color: "#ffffff",
+            fontSize: 12,
+            fontWeight: 800,
             flexShrink: 0,
           }}
         >
-          {index + 1}
+          {String(index + 1).padStart(2, "0")}
         </span>
 
-        {/* 🔥 이름+단위 영역: 여기서 ... 처리 */}
-        <span
-          title={fullName} // 마우스 올리면 전체 이름 보이게
+        <div
           style={{
-            flex: 1,
+            display: "flex",
+            flexDirection: "column",
             minWidth: 0,
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
           }}
         >
-          <b>{item.productName}</b>
+          <span
+            title={fullName}
+            style={{
+              fontSize: 14,
+              fontWeight: 700,
+              color: "#111827",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              maxWidth: 230,
+            }}
+          >
+            {item.productName}
+          </span>
           {item.unit && (
-            <span style={{ fontSize: 12, opacity: 0.8 }}>
-              {" "}
+            <span
+              style={{
+                fontSize: 12,
+                color: "#6b7280",
+              }}
+            >
               ({item.unit})
             </span>
           )}
-        </span>
-
-        {/* 퍼센트 */}
-        <span
-          style={{
-            fontSize: 12,
-            marginLeft: 4,
-            color: type === "down" ? "#16a34a" : "#f97316",
-            flexShrink: 0,
-          }}
-        >
-          {type === "down" ? "-" : "+"}
-          {absRate}%
-        </span>
+        </div>
       </div>
 
-      {/* 설명 문장 */}
-      <div style={{ fontSize: 12, opacity: 0.85 }}>{line}</div>
+      {/* 🔹 오른쪽: 변동률 + 짧은 설명 */}
+      <div style={{ textAlign: "right", flexShrink: 0 }}>
+        <div
+          style={{
+            fontSize: 12,
+            fontWeight: 700,
+            color: accentColor,
+            background: badgeBg,
+            padding: "4px 10px",
+            borderRadius: 999,
+            minWidth: 80,
+            display: "inline-flex",
+            justifyContent: "center",
+          }}
+        >
+          {isDown ? "▼" : "▲"} {absRate}%
+        </div>
+        <div
+          style={{
+            fontSize: 11,
+            color: "#6b7280",
+            marginTop: 3,
+            whiteSpace: "nowrap",
+          }}
+        >
+          {shortComment}
+        </div>
+      </div>
     </div>
   );
 }
@@ -152,12 +178,11 @@ export default function HomePriceSpikeSection({
         marginTop: 24,
         marginBottom: 16,
         maxWidth: 1120,
-        borderTop: "1px solid #e5e7eb", // 섹션 위에만 라인
-        borderBottom: "1px solid #d1d5db",   // 🔥 아래 라인 추가
+        borderTop: "1px solid #e5e7eb",
+        borderBottom: "1px solid #d1d5db",
         paddingTop: 16,
       }}
     >
-      {/* 🔸 카드 느낌 줄이고, 그냥 2컬럼 섹션처럼 */}
       <div
         style={{
           display: "grid",
@@ -165,11 +190,11 @@ export default function HomePriceSpikeSection({
           columnGap: 40,
         }}
       >
-        {/* ───────── 왼쪽: 공지사항 영역 ───────── */}
+        {/* ───────── 왼쪽: 공지사항 ───────── */}
         <div
           style={{
             paddingRight: 20,
-            borderRight: "1px solid rgba(148,163,184,0.25)", // 가운데만 살짝
+            borderRight: "1px solid rgba(148,163,184,0.25)",
           }}
         >
           <div
@@ -194,7 +219,6 @@ export default function HomePriceSpikeSection({
               </span>
               <span>공지사항</span>
             </div>
-            {/* 필요하면 더보기 버튼 나중에 추가 가능 */}
           </div>
 
           <div
@@ -260,7 +284,7 @@ export default function HomePriceSpikeSection({
           )}
         </div>
 
-        {/* ───────── 오른쪽: 급락·급등 영역 ───────── */}
+        {/* ───────── 오른쪽: 급락/급등 – 2컬럼 ───────── */}
         <div style={{ paddingLeft: 8 }}>
           <div
             style={{
@@ -284,7 +308,7 @@ export default function HomePriceSpikeSection({
               <span role="img" aria-label="graph">
                 📊
               </span>
-              <span>오늘 급락·급등 품목이 있나요?</span>
+              <span>오늘 급락·급등한 품목이 있나요?</span>
             </div>
             {!loadingSummary && (
               <div
@@ -298,6 +322,7 @@ export default function HomePriceSpikeSection({
             )}
           </div>
 
+          {/* 🔥 왼쪽: 갑자기 싸진 품목 / 오른쪽: 아쉬운 품목 */}
           <div
             style={{
               display: "grid",
@@ -305,7 +330,7 @@ export default function HomePriceSpikeSection({
               gap: 24,
             }}
           >
-            {/* 오늘 갑자기 싸진 품목 */}
+            {/* 왼쪽 – 오늘 갑자기 싸진 품목 (가격 급락) */}
             <div>
               <div
                 style={{
@@ -317,8 +342,17 @@ export default function HomePriceSpikeSection({
                   gap: 6,
                 }}
               >
-                <span role="img" aria-label="down">
-                  🧾
+                <span
+                  style={{
+                    fontSize: 11,
+                    padding: "3px 8px",
+                    borderRadius: 999,
+                    background: "rgba(22,163,74,0.08)",
+                    color: "#15803d",
+                    fontWeight: 700,
+                  }}
+                >
+                  가격 급락
                 </span>
                 <span>오늘 갑자기 싸진 품목</span>
               </div>
@@ -342,7 +376,7 @@ export default function HomePriceSpikeSection({
               )}
             </div>
 
-            {/* 오늘은 조금 아쉬운 품목 */}
+            {/* 오른쪽 – 오늘은 조금 아쉬운 품목 (가격 급등) */}
             <div>
               <div
                 style={{
@@ -354,8 +388,17 @@ export default function HomePriceSpikeSection({
                   gap: 6,
                 }}
               >
-                <span role="img" aria-label="up">
-                  ✅
+                <span
+                  style={{
+                    fontSize: 11,
+                    padding: "3px 8px",
+                    borderRadius: 999,
+                    background: "rgba(249,115,22,0.08)",
+                    color: "#f97316",
+                    fontWeight: 700,
+                  }}
+                >
+                  가격 급등
                 </span>
                 <span>오늘은 조금 아쉬운 품목</span>
               </div>

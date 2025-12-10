@@ -66,7 +66,7 @@ public class GroupDealDashboardResponse {
     @Data
     public static class Participant {
         private Long participantId;  // 참여 ID
-        private Long memberId;       // 회원 ID
+        private String memberId;       // 회원 ID
         private String memberName;   // 이름
         private String phone;        // 연락처
         private Integer quantity;    // 신청 수량
@@ -84,7 +84,7 @@ public class GroupDealDashboardResponse {
     @Data
     public static class Question {
         private Long questionId;
-        private Long memberId;
+        private String memberId;
         private String memberName;
         private String question;
         private String answer;       // 답변

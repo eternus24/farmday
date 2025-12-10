@@ -30,7 +30,7 @@ export default function PriceTicker() {
   if (error) {
     return (
       <div className="price-ticker-wrapper">
-        <div style={{ padding: "8px 16px", fontSize: 12 }}>{error}</div>
+        <div className="price-ticker-message">{error}</div>
       </div>
     );
   }
@@ -38,7 +38,7 @@ export default function PriceTicker() {
   if (!cards.length) {
     return (
       <div className="price-ticker-wrapper">
-        <div style={{ padding: "8px 16px", fontSize: 12 }}>
+        <div className="price-ticker-message">
           오늘의 시세를 불러오는 중입니다...
         </div>
       </div>
@@ -61,11 +61,15 @@ export default function PriceTicker() {
 
           return (
             <div key={idx} className="price-card">
-              <div className="price-card-title">{card.productName}</div>
-              <div className="price-card-unit">{card.unit}</div>
+              <div className="price-card-header">
+                <div className="price-card-title">{card.productName}</div>
+                <div className="price-card-unit">{card.unit}</div>
+              </div>
+
               <div className="price-card-price">
                 {formatNumber(card.todayPrice)}원
               </div>
+
               <div className={`price-card-diff ${diffClass}`}>
                 <span className="price-arrow-circle">
                   {diffRate === 0 ? "·" : up ? "▲" : "▼"}
@@ -74,11 +78,12 @@ export default function PriceTicker() {
                   <span>보합 (0%)</span>
                 ) : (
                   <>
-                    <span>
-                      {(up ? "" : "-") + formatNumber(diffPrice)}
-                      원
+                    <span className="price-diff-amount">
+                      {(up ? "" : "-") + formatNumber(diffPrice)}원
                     </span>
-                    <span>({diffRate.toFixed(1)}%)</span>
+                    <span className="price-diff-rate">
+                      ({diffRate.toFixed(1)}%)
+                    </span>
                   </>
                 )}
               </div>

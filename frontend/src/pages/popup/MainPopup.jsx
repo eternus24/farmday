@@ -11,7 +11,6 @@ export default function MainPopup() {
   const { protocol, hostname } = window.location;
   const API_BASE = `${protocol}//${hostname}:8080`;
   const user_id = JSON.parse(window.localStorage.getItem('loginUser')).userId;
-  const loginUser = JSON.parse(localStorage.getItem("loginUser") || "{}");
   const token =
       auth?.accessToken ||
       auth?.token ||

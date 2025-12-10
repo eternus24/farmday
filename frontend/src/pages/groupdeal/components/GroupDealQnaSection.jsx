@@ -289,11 +289,35 @@ const GroupDealQnaSection = ({ deal }) => {
           qnaList.map((q) => {
             const isOpen = openId === q.qnaId;
 
-            const canView =
-              q.isPrivate !== "Y" ||
-              String(q.userId) === String(loginUserId) ||
-              userRole === "ADMIN" ||
-              userRole === "PRODUCER";
+            // 🔒 비공개 여부
+            const isSecret =
+              q.isPrivate === "Y" ||
+              q.isPrivate === true ||
+              q.isPrivate === 1;
+
+            // 🧍‍♀️ 글 작성자
+            const isWriter =
+              loginUserId != null &&
+              String(q.userId) === String(loginUserId);
+
+            // 👨‍🌾 이 공동구매 등록한 판매자(딜 작성자) 추정
+            const dealOwnerId =
+              deal?.producerId ||
+              deal?.sellerId ||
+              deal?.userId ||
+              deal?.createdBy;
+
+            const isDealOwner =
+              dealOwnerId != null &&
+              loginUserId != null &&
+              String(dealOwnerId) === String(loginUserId);
+
+            // 👑 관리자
+            const isAdmin =
+              userRole === "ADMIN" || userRole === "ROLE_ADMIN";
+
+            // 최종 접근 권한
+            const canView = !isSecret || isWriter || isDealOwner || isAdmin;
 
             return (
               <div
@@ -329,10 +353,11 @@ const GroupDealQnaSection = ({ deal }) => {
                   </div>
 
                   <div className="flex-grow-1">
-                    {!canView ? (
+                    {/* 🔒 제목 숨김 처리 */}
+                    {isSecret && !canView ? (
                       <>
                         <span className="me-1">🔒</span>
-                        <span className="fw-semibold small">
+                        <span className="fw-semibold small text-muted">
                           비공개로 등록된 문의입니다.
                         </span>
                       </>
@@ -363,8 +388,12 @@ const GroupDealQnaSection = ({ deal }) => {
                     style={qnaStyles.detailBox}
                   >
                     {!canView ? (
-                      <div className="qna-private-msg" style={qnaStyles.privateMsg}>
-                        🔒 작성자 본인과 운영자만 확인할 수 있는 문의입니다.
+                      <div
+                        className="qna-private-msg"
+                        style={qnaStyles.privateMsg}
+                      >
+                        🔒 비공개 문의입니다. 작성자와 판매자, 관리자만 확인할 수
+                        있습니다.
                       </div>
                     ) : (
                       <>
@@ -422,7 +451,7 @@ const GroupDealQnaSection = ({ deal }) => {
                         )}
 
                         {/* 내 글이면 수정/삭제 */}
-                        {String(q.userId) === String(loginUserId) && (
+                        {isWriter && (
                           <div className="mt-3 d-flex gap-2">
                             <button
                               className="btn btn-sm btn-outline-secondary"

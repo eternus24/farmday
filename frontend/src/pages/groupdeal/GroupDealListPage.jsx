@@ -42,13 +42,17 @@ function getBadge(deal, remainingText) {
 // 정렬
 function sortDeals(deals, sortOption) {
   const copy = [...deals];
+
   if (sortOption === "ending") {
     return copy.sort((a, b) => new Date(a.endAt) - new Date(b.endAt));
   }
+
   if (sortOption === "discount") {
     return copy.sort((a, b) => (b.discountRate || 0) - (a.discountRate || 0));
   }
-  return copy; // latest: 일단 그대로
+
+  // 기본: 최신 등록 순 (ID 역순)
+  return copy.sort((a, b) => b.groupDealId - a.groupDealId);
 }
 
 const CATEGORY_OPTIONS = ["전체"]; // 추후 과일/채소 등으로 확장 가능
@@ -68,6 +72,7 @@ function GroupDealListPage() {
       setLoading(true);
       setError("");
       try {
+        // 기존 로직 유지: OPEN 상태 기준 목록
         const list = await getGroupDealList("OPEN");
         setDeals(list || []);
       } catch (e) {
@@ -77,6 +82,7 @@ function GroupDealListPage() {
         setLoading(false);
       }
     };
+
     fetchData();
   }, []);
 
@@ -125,12 +131,49 @@ function GroupDealListPage() {
           현재 진행 중인 공동구매가 없습니다.
         </div>
       )}
-
       {!loading && !error && filteredAndSortedDeals.length > 0 && (
         <div className="row g-4">
           {filteredAndSortedDeals.map((deal) => {
             const remainingText = formatRemainingTime(deal.endAt);
             const badgeText = getBadge(deal, remainingText);
+
+            // 🔹 마감 / 매진 상태 계산
+            const statusUpper = (deal.status || "").toString().toUpperCase();
+
+            const currentQty =
+              typeof deal.currentQuantity === "number"
+                ? deal.currentQuantity
+                : Number(deal.currentQuantity ?? 0) || 0;
+
+            const hasMax =
+              typeof deal.maxMemberCount === "number" &&
+              deal.maxMemberCount > 0;
+            const hasMin =
+              typeof deal.minMemberCount === "number" &&
+              deal.minMemberCount > 0;
+
+            let remainingQty = null;
+            let isSoldOut = false;
+
+            // ✅ 1순위: maxMemberCount 기준 매진
+            if (hasMax) {
+              remainingQty = deal.maxMemberCount - currentQty;
+              isSoldOut = remainingQty <= 0;
+            }
+            // ✅ 2순위: max가 없으면 minMemberCount라도 다 찼으면 매진 취급
+            else if (hasMin) {
+              remainingQty = deal.minMemberCount - currentQty;
+              isSoldOut = remainingQty <= 0;
+            }
+
+            const isTimeOver = remainingText === "마감";
+            const isStatusClosed = statusUpper && statusUpper !== "OPEN";
+
+            const isClosed = isSoldOut || isTimeOver || isStatusClosed;
+            const closeLabel = isSoldOut ? "매진" : isClosed ? "마감" : "";
+
+           
+
 
             return (
               <div
@@ -147,6 +190,7 @@ function GroupDealListPage() {
                     boxShadow: "0 12px 32px rgba(15,23,42,0.06)",
                     transition:
                       "transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease",
+                    opacity: isClosed ? 0.85 : 1,
                   }}
                   onClick={() => handleCardClick(deal.groupDealId)}
                   onMouseEnter={(e) => {
@@ -167,7 +211,7 @@ function GroupDealListPage() {
                     style={{
                       position: "relative",
                       width: "100%",
-                      paddingTop: "90%", // ✅ 세로 크게
+                      paddingTop: "90%",
                       backgroundColor: "#f3f4f6",
                     }}
                   >
@@ -204,6 +248,39 @@ function GroupDealListPage() {
                     >
                       {badgeText}
                     </div>
+
+                    {/* 🔥 마감/매진 오버레이 */}
+                    {isClosed && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          background:
+                            "linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.6))",
+                        }}
+                      />
+                    )}
+                    {closeLabel && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: "50%",
+                          left: "50%",
+                          transform: "translate(-50%, -50%)",
+                          padding: "10px 22px",
+                          borderRadius: "999px",
+                          fontSize: "1.1rem",
+                          fontWeight: 800,
+                          letterSpacing: "0.18em",
+                          textAlign: "center",
+                          backgroundColor: "rgba(15,23,42,0.95)",
+                          color: "#fefce8",
+                          boxShadow: "0 12px 32px rgba(0,0,0,0.5)",
+                        }}
+                      >
+                        {closeLabel === "매진" ? "매진!" : "마감!"}
+                      </div>
+                    )}
                   </div>
 
                   {/* 본문 */}
@@ -251,7 +328,7 @@ function GroupDealListPage() {
                             style={{
                               fontSize: "1.8rem",
                               fontWeight: 800,
-                              color: "#b91c1c", // 🔴 할인율 레드
+                              color: "#b91c1c",
                             }}
                           >
                             {`${Math.round(deal.discountRate)}%`}
@@ -261,7 +338,7 @@ function GroupDealListPage() {
                           style={{
                             fontSize: "1.5rem",
                             fontWeight: 800,
-                            color: "#166534", // ✅ 메인 가격 그린
+                            color: "#166534",
                           }}
                         >
                           {formatPrice(deal.dealPrice)}
@@ -297,8 +374,8 @@ function GroupDealListPage() {
                               ? "#9ca3af"
                               : remainingText.startsWith("곧 마감") ||
                                 remainingText.startsWith("오늘")
-                              ? "#b91c1c" // 🔴 임박은 레드
-                              : "#16a34a", // ✅ 여유는 그린
+                              ? "#b91c1c"
+                              : "#16a34a",
                         }}
                       >
                         {remainingText}
@@ -323,7 +400,6 @@ function GroupDealListPage() {
                       >
                         공동구매 상세보기
                       </button>
-
                     </div>
                   </div>
                 </div>

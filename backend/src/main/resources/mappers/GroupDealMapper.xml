@@ -144,23 +144,6 @@
           AND user_id = #{userId}
     </select>
 
-    <!-- ✅ 생산자 대시보드용: 공동구매 참여자 목록 -->
-    <select id="selectGroupDealParticipants"
-            resultType="com.farmday.groupdeal.dto.GroupDealDashboardResponse$Participant">
-        SELECT
-            m.member_id    AS participantId,
-            m.user_id      AS memberId,
-            NULL           AS memberName,
-            NULL           AS phone,
-            m.quantity     AS quantity,
-            m.status       AS status,
-            m.joined_at    AS createdAt
-        FROM GROUP_DEAL_MEMBER m
-        WHERE m.group_deal_id = #{groupDealId}
-        ORDER BY m.joined_at DESC
-    </select>
-
-
     <!-- =========================
          INSERT 쿼리
          ========================= -->

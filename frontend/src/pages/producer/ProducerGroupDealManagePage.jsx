@@ -1,4 +1,4 @@
-// src/pages/producer/ProducerGroupDealManagePage.jsx
+// 경로: frontend/src/pages/producer/ProducerGroupDealManagePage.jsx
 // 생산자 마이페이지 - 공동구매 관리 전용
 import { useEffect, useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
@@ -229,7 +229,9 @@ export default function ProducerGroupDealManagePage() {
                         <div style={{ fontSize: "14px", color: "#666" }}>
                           <div>
                             공동구매가:{" "}
-                            <strong style={{ color: "#28a745", fontSize: "16px" }}>
+                            <strong
+                              style={{ color: "#28a745", fontSize: "16px" }}
+                            >
                               {gd.dealPrice?.toLocaleString()}원
                             </strong>
                             {gd.originPrice && (
@@ -303,12 +305,16 @@ export default function ProducerGroupDealManagePage() {
                           {gd.minMemberCount || 0}명
                         </span>
                         {isSuccess && (
-                          <span style={{ color: "#28a745", fontWeight: "600" }}>
+                          <span
+                            style={{ color: "#28a745", fontWeight: "600" }}
+                          >
                             모집 성공! 🎉
                           </span>
                         )}
                         {isClosed && !isSuccess && (
-                          <span style={{ color: "#856404", fontWeight: "600" }}>
+                          <span
+                            style={{ color: "#856404", fontWeight: "600" }}
+                          >
                             모집 마감
                           </span>
                         )}
@@ -356,7 +362,8 @@ export default function ProducerGroupDealManagePage() {
                       </div>
                       {gd.endAt && (
                         <div>
-                          마감일: {new Date(gd.endAt).toLocaleDateString("ko-KR")}
+                          마감일:{" "}
+                          {new Date(gd.endAt).toLocaleDateString("ko-KR")}
                         </div>
                       )}
                     </div>
@@ -371,8 +378,11 @@ export default function ProducerGroupDealManagePage() {
                       minWidth: "150px",
                     }}
                   >
+                    {/* 🔥 발송 처리 관리 → 문의/답변 관리로 텍스트만 변경 */}
                     <button
-                      onClick={() => navigate(`/groupdeal/${gd.groupDealId}/manage`)}
+                      onClick={() =>
+                        navigate(`/groupdeal/${gd.groupDealId}/manage`)
+                      }
                       style={{
                         padding: "10px 16px",
                         border: "1px solid #007bff",
@@ -384,7 +394,7 @@ export default function ProducerGroupDealManagePage() {
                         fontWeight: "600",
                       }}
                     >
-                      발송 처리 관리
+                      문의 / 답변 관리
                     </button>
                     <button
                       onClick={() => navigate(`/groupdeal/${gd.groupDealId}`)}
@@ -402,7 +412,9 @@ export default function ProducerGroupDealManagePage() {
                       모집글 보기
                     </button>
                     <button
-                      onClick={() => navigate(`/groupdeal/${gd.groupDealId}/edit`)}
+                      onClick={() =>
+                        navigate(`/groupdeal/${gd.groupDealId}/edit`)
+                      }
                       style={{
                         padding: "10px 16px",
                         border: "1px solid #28a745",
@@ -418,7 +430,9 @@ export default function ProducerGroupDealManagePage() {
                     </button>
                     {gd.status === "OPEN" && (
                       <button
-                        onClick={() => handleStopGroupDeal(gd.groupDealId, gd.title)}
+                        onClick={() =>
+                          handleStopGroupDeal(gd.groupDealId, gd.title)
+                        }
                         style={{
                           padding: "10px 16px",
                           border: "1px solid #ffc107",
@@ -434,7 +448,9 @@ export default function ProducerGroupDealManagePage() {
                       </button>
                     )}
                     <button
-                      onClick={() => handleDeleteGroupDeal(gd.groupDealId, gd.title)}
+                      onClick={() =>
+                        handleDeleteGroupDeal(gd.groupDealId, gd.title)
+                      }
                       style={{
                         padding: "10px 16px",
                         border: "1px solid #dc3545",

@@ -31,7 +31,7 @@ public class GroupDealController {
     private final GroupDealService groupDealService;
 
     // 실제 파일 저장 경로 (물리 경로) - WebMvcConfig 의 /uploads/** 와 연동
-    private static final String GROUP_DEAL_UPLOAD_DIR = "F:/farmday/uploads/groupdeal";
+    private static final String GROUP_DEAL_UPLOAD_DIR = "D:/farmday/uploads/groupdeal";
 
     // 공동구매 목록 조회 (소비자)
     @GetMapping("/group-deals")

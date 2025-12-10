@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import "./GroupDealDetailTabs.css";
+import GroupDealQnaSection from "../pages/groupdeal/components/GroupDealQnaSection";
 
 const PRIMARY_DEEP_GREEN = "#166534"; // 메인 딥그린 색상
 const TABS_STICKY_OFFSET = 80;        // 상단 헤더 높이에 맞춰 필요하면 숫자 조정
@@ -9,15 +10,36 @@ const TABS_STICKY_OFFSET = 80;        // 상단 헤더 높이에 맞춰 필요�
 function GroupDealDetailTabs({ deal }) {
   const [active, setActive] = useState("detail");
 
-  // 상품상세 탭에서 사용할 상세 설명 텍스트 (DB: GROUP_DEAL.group_deal_detail)
-  // 여기서 리뷰는 없어도 될 것 같아. 관리자가 올리는 시스템이라.
+  // ✅ 상세 이미지용 배열: imagePaths 우선, 없으면 images에서 생성
+  const detailImages = (() => {
+    if (!deal) return [];
 
+    if (Array.isArray(deal.imagePaths) && deal.imagePaths.length > 0) {
+      return deal.imagePaths;
+    }
+
+    if (Array.isArray(deal.images) && deal.images.length > 0) {
+      return deal.images
+        .map(
+          (img) =>
+            img.imageUrl || img.url || img.path || img.image_path || img.src
+        )
+        .filter(Boolean);
+    }
+
+    return [];
+  })();
+
+  // ✅ 상품상세 텍스트: deal.detail 포함해서 여러 필드 중 하나를 사용
   const detailText =
     (deal &&
-      (deal.description ||
+      (
+        deal.detail ||                // ← 원래 페이지에서 쓰던 필드
+        deal.description ||
         deal.groupDealDetail ||
         deal.group_deal_detail ||
-        deal.productDescription)) ||
+        deal.productDescription
+      )) ||
     "";
 
   // 상품 정보 요약 박스용 데이터 (공동구매 메타 정보)
@@ -82,80 +104,6 @@ function GroupDealDetailTabs({ deal }) {
       )
     : [];
 
-  // 상품문의 더미 데이터 (UI용)
-  const dummyQnaList = [
-    {
-      id: 1,
-      title: "비밀글입니다. 🔒",
-      author: "김*지",
-      date: "2024.12.16",
-      status: "답변완료",
-    },
-    {
-      id: 2,
-      title: "비밀글입니다. 🔒",
-      author: "손*지",
-      date: "2024.12.14",
-      status: "답변완료",
-    },
-    {
-      id: 3,
-      title: "배송이 너무 늦어요",
-      author: "최*윤",
-      date: "2024.12.03",
-      status: "답변완료",
-    },
-    {
-      id: 4,
-      title: "비밀글입니다. 🔒",
-      author: "혜*",
-      date: "2024.11.29",
-      status: "답변완료",
-    },
-    {
-      id: 5,
-      title: "받아보니 크기가 다 달라요",
-      author: "박*주",
-      date: "2024.11.17",
-      status: "답변완료",
-    },
-    {
-      id: 6,
-      title: "환불 요청합니다",
-      author: "지*지",
-      date: "2024.11.14",
-      status: "답변완료",
-    },
-    {
-      id: 7,
-      title: "두 번째 구매인데 만족해요",
-      author: "송*하",
-      date: "2024.11.11",
-      status: "답변완료",
-    },
-    {
-      id: 8,
-      title: "비밀글입니다. 🔒",
-      author: "봄*",
-      date: "2024.11.09",
-      status: "답변완료",
-    },
-    {
-      id: 9,
-      title: "맛이 지난번보다 덜 달라요",
-      author: "윤*수",
-      date: "2024.11.08",
-      status: "답변완료",
-    },
-    {
-      id: 10,
-      title: "배송 하루 지연 문의",
-      author: "이*연",
-      date: "2024.11.05",
-      status: "답변완료",
-    },
-  ];
-
   // 상품평 탭 제거 (detail / qna / shipping 만 사용)
   const tabs = [
     { key: "detail", label: "상품상세" },
@@ -206,14 +154,6 @@ function GroupDealDetailTabs({ deal }) {
                 }}
               />
             </div>
-
-            {/* 상세 설명 본문 (HTML) */}
-            {detailText && (
-              <div
-                className="mb-5 detail-text-box"
-                dangerouslySetInnerHTML={{ __html: detailText }}
-              />
-            )}
 
             {/* 농산물 Check Point - 리디자인 */}
             <section className="deal-section deal-section-checkpoint">
@@ -286,8 +226,8 @@ function GroupDealDetailTabs({ deal }) {
               </div>
             </section>
 
-            {/* 상세 이미지 영역 */}
-            {deal.imagePaths && deal.imagePaths.length > 0 && (
+            {/* ✅ 상세 이미지 영역 */}
+            {detailImages.length > 0 && (
               <section className="deal-section deal-section-images">
                 <div className="deal-section-header mb-3">
                   <div className="deal-section-kicker">Detail View</div>
@@ -297,7 +237,7 @@ function GroupDealDetailTabs({ deal }) {
                 </div>
 
                 <div className="deal-images-wrap">
-                  {deal.imagePaths.map((img, idx) => (
+                  {detailImages.map((img, idx) => (
                     <div key={idx} className="deal-image-item">
                       <img
                         src={img}
@@ -309,24 +249,20 @@ function GroupDealDetailTabs({ deal }) {
               </section>
             )}
 
-            {/* 상품 정보 요약 박스 (공동구매 메타) */}
-            {specRows.length > 0 && (
-              <section className="deal-section deal-section-spec">
-                <div className="deal-section-header mb-3">
-                  <div className="deal-section-kicker">Info</div>
-                  <h6 className="deal-section-subtitle">공동구매 기본 정보</h6>
-                </div>
-
-                <div className="deal-spec-grid">
-                  {specRows.map((row) => (
-                    <div key={row.label} className="deal-spec-row">
-                      <span className="deal-spec-label">{row.label}</span>
-                      <span className="deal-spec-value">{row.value}</span>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
+          {/* ✅ 이미지 바로 아래에 상품 소개(detailText) */}
+{detailText && (
+  <section className="deal-section deal-section-detail-text">
+    <div className="deal-section-header mb-3">
+      <div className="deal-section-kicker">Story</div>
+      <h6 className="deal-section-subtitle">상품 소개</h6>
+    </div>
+    <div
+      className="detail-text-box"
+      dangerouslySetInnerHTML={{ __html: detailText }}
+    />
+  </section>
+)}
+         
 
             {/* 추가 detailSections */}
             {deal.detailSections &&
@@ -339,133 +275,8 @@ function GroupDealDetailTabs({ deal }) {
           </div>
         );
       case "qna":
-        return (
-          <div className="py-3 small">
-            <p className="mb-2 fw-semibold">상품 문의 안내</p>
-            <p className="mb-2">
-              배송 일정, 보관 방법, 환불 절차 등 상품 이용과 관련된 내용만
-              문의해 주세요. 빠르고 정확한 안내를 위해 주문 정보 확인이
-              필요할 수 있습니다.
-            </p>
-            <ul className="mb-3 ps-3">
-              <li className="mb-1">
-                제목과 내용에는{" "}
-                <strong>상품명이나 특정 농가명 등은 기재하지 마시고</strong>,
-                주문번호 또는 구매일을 중심으로 작성해 주세요.
-              </li>
-              <li className="mb-1">
-                예시 제목) “배송은 언제 도착하나요?”, “예약일에 맞춰 배송이
-                되는지 궁금합니다”, “환불 관련 문의드립니다”
-              </li>
-              <li className="mb-1">
-                상품 상태 문의 시에는 수령일과 보관 방법을 함께 남겨주시면
-                도움이 됩니다.
-              </li>
-            </ul>
-            <p className="text-muted mb-0">
-              개인정보(연락처, 계좌번호, 주소 등)는 문의글에 절대 남기지 말아
-              주세요. 필요한 경우 고객센터를 통해 개별 안내해 드립니다.
-            </p>
-
-            <div className="mt-4">
-              <div className="d-flex justify-content-between align-items-center mb-2">
-                <div className="fw-semibold">
-                  상품 문의{" "}
-                  <span className="text-muted">
-                    ({dummyQnaList.length})
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  className="btn btn-sm btn-outline-success"
-                >
-                  상품 문의하기
-                </button>
-              </div>
-
-              <div
-                className="d-none d-md-flex border-top border-bottom py-2 text-muted"
-                style={{ fontSize: "0.78rem" }}
-              >
-                <div style={{ width: 50 }}>번호</div>
-                <div style={{ width: 80 }}>답변상태</div>
-                <div className="flex-grow-1">제목</div>
-                <div style={{ width: 80 }} className="text-center">
-                  작성자
-                </div>
-                <div style={{ width: 90 }} className="text-center">
-                  작성일
-                </div>
-              </div>
-
-              <div className="border-top">
-                {dummyQnaList.map((item, index) => (
-                  <div
-                    key={item.id}
-                    className="d-flex flex-column flex-md-row align-items-start align-items-md-center border-bottom py-3"
-                  >
-                    <div
-                      className="text-muted small d-none d-md-block"
-                      style={{ width: 50 }}
-                    >
-                      {dummyQnaList.length - index}
-                    </div>
-
-                    <div className="flex-grow-1 w-100">
-                      <div className="d-flex align-items-center mb-1">
-                        <span
-                          className="badge rounded-pill me-2"
-                          style={{
-                            backgroundColor: "#e5f7ec",
-                            color: PRIMARY_DEEP_GREEN,
-                            fontWeight: 600,
-                          }}
-                        >
-                          {item.status}
-                        </span>
-                        <span className="fw-semibold">{item.title}</span>
-                      </div>
-                      <div className="d-block d-md-none text-muted small mt-1">
-                        {item.author} · {item.date}
-                      </div>
-                    </div>
-
-                    <div className="d-none d-md-flex flex-column align-items-center text-muted small ms-3">
-                      <div style={{ width: 80 }} className="text-center">
-                        {item.author}
-                      </div>
-                      <div style={{ width: 90 }} className="text-center">
-                        {item.date}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="d-flex justify-content-center mt-3">
-                <nav>
-                  <ul className="pagination pagination-sm mb-0">
-                    <li className="page-item disabled">
-                      <span className="page-link">〈</span>
-                    </li>
-                    <li className="page-item active">
-                      <span className="page-link">1</span>
-                    </li>
-                    <li className="page-item">
-                      <span className="page-link">2</span>
-                    </li>
-                    <li className="page-item">
-                      <span className="page-link">3</span>
-                    </li>
-                    <li className="page-item">
-                      <span className="page-link">〉</span>
-                    </li>
-                  </ul>
-                </nav>
-              </div>
-            </div>
-          </div>
-        );
+        // 🔹 실제 QnA 컴포넌트 렌더링
+        return <GroupDealQnaSection deal={deal} />;
       case "shipping":
         return (
           <div className="py-3 small">
