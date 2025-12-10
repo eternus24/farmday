@@ -239,19 +239,15 @@
 }
 
 .detail-desc-text {
-    margin-top: 30px;
-    line-height: 1.7;
-    font-size: 1.05rem;
+  margin-top: 30px;
+  line-height: 1.7;
+  font-size: 1.05rem;
+  white-space: pre-line;   /* ✅ 여기로 이동 */
 }
 
 .detail-desc-text h3 {
     font-weight: 700;
     margin-bottom: 15px;
-}
-
-.detail-desc-text p {
-  white-space: pre-line;
-  line-height: 1.6;
 }
 
 /* 상품 설명 고정 내용 */

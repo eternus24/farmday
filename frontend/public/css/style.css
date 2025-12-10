@@ -663,6 +663,11 @@
   padding: 24px;
 }
 
+.hero-header,
+.page-header {
+  margin-top: 0px !important;
+}
+
 /* 내용 카드 */
 .notice-modal-card {
   width: 100%;
@@ -742,6 +747,14 @@
 .notice-modal-close-fixed:hover {
   background: rgba(0, 0, 0, 0.78);
   transform: translateY(-1px);
+}
+
+.page-header {
+    position: relative;
+    background: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url(../img/cart-page-header-img.jpg);
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-size: cover;
 }
 
 /* ✅ 왼쪽으로 계속 흘러가는 애니메이션 (이름 변경) */

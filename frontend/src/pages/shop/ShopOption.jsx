@@ -77,7 +77,7 @@ const ShopOption = ({product}) => {
         });
         await findCartAmount();
 
-        navigate("/orders", { state: { ok: true, updated: items.length, total, shipping: 0}, replace: false });
+        navigate("/orders", { state: { ok: true }, replace: false });
 
     }
 

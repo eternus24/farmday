@@ -72,12 +72,26 @@
     margin-right: 10px;
 }
 
+.orders-item-delivery-status {
+    cursor: pointer;
+}
 
+.orders-item-delivery-status:hover {
+    color: #222;
+    font-weight: 600;
+}
 
 .order-box {
     margin-top: 10px;
     padding-top: 20px;
-    margin-bottom: 60px;
+    margin-bottom: 20px;
+    border-top: 1px solid lightgray;
+}
+
+.group-deal-order-box {
+    margin-top: 10px;
+    padding-top: 20px;
+    margin-bottom: 30px;
     border-top: 1px solid lightgray;
 }
 
@@ -109,7 +123,7 @@
 }
 
 .orders-thumbnail-detail {
-    margin-left: 15px;
+    margin-left: 30px;
     color: #222;
     font-weight: 400;
 }
@@ -127,13 +141,41 @@
     font-size: 10pt;
 }
 
+/* 🎬🆕 주문 상세가 "천천히 펼쳐지며" 등장하는 효과 */
+.order-detail-animate {
+  overflow: hidden;
+  animation: orderDetailExpand 700ms ease;
+}
+
+/* 🎬🆕 max-height를 크게 잡아 실제 높이를 커버 */
+@keyframes orderDetailExpand {
+  from {
+    max-height: 0;
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    max-height: 1200px; /* ✅ 충분히 큰 값으로 지정 */
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+
+
+
+
 
 .orders-item-container {
-    padding-top: 20px;
-    padding-bottom: 20px;
+    padding-top: 15px;
+    padding-bottom: 15px;
     border-bottom: 1px solid #cccccc;
     display: flex !important;
     align-items: center !important;
+    /* background-color: #f5f5f5; */
+    padding-left: 16px;
+    padding-right: 16px;
 }
 
 
@@ -178,6 +220,7 @@
   font-weight: 600;
   transition: 0.2s;
   color: #75af09;
+  cursor: pointer;
 }
 
 .order-cancel-finished {
@@ -222,6 +265,12 @@
     margin-bottom: 35px;
 }
 
+.group-deal-orders-item-detail-delivery {
+    text-align: end;
+    font-size: 11pt;
+    margin-bottom: 68px;
+}
+
 
 .is-canceled {
     filter: brightness(0.5);
@@ -238,57 +287,161 @@
 }
 
 .delivery-img-name {
-    width: 100px;
-    color: white;
-    font-weight: 600;
-    text-align: center;
-    border: 1px solid rgb(28, 189, 28);
-    background-color: rgb(28, 189, 28);
-    border-radius: 5px;
-    
-    margin: 0 auto;
-    margin-bottom: 25px;
-}
-
-.delivery-img-name.btn-disabled {
     border: 1px solid #dddddd;
     color: #aaaaaa;
     background-color: white;
     font-weight: 400;
-}
-/* =========================
-   마이페이지 내 정보 - 주소 영역
-   (기존 디자인과 톤 맞추기)
-   ========================= */
-.addr-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+
+    width: 100px;
+    text-align: center;
+    margin: 0 auto;
+    margin-bottom: 25px;
+    border-radius: 5px;
 }
 
-/* 주소 입력창: 그냥 form-control 느낌 유지, 폭만 제어 */
-.addr-input {
-  flex: 1;
+.delivery-img-name.btn-activated {
+    color: white;
+    font-weight: 600;
+    border: 1px solid rgb(28, 189, 28);
+    background-color: rgb(28, 189, 28);
 }
 
-/* 주소 검색 버튼: 네모 + 살짝 둥글, 기존 버튼 톤 맞춤 */
-.addr-search-btn {
-  min-width: 90px;
-  height: 40px;
-  padding: 0 14px;
-  border-radius: 5px;              /* 과하게 둥글지 않게 */
-  border: 1px solid #ffb524;       /* order-cancel-btn 과 비슷한 노랑 톤 */
-  background-color: #ffffff;
-  color: #75af09;                  /* 기존 초록 텍스트 색상 계열 */
-  font-size: 10pt;
-  font-weight: 600;
-  line-height: 1;
+.delivery-img-name.btn-canceled {
+    color: white;
+    font-weight: 600;
+    border: 1px solid #818181;
+    background-color: #818181;
+}
+
+
+
+.delivery-detail-container {
+    font-size: 11pt;
+    margin-top: 3px;
+    margin-bottom: 3px;
+}
+.delivery-detail-created-date {
+    display: inline-block;
+    width: 170px;
+}
+.delivery-detail-content {
+    display: inline-block;
+    color: #353535;
+    font-weight: 500;
+}
+
+
+
+
+.order-images-spread-container {
+  --img-size: 140px;
+  --img-gap: -10px;
+
+  position: relative;
+  width: var(--img-size);
+  height: var(--img-size);
+  overflow: visible;
   cursor: pointer;
-  transition: 0.2s;
 }
 
-.addr-search-btn:hover {
-  background-color: #ffb524;
-  border-color: #ffb524;
-  color: #ffffff;
+/* 공통: 전부 한 점에 겹쳐 놓기 */
+.order-images-spread-container > div {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+/* 🧩 z-index: 1번째가 항상 맨 위에 오도록 유지 */
+.order-images-spread-container > div:nth-child(1) { z-index: 30; }
+.order-images-spread-container > div:nth-child(2) { z-index: 29; }
+.order-images-spread-container > div:nth-child(3) { z-index: 28; }
+.order-images-spread-container > div:nth-child(4) { z-index: 27; }
+
+.order-images-spread-img {
+  width: var(--img-size);
+  height: var(--img-size);
+  object-fit: cover;
+  border-radius: 6px;
+  box-shadow: 3px 3px 5px #929292;
+}
+
+/* 🧩 공통 transition + hover 전에는 클릭 안 되게 */
+.order-images-spread-container > div:not(:first-child) {
+  pointer-events: none;
+  transition: ease-out, transform 0.2s ease-out;
+}
+
+/* ✨ 기본 상태에서 2,3,4번째 이미지를 "살짝" 오른쪽으로 삐져나오게 */
+.order-images-spread-container > div:nth-child(2) {
+  transform: translateX(5px);   /* ← 살짝만 우측으로 */
+}
+.order-images-spread-container > div:nth-child(3) {
+  transform: translateX(10px);
+}
+.order-images-spread-container > div:nth-child(4) {
+  transform: translateX(15px);
+}
+
+/* ✨ hover 시: 오른쪽으로 크게 펼쳐지도록 기존 translate로 덮어쓰기 */
+.order-images-spread-container:hover > div:nth-child(2) {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(calc(1 * (var(--img-size) + var(--img-gap))));
+}
+
+.order-images-spread-container:hover > div:nth-child(3) {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(calc(2 * (var(--img-size) + var(--img-gap))));
+}
+
+.order-images-spread-container:hover > div:nth-child(4) {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(calc(3 * (var(--img-size) + var(--img-gap))));
+}
+
+
+
+
+
+
+
+
+
+/* 💄 마이페이지 주문내역 페이지네이션 가로 정렬 */
+.mypage-pagination {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;     /* 숫자가 많아질 때 한 줄에 안 들어가면 다음 줄로 */
+  gap: 4px;            /* 버튼 사이 간격 */
+  padding-left: 0;     /* ul 들여쓰기 제거 */
+  list-style: none;    /* 기본 점 제거 */
+}
+
+.mypage-pagination .page-item {
+  display: inline-flex; /* li가 세로로 쌓이지 않도록 강제 가로 배치 */
+  margin: 0;
+}
+
+.order-box .seller-reply-box {
+  background: #fafbfe;
+  border: 1px solid #e6eaf2;
+}
+
+.review-title {
+  font-weight: 600;
+  font-size: 1.02rem;
+  line-height: 1.3;
+  margin-top: 2px;
+  margin-bottom: 0px;
+}
+
+.review-content {
+  font-size: 0.95rem;
+  color: #555;
+  line-height: 1.45;
+  white-space: pre-line; /* 줄바꿈 유지 */
+  padding: 0px;
+  margin-bottom: 0px;
 }

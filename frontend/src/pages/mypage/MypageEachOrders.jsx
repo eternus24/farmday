@@ -44,9 +44,9 @@ export default function MypageEachOrders({od,formatKoreanDateTime,moneyKRW,handl
           <div className="d-flex flex-column gap-2" style={{width:'460px'}}>
 
             {/* ✨🛠️ 수정: 상품명 라인 강조 + 건수 배지 */}
-            <div className="d-flex align-items-center justify-content-between">
+            <div className="d-flex align-items-center">
               <div className="fw-semibold" style={{ fontSize: "1.02rem", fontWeight:"600" }}>
-                {od.thumbnail_name}
+                {od.thumbnail_name} &nbsp;
               </div>
               <span className="badge bg-light text-dark">
                 {od.order_amount === 1 ? "단일 상품" : `외 ${od.order_amount - 1}건`}
