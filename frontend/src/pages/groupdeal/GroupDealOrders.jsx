@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import { useLocation, Link, useParams } from "react-router-dom";
 import "../../assets/css/cart.css";
 import { loadTossPayments, ANONYMOUS } from "@tosspayments/tosspayments-sdk";
 import { random123DaysLaterLabelKST } from "../orders/dateCalc";
+import { AuthContext } from "../../contexts/AuthContext";
 
 function money(n) { return `$${n.toFixed(2)}`; }
 
@@ -13,7 +14,9 @@ export default function GroupDealOrders() {
   const [items, setItems] = useState([]);
   const [status, setStatus] = useState("loading"); // loading | ready | error
   const [paying, setPaying] = useState(false);
+  const { auth } = useContext(AuthContext);
 
+  const [coupon, setCoupon] = useState([]);
   const [userInfo, setUserInfo] = useState([]);
 
   // ⬇️ 추가: 쿠폰/적립금 상태
@@ -27,6 +30,14 @@ export default function GroupDealOrders() {
 
   const location = useLocation();
   const { shipping, fromGroupDeal, quantity } = location.state || {};
+
+  const token =
+    auth?.accessToken ||
+    auth?.token ||
+    localStorage.getItem("accessToken");
+
+  const userNo = auth.userNo;
+
 
   // cart.jsx의 로딩 방식과 동일: fetch → map/normalize → setItems
   async function reloadCart(signal) {
@@ -102,7 +113,39 @@ export default function GroupDealOrders() {
     }
   }
 
+
+  async function getCoupons() {
+    try {
+      const res = await fetch(
+        `${API_BASE}/api/mypage/coupon/my-coupons?userNo=${userNo}`,
+          {
+            method: "GET",
+            credentials: "include",
+            cache: "no-store",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: token.startsWith('Bearer ')
+                ? token
+                : `Bearer ${token}`,
+            },
+          }
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      console.log("쿠폰 응답:", data);
+
+      setCoupon(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("쿠폰 조회 실패:", err);
+    }
+
+
+  };
+
+
+
   useEffect(() => {
+    getCoupons();
     const ac = new AbortController();
     reloadCart(ac.signal);
     const ac2 = new AbortController();
@@ -121,13 +164,28 @@ export default function GroupDealOrders() {
     [userInfo]
   );
 
-  // 쿠폰 할인금액
+  // 선택된 쿠폰 객체 찾기
+  const selectedCouponObj = useMemo(() => {
+    if (selectedCoupon === "NONE") return null;
+    return coupon.find((cp) => String(cp.couponId) === String(selectedCoupon)) ?? null;
+  }, [selectedCoupon, coupon]);
+
+  // 할인 계산은 객체 기준으로
   const discountAmount = useMemo(() => {
-    const rate =
-      selectedCoupon === "5PCT" ? 0.05 :
-      selectedCoupon === "10PCT" ? 0.10 : 0;
-    return Math.floor(subtotal * rate);
-  }, [selectedCoupon, subtotal]);
+    if (!selectedCouponObj) return 0;
+
+    const type = selectedCouponObj.discountType;
+    const value = Number(selectedCouponObj.discountValue ?? 0);
+
+    if (type === "RATE") {
+      const rate = value * 0.01;
+      return Math.floor(subtotal * rate);
+    }
+    if (type === "FIXED") {
+      return value;
+    }
+    return 0;
+  }, [selectedCouponObj, subtotal]);
 
   // 적립금 적용 전 결제 예정 금액(상한 산정용)
   const payableBeforePoints = useMemo(
@@ -380,9 +438,15 @@ export default function GroupDealOrders() {
                           value={selectedCoupon}
                           onChange={(e) => setSelectedCoupon(e.target.value)}
                         >
-                          <option value="NONE">쿠폰 선택 안 함</option>
+                          {/* <option value="NONE">쿠폰 선택 안 함</option>
                           <option value="5PCT">11월 정기 할인쿠폰 5%</option>
-                          <option value="10PCT">신규회원 첫구매 10%</option>
+                          <option value="10PCT">신규회원 첫구매 10%</option> */}
+                          <option value="NONE">쿠폰 선택 안 함</option>
+                          {coupon.map((cp) => (
+                            <option key={cp.couponId} value={cp.couponId}>
+                              {cp.couponName}
+                            </option>
+                          ))}
                         </select>
                       </div>
                       <div className="col-auto text-muted small">할인 금액</div>

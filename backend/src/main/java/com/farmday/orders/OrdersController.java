@@ -387,6 +387,39 @@ public class OrdersController {
     }
     
 
+    @PostMapping("/orders/confirmGroupDealOrder/{user_id}")
+    public ResponseEntity<String> confirmGroupDealOrder(
+        @PathVariable("user_id") String user_id,
+        @RequestParam("group_deal_id")int group_deal_id) throws Exception {
+        
+        System.out.println("디버깅 확인: 주문 확정 컨트롤러 진입");
+
+        OrdersItemDTO ordersItem = ordersService.findGroupDealOrdersItemById(group_deal_id);
+
+        String status = ordersItem.getOrder_status();
+
+        if (!status.equals("A2")) {
+            return ResponseEntity.badRequest().body("not_appropriate_status");
+        }
+
+        MembershipGradeDTO membershipGrade = ordersService.findMembershipGradeInfo(ordersService.findUserMembershipInfo(user_id));
+
+        double point_rate = membershipGrade.getPoint_rate();
+        
+        int earned_points = (int)(ordersItem.getLine_total_amount() * point_rate * 0.01);
+        int current_points = ordersService.findUserPoints(user_id);
+        int updated_points = current_points + earned_points;
+
+        ordersService.updateUserPoints(user_id, updated_points);
+
+        System.out.println("적립금 "+earned_points+"점을 얻어 총 "+updated_points+"점이 되었습니다.");
+
+        ordersService.changeGroupDealOrdersItemStatus(group_deal_id, "E1");
+
+        return ResponseEntity.ok("");
+    }
+
+
     // 배송이 완료되고 고객이 물품을 환불하려고 할 때
     @PostMapping("/orders/refundRequest/{user_id}")
     public ResponseEntity<String> refundRequest(

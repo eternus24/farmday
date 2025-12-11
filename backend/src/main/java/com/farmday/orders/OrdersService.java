@@ -124,4 +124,14 @@ public class OrdersService {
         return ordersMapper.findUserNoByOrderItemId(order_item_id);
     }
 
+
+
+
+    public OrdersItemDTO findGroupDealOrdersItemById(int group_deal_id) throws Exception {
+        return ordersMapper.findGroupDealOrdersItemById(group_deal_id);
+    }
+
+    public int changeGroupDealOrdersItemStatus(int group_deal_id, String order_status) throws Exception {
+        return ordersMapper.changeGroupDealOrdersItemStatus(group_deal_id,order_status);
+    }
 }

@@ -52,6 +52,8 @@
 
 
 
+
+
   <insert id="insertOrders" parameterType="com.farmday.orders.OrdersDTO">
     insert into orders
       (order_id,user_id,order_status,product_total_amount,shipping_fee,discount_amount,order_total_amount,receiver_name,receiver_phone,receiver_addr,delivery_message,order_type,group_deal_id,toss_orderid,toss_paymentkey,used_points)
@@ -204,5 +206,19 @@
       JOIN USERS u ON o.user_id = u.userId
       WHERE oi.order_item_id = #{order_item_id}
   </select>
+
+
+
+
+
+  <select id="findGroupDealOrdersItemById" parameterType="int" resultType="com.farmday.orders.OrdersItemDTO">
+    select * from orders_item where group_deal_id=#{group_deal_id}
+  </select>
+
+  <update id="changeGroupDealOrdersItemStatus" parameterType="java.util.Map">
+    update orders_item set
+      order_status=#{order_status}
+    where group_deal_id=#{group_deal_id}
+  </update>
 
 </mapper>

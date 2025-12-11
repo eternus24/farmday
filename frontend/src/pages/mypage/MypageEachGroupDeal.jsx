@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, Navigate, NavLink, useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
+import logoImg from "../../assets/img/FarmDay.png";
 
 export default function MypageEachGroupDeal({od,formatKoreanDateTime,moneyKRW,handleToggleOrderDetails,openOrderId,ordersItem,handleOpenCancelModal,confirmOrder,refundRequest,handleOpenGroupDealDeliveryModal,API_BASE}) {
 
@@ -7,8 +9,11 @@ export default function MypageEachGroupDeal({od,formatKoreanDateTime,moneyKRW,ha
   // 예시: 대표 이미지 + 나머지 이미지 썸네일
   const mainImg = imgList[0];           // 첫 번째 이미지를 대표로
   const subImgs = imgList.slice(1);     // 나머지
+  const navigate = useNavigate()
 
   const [groupDealItem, setGroupDealItem] = useState([]);
+  const userInfoFromLocal = JSON.parse(window.localStorage.getItem("loginUser"));
+  const user_Id = userInfoFromLocal.userId;
 
   async function getGroupDealItem() {
     try {
@@ -26,7 +31,52 @@ export default function MypageEachGroupDeal({od,formatKoreanDateTime,moneyKRW,ha
     }
   }
 
+  async function confirmGroupDealOrder(group_deal_id,order_id) {
 
+    const result = await Swal.fire({
+      html: `
+        <br/>
+        <img src="`+logoImg+`" width="200px"/>
+        <br/><br/>
+        구매를 확정하시겠습니까?<br/>
+        구매 확정 후에는 환불이 불가능합니다.
+      `,
+      title: "",
+      text: "123",
+      // icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "확인",
+      cancelButtonText: "취소",
+      reverseButtons: true,
+      focusCancel: true,
+    });
+    if (!result.isConfirmed) return;
+
+    try {
+      const delRes = await fetch(`${API_BASE}/orders/confirmGroupDealOrder/${user_Id}?group_deal_id=${group_deal_id}`, {
+        method: "post",
+        credentials: "include",
+      });
+      if (!delRes.ok) throw new Error(`DELETE HTTP ${delRes.status}`);
+
+      await Swal.fire({
+        title: "",
+        text: "구매가 확정되었습니다.",
+        icon: "success",
+        confirmButtonText: "확인",
+      });
+    } catch (e) {
+      console.error("delete failed:", e);
+      await Swal.fire({
+        title: "오류가 발생했습니다",
+        text: e?.message ?? "잠시 후 다시 시도해 주세요.",
+        icon: "error",
+        confirmButtonText: "확인",
+      });
+    } finally {
+      await getGroupDealItem();
+    }
+  }
 
   useEffect(() => {
     getGroupDealItem();
@@ -55,7 +105,7 @@ export default function MypageEachGroupDeal({od,formatKoreanDateTime,moneyKRW,ha
         </NavLink> */}
 
         
-        <NavLink to={`/group-deals/${groupDealItem.group_deal_id}`}>
+        <NavLink to={`/groupdeal/${groupDealItem.group_deal_id}`}>
           <div className="order-images-spread-container">
             {imgList.map((img) => (
               <div>
@@ -121,27 +171,33 @@ export default function MypageEachGroupDeal({od,formatKoreanDateTime,moneyKRW,ha
               )
             }
             {(groupDealItem.order_status === 'A1' && groupDealItem.delivery_status === '배송준비')  && (
-              <div
-                className="order-cancel-btn"
-                onClick={() => handleOpenCancelModal(od.order_item_id)}
-                role="button"
-                tabIndex={0}
-              >
-                주문 취소
+              // <div
+              //   className="order-cancel-btn"
+              //   onClick={() => handleOpenCancelModal(od.order_item_id)}
+              //   role="button"
+              //   tabIndex={0}
+              // >
+              //   주문 취소
+              // </div>
+              <div className="order-cancel-btn" tabIndex={0} onClick={() => handleOpenGroupDealDeliveryModal(groupDealItem.order_item_id)}>
+                배송 조회
               </div>
             )}
             {(groupDealItem.order_status === 'A1' && groupDealItem.delivery_status === '배송중')  && (
-              <div className="order-cancel-btn" tabIndex={0} onClick={() => handleOpenDeliveryModal(od.order_item_id)}>
+              <div className="order-cancel-btn" tabIndex={0} onClick={() => handleOpenGroupDealDeliveryModal(groupDealItem.order_item_id)}>
                 배송 조회
               </div>
             )}
             {groupDealItem.order_status === 'A2' && (
               <>
-                <div className="order-cancel-btn" style={{display:"flex",float:"left",marginRight:10}} tabIndex={0} onClick={() => confirmOrder(od.order_item_id,od.order_id)}>
+                <div className="order-cancel-btn" style={{display:"flex",float:"left",marginRight:10}} tabIndex={0} onClick={() => confirmGroupDealOrder(groupDealItem.group_deal_id,od.order_id)}>
                   구매 확정
                 </div>
-                <div className="order-cancel-btn" style={{display:"flex",float:"right"}} tabIndex={0} onClick={() => refundRequest(od.order_item_id,od.order_id)}>
+                {/* <div className="order-cancel-btn" style={{display:"flex",float:"right"}} tabIndex={0} onClick={() => refundRequest(od.order_item_id,od.order_id)}>
                   환불 신청
+                </div> */}
+                <div className="order-cancel-btn" tabIndex={0} onClick={() => handleOpenGroupDealDeliveryModal(groupDealItem.order_item_id)} style={{display:"flex",float:"right"}}>
+                  배송 조회
                 </div>
               </>
             )}
@@ -153,11 +209,15 @@ export default function MypageEachGroupDeal({od,formatKoreanDateTime,moneyKRW,ha
             {(groupDealItem.order_status === 'E1' || groupDealItem.order_status === 'E2') && (
               
               <>
-                <div className="order-cancel-btn" style={{display:"flex",float:"left",marginRight:10}} tabIndex={0} onClick={()=>navigate(`/review/write/${od.order_item_id}`)}>
+                <div className="order-cancel-btn" style={{display:"flex",float:"left",marginRight:10}} tabIndex={0} onClick={()=>navigate(`/groupdeal/${groupDealItem.group_deal_id}`)}>
                   리뷰 작성
                 </div>
-                <div className="order-cancel-btn" style={{display:"flex",float:"right"}}>
+                
+                {/* <div className="order-cancel-btn" style={{display:"flex",float:"right"}}>
                   구매 상세
+                </div> */}
+                <div className="order-cancel-btn" tabIndex={0} onClick={() => handleOpenGroupDealDeliveryModal(groupDealItem.order_item_id)} style={{display:"flex",float:"right"}}>
+                  배송 조회
                 </div>
               </>
             )}
@@ -167,8 +227,11 @@ export default function MypageEachGroupDeal({od,formatKoreanDateTime,moneyKRW,ha
                 <div className="order-cancel-finished" style={{display:"flex",float:"left",marginRight:10}}>
                   리뷰 작성 완료
                 </div>
-                <div className="order-cancel-btn" style={{display:"flex",float:"right"}}>
+                {/* <div className="order-cancel-btn" style={{display:"flex",float:"right"}}>
                   구매 상세
+                </div> */}
+                <div className="order-cancel-btn" tabIndex={0} onClick={() => handleOpenGroupDealDeliveryModal(groupDealItem.order_item_id)} style={{display:"flex",float:"right"}}>
+                  배송 조회
                 </div>
               </>
             )}

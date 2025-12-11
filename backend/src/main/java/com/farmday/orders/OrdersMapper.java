@@ -83,4 +83,14 @@ public interface OrdersMapper {
 	//민아 - 리뷰 작성 적립금
 	Long findUserNoByOrderItemId(int order_item_id);
 	
+
+
+
+	OrdersItemDTO findGroupDealOrdersItemById(int group_deal_id) throws Exception;
+
+	int changeGroupDealOrdersItemStatus(
+		@Param("group_deal_id")int group_deal_id,
+		@Param("order_status")String order_status
+	) throws Exception;
+
 }
