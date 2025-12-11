@@ -55,7 +55,7 @@ const ShopMain = () => {//페이지 역할
 
   return (
         <div className="text-center mb-4">
-          <h1 className="shop-title">🛒 제철 과일 상품</h1>
+          <h1 className="shop-title">🛒 제철 인기 상품</h1>
 
       <div className='container py-5'>
         <div className='row g-4'>
