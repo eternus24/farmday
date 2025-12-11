@@ -3,6 +3,7 @@ package com.farmday.mystore.service;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.farmday.mystore.dto.MystoreDTO;
 import com.farmday.mystore.mapper.MystoreMapper;
@@ -24,19 +25,20 @@ public class MystoreServiceImpl implements MystoreService {
     public MystoreDTO selectStoreBoard(Long producerId){
         return mystoreMapper.selectStoreBoard(producerId);
     }
-    
+
     @Override
+    @Transactional
     public void updateStore(MystoreDTO dto){
 
-        //스토어 업데이트
+        // 1) 스토어 기본 정보 업데이트 (store_name, description, thumbnail, status 등)
         mystoreMapper.updateStoreInfo(dto);
 
-        //producer 업데이트
+        // 2) 생산자 정보 업데이트 (biz_no, biz_addr, biz_phone, 계좌 정보 등)
         mystoreMapper.updateProducerInfo(dto);
-
     }
 
-    //전체 상점
+    // 전체 상점
+    @Override
     public List<MystoreDTO> getAllStoreList(){
         return mystoreMapper.getAllStoreList();
     }
