@@ -214,7 +214,7 @@ export default function Orders() {
 
 
   // 토스
-  const clientKey = "test_ck_BX7zk2yd8yjQwL25791X3x9POLqK";
+  const clientKey = "#";
 
   const handlePay = async () => {
     if (!items.length) return;
