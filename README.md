@@ -18,7 +18,7 @@ FarmDay는 **농산물 시세 정보 + 직거래 + 공동구매**를 결합한
 ## 🛠 기술 스택
 
 ### Backend
-- Java 17
+- Java 8
 - Spring Boot
 - Spring Security
 - JWT 인증
